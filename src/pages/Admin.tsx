@@ -31,11 +31,13 @@ export default function Admin() {
   const navigate = useNavigate();
   const location = useLocation();
   const [authTimeout, setAuthTimeout] = useState(false);
+  const [userChangedTab, setUserChangedTab] = useState(false);
   
   // Check for redirects from location state
   useEffect(() => {
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab);
+      setUserChangedTab(true); // Markieren, dass der Tab über Navigation geändert wurde
       // Clear the state to prevent unexpected redirects on refresh
       window.history.replaceState({}, document.title);
     }
@@ -66,6 +68,12 @@ export default function Admin() {
       }
     }
   }, [isAuthenticated, loadingAuth]);
+  
+  // Handle tab changes based on user selection
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setUserChangedTab(true); // Benutzer hat manuell gewechselt
+  };
   
   // If auth is taking too long, show a helpful message
   if (authTimeout) {
@@ -107,18 +115,19 @@ export default function Admin() {
   // Separate useEffect to handle tab changes based on company status
   useEffect(() => {
     if (!loadingAuth && isAuthenticated) {
-      if (!company && activeTab === "properties") {
-        // Wenn kein Unternehmen existiert und wir auf der Immobilienseite sind,
-        // wechsle zu Einstellungen
+      if (!company && activeTab === "properties" && !userChangedTab) {
+        // Nur weiterleiten, wenn kein Unternehmen existiert, wir auf der Immobilienseite sind,
+        // und der Benutzer nicht manuell gewechselt hat
         setActiveTab("settings");
         toast.info("Bitte erstellen Sie zuerst ein Unternehmen, um Immobilien zu verwalten");
-      } else if (company && activeTab === "settings" && location.state?.activeTab !== "settings") {
-        // Wenn ein Unternehmen existiert und wir bei Einstellungen sind
-        // (aber nicht explizit dorthin navigiert wurden), zu Immobilien wechseln
+      } else if (company && activeTab === "settings" && !userChangedTab && 
+                location.state?.activeTab !== "settings") {
+        // Nur weiterleiten, wenn wir ein Unternehmen haben, bei Einstellungen sind,
+        // der Benutzer nicht manuell gewechselt hat und nicht explizit zu Einstellungen navigiert wurde
         setActiveTab("properties");
       }
     }
-  }, [isAuthenticated, company, activeTab, loadingAuth, location.state]);
+  }, [isAuthenticated, company, activeTab, loadingAuth, location.state, userChangedTab]);
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -126,7 +135,7 @@ export default function Admin() {
       
       <div className="flex-grow bg-gray-50 p-4 md:p-8">
         <div className="container mx-auto">
-          <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
+          <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="mb-8">
               <TabsTrigger value="properties">Immobilien</TabsTrigger>
               <TabsTrigger value="agents">Makler</TabsTrigger>
