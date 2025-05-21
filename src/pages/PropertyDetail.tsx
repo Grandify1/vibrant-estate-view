@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useProperties } from "@/hooks/useProperties";
@@ -9,23 +8,137 @@ import { Badge } from "@/components/ui/badge";
 import { Bath, Bed, Calendar, ChevronLeft, ChevronRight, Home, Ruler, MapPin, Info } from "lucide-react";
 import PropertyContactForm from "@/components/embed/ContactForm";
 import { Lightbox } from "@/components/ui/lightbox";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function PropertyDetailPage() {
   const { propertyId } = useParams<{ propertyId: string }>();
-  const { properties, loading, lastError } = useProperties();
+  const { properties } = useProperties();
   const [property, setProperty] = useState<Property | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   
-  // Find property when properties load
+  // Load property directly from Supabase
   useEffect(() => {
-    if (!loading && properties && propertyId) {
-      const foundProperty = properties.find(p => p.id === propertyId);
-      if (foundProperty) {
-        setProperty(foundProperty);
+    async function fetchPropertyDirectly() {
+      if (!propertyId) return;
+      
+      setIsLoading(true);
+      setLoadError(null);
+      
+      try {
+        // First try to find the property in the local state
+        if (properties && properties.length > 0) {
+          const foundProperty = properties.find(p => p.id === propertyId);
+          if (foundProperty) {
+            setProperty(foundProperty);
+            setIsLoading(false);
+            return;
+          }
+        }
+        
+        // Otherwise load directly from the database
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('id', propertyId)
+          .single();
+        
+        if (error) {
+          console.error("Error fetching property:", error);
+          setLoadError(`Fehler beim Laden der Immobilie: ${error.message}`);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (data) {
+          // Parse the JSON fields
+          const safelyParseJson = <T extends unknown>(jsonValue: any, fallback: T): T => {
+            if (!jsonValue) return fallback;
+            if (typeof jsonValue === 'string') {
+              try {
+                return JSON.parse(jsonValue) as T;
+              } catch (e) {
+                console.error('Error parsing JSON:', e);
+                return fallback;
+              }
+            }
+            if (Array.isArray(jsonValue)) return jsonValue as unknown as T;
+            if (typeof jsonValue === 'object') return jsonValue as T;
+            return fallback;
+          };
+          
+          const emptyHighlights: Property['highlights'] = [];
+          const emptyImages: Property['images'] = [];
+          const emptyFloorPlans: Property['floorPlans'] = [];
+          const emptyDetails: Property['details'] = {
+            price: '',
+            livingArea: '',
+            plotArea: '',
+            rooms: '',
+            bathrooms: '',
+            bedrooms: '',
+            constructionYear: '',
+            lastRenovation: '',
+            availability: '',
+            propertyType: '',
+            floor: '',
+            totalFloors: '',
+            parkingSpaces: '',
+            availableFrom: '',
+            maintenanceFee: '',
+            condition: '',
+            heatingType: '',
+            energySource: ''
+          };
+          const emptyEnergy: Property['energy'] = {
+            certificateAvailable: false,
+            certificateType: '',
+            energyConsumption: '',
+            energyEfficiencyClass: '',
+            includesWarmWater: false,
+            primaryEnergyCarrier: '',
+            finalEnergyDemand: '',
+            constructionYear: '',
+            validUntil: '',
+            createdAt: ''
+          };
+          
+          const parsedProperty: Property = {
+            id: data.id,
+            title: data.title || '',
+            address: data.address || '',
+            status: (data.status || 'active') as 'active' | 'sold' | 'archived',
+            company_id: data.company_id,
+            agent_id: data.agent_id,
+            description: data.description || '',
+            amenities: data.amenities || '',
+            location: data.location || '',
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+            highlights: safelyParseJson<Property['highlights']>(data.highlights, emptyHighlights),
+            images: safelyParseJson<Property['images']>(data.images, emptyImages),
+            floorPlans: safelyParseJson<Property['floorPlans']>(data.floor_plans, emptyFloorPlans),
+            details: safelyParseJson<Property['details']>(data.details, emptyDetails),
+            energy: safelyParseJson<Property['energy']>(data.energy, emptyEnergy)
+          };
+          
+          setProperty(parsedProperty);
+        } else {
+          setLoadError("Immobilie nicht gefunden.");
+        }
+      } catch (err: any) {
+        console.error("Error loading property:", err);
+        setLoadError(`Fehler beim Laden der Immobilie: ${err.message}`);
+      } finally {
+        setIsLoading(false);
       }
     }
-  }, [propertyId, properties, loading]);
+    
+    fetchPropertyDirectly();
+  }, [propertyId, properties]);
   
   // Reset image index when property changes
   useEffect(() => {
@@ -62,7 +175,7 @@ export default function PropertyDetailPage() {
     }
   }, [property]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
@@ -71,11 +184,11 @@ export default function PropertyDetailPage() {
     );
   }
   
-  if (lastError) {
+  if (loadError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4">
         <p className="text-xl mb-4">Fehler beim Laden der Immobilie</p>
-        <p className="mb-4">{lastError}</p>
+        <p className="mb-4">{loadError}</p>
         <Button onClick={() => window.location.reload()}>Erneut versuchen</Button>
       </div>
     );

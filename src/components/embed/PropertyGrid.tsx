@@ -49,13 +49,13 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
       {properties.map(property => (
-        // Use regular anchor tag with target="_blank" to open in new tab
         <a 
           key={property.id} 
           href={`${getBaseUrl()}/property/${property.id}`} 
           className="no-underline text-inherit"
           target="_blank" 
           rel="noopener noreferrer"
+          aria-label={`Öffne Details zu ${property.title}`}
         >
           <PropertyCard property={property} />
         </a>
