@@ -8,6 +8,7 @@ import PropertyList from "@/components/admin/PropertyList";
 import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
 import { Property } from "@/types/property";
+import { toast } from "sonner";
 
 enum AdminView {
   LIST = "list",
