@@ -6,8 +6,6 @@ import { Property } from "@/types/property";
 import { Separator } from "@/components/ui/separator";
 import { Bath, Bed, Calendar, Home, MapPin, Ruler } from "lucide-react";
 import PropertyContactForm from "./ContactForm";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface PropertyDetailProps {
   property: Property | null;
@@ -25,14 +23,41 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
   
+  // Enhanced image handling
+  const getImageUrl = (imageUrl: string) => {
+    if (!imageUrl || imageUrl.startsWith('blob:')) {
+      console.log('Invalid detail image URL detected, using placeholder');
+      return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
+    }
+    
+    // Check if image URL is valid
+    try {
+      new URL(imageUrl);
+      return imageUrl;
+    } catch (e) {
+      console.log('Invalid detail image URL format:', imageUrl);
+      return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
+    }
+  };
+  
   const getFeaturedImage = () => {
     const featuredImg = property.images.find(img => img.isFeatured);
-    return featuredImg ? featuredImg.url : (property.images[0]?.url || '');
+    const imageUrl = featuredImg ? featuredImg.url : (property.images[0]?.url || '');
+    return getImageUrl(imageUrl);
   };
   
   const getImages = () => {
     // Put featured image first, then the rest
     const featured = property.images.find(img => img.isFeatured);
+    if (!featured && property.images.length === 0) {
+      // Create a dummy image if there are no images
+      return [{
+        id: "placeholder",
+        url: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop",
+        isFeatured: true
+      }];
+    }
+    
     if (!featured) return property.images;
     
     return [
@@ -43,15 +68,6 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   
   const images = getImages();
   const currentImage = images[activeImageIndex]?.url || getFeaturedImage();
-  
-  // Fixed image URL handling function
-  const getImageUrl = (imageUrl: string) => {
-    // If it's a blob URL, replace it with placeholder
-    if (imageUrl.startsWith('blob:')) {
-      return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
-    }
-    return imageUrl;
-  };
   
   const renderDetailItem = (label: string, value: string | undefined) => {
     if (!value) return null;
@@ -77,6 +93,10 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                 src={getImageUrl(currentImage)} 
                 alt={property.title} 
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.log('Main detail image failed to load:', (e.target as HTMLImageElement).src);
+                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
+                }}
               />
             </div>
             
@@ -97,6 +117,10 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                         src={getImageUrl(image.url)} 
                         alt={`Bild ${index + 1}`}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.log('Thumbnail image failed to load:', (e.target as HTMLImageElement).src);
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
+                        }}
                       />
                     </button>
                   ))}
@@ -168,111 +192,113 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
           </div>
         </div>
         
-        <div className="p-4 md:p-6">
-          {/* Replace tabs with accordion sections */}
-          <div className="space-y-6">
-            {/* Details section */}
-            <div className="bg-gray-50 rounded-lg p-4 md:p-6">
-              <h3 className="text-xl font-semibold mb-4">Details</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                {renderDetailItem("Objekttyp", property.details.propertyType)}
-                {renderDetailItem("Grundstücksfläche", property.details.plotArea ? `${property.details.plotArea} m²` : undefined)}
-                {renderDetailItem("Wohnfläche", property.details.livingArea ? `${property.details.livingArea} m²` : undefined)}
-                {renderDetailItem("Zimmer", property.details.rooms)}
-                {renderDetailItem("Schlafzimmer", property.details.bedrooms)}
-                {renderDetailItem("Badezimmer", property.details.bathrooms)}
-                {renderDetailItem("Baujahr", property.details.constructionYear)}
-                {renderDetailItem("Bezugsfrei ab", property.details.availableFrom)}
-                {renderDetailItem("Objektzustand", property.details.condition)}
-                {renderDetailItem("Heizungsart", property.details.heatingType)}
-                {renderDetailItem("Energieträger", property.details.energySource)}
-                {renderDetailItem("Hausgeld", property.details.maintenanceFee ? `${property.details.maintenanceFee} €` : undefined)}
-              </div>
-              
-              {property.energy.certificateAvailable && (
-                <>
-                  <Separator className="my-6" />
-                  <div>
-                    <h4 className="font-medium mb-4">Energieausweis</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                      {renderDetailItem("Energieausweis Typ", property.energy.certificateType)}
-                      {renderDetailItem("Endenergieverbrauch", property.energy.energyConsumption ? `${property.energy.energyConsumption} kWh/(m²·a)` : undefined)}
-                      {renderDetailItem("Energieeffizienzklasse", property.energy.energyEfficiencyClass)}
-                      {renderDetailItem("Baujahr lt. Energieausweis", property.energy.constructionYear)}
-                      {renderDetailItem("Gültig bis", property.energy.validUntil)}
-                      {renderDetailItem("Erstellt am", property.energy.createdAt)}
-                    </div>
+        {/* Vertically stacked sections */}
+        <div className="p-4 md:p-6 space-y-8">
+          {/* Details section */}
+          <div className="bg-gray-50 rounded-lg p-4 md:p-6">
+            <h3 className="text-xl font-semibold mb-4">Details</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              {renderDetailItem("Objekttyp", property.details.propertyType)}
+              {renderDetailItem("Grundstücksfläche", property.details.plotArea ? `${property.details.plotArea} m²` : undefined)}
+              {renderDetailItem("Wohnfläche", property.details.livingArea ? `${property.details.livingArea} m²` : undefined)}
+              {renderDetailItem("Zimmer", property.details.rooms)}
+              {renderDetailItem("Schlafzimmer", property.details.bedrooms)}
+              {renderDetailItem("Badezimmer", property.details.bathrooms)}
+              {renderDetailItem("Baujahr", property.details.constructionYear)}
+              {renderDetailItem("Bezugsfrei ab", property.details.availableFrom)}
+              {renderDetailItem("Objektzustand", property.details.condition)}
+              {renderDetailItem("Heizungsart", property.details.heatingType)}
+              {renderDetailItem("Energieträger", property.details.energySource)}
+              {renderDetailItem("Hausgeld", property.details.maintenanceFee ? `${property.details.maintenanceFee} €` : undefined)}
+            </div>
+            
+            {property.energy.certificateAvailable && (
+              <>
+                <Separator className="my-6" />
+                <div>
+                  <h4 className="font-medium mb-4">Energieausweis</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    {renderDetailItem("Energieausweis Typ", property.energy.certificateType)}
+                    {renderDetailItem("Endenergieverbrauch", property.energy.energyConsumption ? `${property.energy.energyConsumption} kWh/(m²·a)` : undefined)}
+                    {renderDetailItem("Energieeffizienzklasse", property.energy.energyEfficiencyClass)}
+                    {renderDetailItem("Baujahr lt. Energieausweis", property.energy.constructionYear)}
+                    {renderDetailItem("Gültig bis", property.energy.validUntil)}
+                    {renderDetailItem("Erstellt am", property.energy.createdAt)}
                   </div>
-                </>
-              )}
-              
-              {property.floorPlans.length > 0 && (
-                <>
-                  <Separator className="my-6" />
-                  <div>
-                    <h4 className="font-medium mb-4">Grundrisse</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {property.floorPlans.map(plan => (
-                        <div key={plan.id} className="border rounded-lg overflow-hidden">
-                          <div className="p-2 bg-gray-50 border-b">
-                            <h4 className="font-medium">{plan.name}</h4>
-                          </div>
-                          <div className="aspect-property bg-gray-100">
-                            <img 
-                              src={getImageUrl(plan.url)} 
-                              alt={plan.name} 
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
+                </div>
+              </>
+            )}
+            
+            {property.floorPlans.length > 0 && (
+              <>
+                <Separator className="my-6" />
+                <div>
+                  <h4 className="font-medium mb-4">Grundrisse</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {property.floorPlans.map(plan => (
+                      <div key={plan.id} className="border rounded-lg overflow-hidden">
+                        <div className="p-2 bg-gray-50 border-b">
+                          <h4 className="font-medium">{plan.name}</h4>
                         </div>
-                      ))}
-                    </div>
+                        <div className="aspect-property bg-gray-100">
+                          <img 
+                            src={getImageUrl(plan.url)} 
+                            alt={plan.name} 
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              console.log('Floor plan image failed to load:', (e.target as HTMLImageElement).src);
+                              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </>
-              )}
-            </div>
-            
-            {/* Description section */}
-            {property.description && (
-              <div className="bg-gray-50 rounded-lg p-4 md:p-6">
-                <h3 className="text-xl font-semibold mb-4">Beschreibung</h3>
-                <div className="prose max-w-none">
-                  {property.description.split("\n").map((paragraph, i) => (
-                    <p key={i}>{paragraph}</p>
-                  ))}
                 </div>
-              </div>
+              </>
             )}
-            
-            {/* Amenities section */}
-            {property.amenities && (
-              <div className="bg-gray-50 rounded-lg p-4 md:p-6">
-                <h3 className="text-xl font-semibold mb-4">Ausstattung</h3>
-                <div className="prose max-w-none">
-                  {property.amenities.split("\n").map((paragraph, i) => (
-                    <p key={i}>{paragraph}</p>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Location section */}
-            {property.location && (
-              <div className="bg-gray-50 rounded-lg p-4 md:p-6">
-                <h3 className="text-xl font-semibold mb-4">Lage</h3>
-                <div className="prose max-w-none">
-                  {property.location.split("\n").map((paragraph, i) => (
-                    <p key={i}>{paragraph}</p>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Contact section */}
+          </div>
+          
+          {/* Description section */}
+          {property.description && (
             <div className="bg-gray-50 rounded-lg p-4 md:p-6">
-              <h3 className="text-xl font-semibold mb-4">Kontakt</h3>
-              <PropertyContactForm propertyTitle={property.title} />
+              <h3 className="text-xl font-semibold mb-4">Beschreibung</h3>
+              <div className="prose max-w-none">
+                {property.description.split("\n").map((paragraph, i) => (
+                  <p key={i}>{paragraph}</p>
+                ))}
+              </div>
             </div>
+          )}
+          
+          {/* Amenities section */}
+          {property.amenities && (
+            <div className="bg-gray-50 rounded-lg p-4 md:p-6">
+              <h3 className="text-xl font-semibold mb-4">Ausstattung</h3>
+              <div className="prose max-w-none">
+                {property.amenities.split("\n").map((paragraph, i) => (
+                  <p key={i}>{paragraph}</p>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Location section */}
+          {property.location && (
+            <div className="bg-gray-50 rounded-lg p-4 md:p-6">
+              <h3 className="text-xl font-semibold mb-4">Lage</h3>
+              <div className="prose max-w-none">
+                {property.location.split("\n").map((paragraph, i) => (
+                  <p key={i}>{paragraph}</p>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Contact section */}
+          <div className="bg-gray-50 rounded-lg p-4 md:p-6">
+            <h3 className="text-xl font-semibold mb-4">Kontakt</h3>
+            <PropertyContactForm propertyTitle={property.title} />
           </div>
         </div>
       </DialogContent>

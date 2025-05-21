@@ -159,6 +159,18 @@ const EmbedPageContent = () => {
     console.log("Properties length:", properties.length);
     console.log("Loading state:", loading);
     
+    // Check image URLs in properties
+    properties.forEach((property, index) => {
+      console.log(`Property ${index} (${property.id}) images:`, property.images);
+      if (property.images && property.images.length > 0) {
+        property.images.forEach((img, i) => {
+          console.log(`Image ${i} URL: ${img.url}, isFeatured: ${img.isFeatured}`);
+        });
+      } else {
+        console.log(`Property ${index} has no images.`);
+      }
+    });
+    
     // Filter active properties with additional logging
     const active = properties.filter(property => {
       console.log(`Property ${property.id} status: ${property.status}`);
@@ -169,13 +181,20 @@ const EmbedPageContent = () => {
     console.log("All properties:", properties);
     
     // Wenn keine aktiven Properties gefunden wurden und nicht mehr im Ladezustand sind, verwenden wir die Demo-Properties
-    const propertiesToDisplay = loading ? [] : (active.length > 0 ? active : demoProperties);
+    // IMPORTANT: We'll check property.images.length to NOT use demo properties if real ones exist without images
+    const shouldUseDemoProperties = 
+      !loading && 
+      (active.length === 0 || (active.length > 0 && active.every(p => !p.images || p.images.length === 0)));
+    
+    const propertiesToDisplay = loading ? [] : (shouldUseDemoProperties ? demoProperties : active);
     console.log("Properties to display:", propertiesToDisplay);
     
     setActiveProperties(propertiesToDisplay);
   }, [properties, loading]);
   
   const handlePropertyClick = (property: Property) => {
+    console.log("Property clicked:", property);
+    console.log("Property images:", property.images);
     setSelectedProperty(property);
     setDetailOpen(true);
   };

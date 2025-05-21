@@ -19,10 +19,25 @@ interface PropertyGridProps {
 export default function PropertyGrid({ properties, onPropertyClick }: PropertyGridProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   
-  // Get featured image or first image
+  // Get featured image or first image with proper URL handling
   const getMainImage = (property: Property) => {
     const featuredImage = property.images.find(img => img.isFeatured);
-    return featuredImage ? featuredImage.url : (property.images[0]?.url || '');
+    let imageUrl = featuredImage ? featuredImage.url : (property.images[0]?.url || '');
+    
+    // Handle blob URLs and empty URLs
+    if (!imageUrl || imageUrl.startsWith('blob:')) {
+      console.log('Invalid image URL detected, using placeholder');
+      return 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop';
+    }
+    
+    // Check if image URL is a valid URL
+    try {
+      new URL(imageUrl);
+      return imageUrl;
+    } catch (e) {
+      console.log('Invalid image URL format:', imageUrl);
+      return 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop';
+    }
   };
   
   // Format number with thousand separator
@@ -39,6 +54,8 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
       </div>
     );
   }
+  
+  console.log("Properties in grid:", properties);
   
   return (
     <div className="w-full">
@@ -80,6 +97,10 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
                     src={getMainImage(property)} 
                     alt={property.title} 
                     className="object-cover w-full h-full" 
+                    onError={(e) => {
+                      console.log('Image failed to load:', (e.target as HTMLImageElement).src);
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
+                    }}
                   />
                   <div className="absolute top-4 right-4 bg-white bg-opacity-90 px-3 py-1 rounded font-medium text-estate">
                     {property.details.price ? `${formatNumber(property.details.price)} €` : "Auf Anfrage"}
@@ -126,6 +147,10 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
                       src={getMainImage(property)} 
                       alt={property.title} 
                       className="object-cover w-full h-full" 
+                      onError={(e) => {
+                        console.log('List view image failed to load:', (e.target as HTMLImageElement).src);
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
+                      }}
                     />
                   </AspectRatio>
                 </div>
