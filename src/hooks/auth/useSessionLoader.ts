@@ -22,13 +22,13 @@ export const useSessionLoader = (
       if (profileData) {
         console.log("Profildaten:", profileData);
         
-        // Get user email asynchronously
+        // Get user email directly
         const { data } = await supabase.auth.getUser();
         const email = data.user?.email || '';
         
         setUser({
           id: userId,
-          email: email, // Fix: Assign email directly instead of a Promise
+          email: email, // Not a Promise anymore
           first_name: profileData.first_name,
           last_name: profileData.last_name,
           company_id: profileData.company_id
@@ -37,12 +37,16 @@ export const useSessionLoader = (
         // If user is associated with a company, load company data
         if (profileData.company_id) {
           console.log("Lade Unternehmensdaten für ID:", profileData.company_id);
-          await loadCompanyData(profileData.company_id);
+          setTimeout(async () => {
+            await loadCompanyData(profileData.company_id);
+          }, 0);
         } else {
           console.log("Benutzer hat kein Unternehmen");
         }
       } else {
-        console.log("Kein Profil gefunden oder Fehler:", error);
+        if (error) {
+          console.log("Profil error:", error);
+        }
         
         // Create profile if none exists
         if (error && error.code === 'PGRST116') {
@@ -90,7 +94,7 @@ export const useSessionLoader = (
         
         // Set up auth state listener FIRST - to avoid deadlocks and prevent missing auth events
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
+          (event, session) => {
             console.log("Auth state changed:", event, session?.user?.id);
             
             if (session) {
@@ -143,7 +147,7 @@ export const useSessionLoader = (
     checkSession();
     
     return () => {
-      // Clean up will be handled by the subscription.unsubscribe() in onAuthStateChange
+      // Clean up will be handled by subscription.unsubscribe
     };
   }, [setIsAuthenticated, setLoadingAuth, setUser, loadCompanyData]);
 };

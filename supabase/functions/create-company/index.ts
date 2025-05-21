@@ -1,28 +1,12 @@
 
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
-
-import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
+// supabase/functions/create-company/index.ts
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-interface CompanyData {
-  name: string;
-  address?: string | null;
-  phone?: string | null;
-  email?: string | null;
-  logo?: string | null;
-}
-
-interface RequestBody {
-  companyData: CompanyData;
-  userId: string;
-}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -31,20 +15,50 @@ serve(async (req) => {
   }
 
   try {
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Create a Supabase client with the Admin key
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
 
-    // Get request body
-    const body: RequestBody = await req.json();
-    const { companyData, userId } = body;
-
-    if (!userId || !companyData.name) {
+    // Create a Supabase client with the user's JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ 
-          error: "Benutzer-ID und Unternehmensname sind erforderlich" 
-        }),
+        JSON.stringify({ error: "Nicht autorisiert" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Get the token from the Authorization header
+    const token = authHeader.replace("Bearer ", "");
+    
+    // Get the authenticated user
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Ungültiger Benutzer" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Parse the request body
+    const { companyData } = await req.json();
+    if (!companyData || !companyData.name) {
+      return new Response(
+        JSON.stringify({ error: "Unternehmensname ist erforderlich" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -52,23 +66,16 @@ serve(async (req) => {
       );
     }
 
-    // Insert new company
-    const { data: company, error: companyError } = await supabase
+    // Insert the company using the admin client (bypasses RLS)
+    const { data: company, error: companyError } = await supabaseAdmin
       .from("companies")
-      .insert({
-        name: companyData.name,
-        address: companyData.address,
-        phone: companyData.phone,
-        email: companyData.email,
-        logo: companyData.logo,
-      })
+      .insert([companyData])
       .select()
       .single();
 
     if (companyError) {
-      console.error("Fehler beim Erstellen des Unternehmens:", companyError);
       return new Response(
-        JSON.stringify({ error: companyError.message }),
+        JSON.stringify({ error: `Fehler beim Erstellen des Unternehmens: ${companyError.message}` }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -76,38 +83,32 @@ serve(async (req) => {
       );
     }
 
-    // Update user profile with company_id
-    const { error: profileError } = await supabase
+    // Update the user's profile to associate them with the new company
+    const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .update({ company_id: company.id })
-      .eq("id", userId);
+      .eq("id", user.id);
 
     if (profileError) {
-      console.error("Fehler beim Aktualisieren des Profils:", profileError);
       return new Response(
-        JSON.stringify({ 
-          company, 
-          profileError: profileError.message,
-          warning: "Unternehmen erstellt, aber Verknüpfung fehlgeschlagen" 
-        }),
+        JSON.stringify({ error: `Fehler beim Aktualisieren des Profils: ${profileError.message}` }),
         {
-          status: 200,
+          status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
     }
 
     return new Response(
-      JSON.stringify({ company, success: true }),
+      JSON.stringify({ success: true, company }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   } catch (error) {
-    console.error("Unerwarteter Fehler:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: `Unerwarteter Fehler: ${error.message}` }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
