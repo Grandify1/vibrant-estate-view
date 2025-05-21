@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -290,12 +289,32 @@ const AdminPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="bg-gray-50 p-4 rounded-md overflow-auto">
-                  <pre className="text-sm"><code>{`<iframe src="${window.location.origin}/embed" width="100%" height="800" frameborder="0"></iframe>`}</code></pre>
+                  <pre className="text-sm"><code>{`<iframe src="${window.location.origin}/embed" width="100%" style="border: none; min-height: 500px;" id="real-estate-iframe"></iframe>
+<script>
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'resize-iframe') {
+      const iframe = document.getElementById('real-estate-iframe');
+      if (iframe) {
+        iframe.style.height = e.data.height + 'px';
+      }
+    }
+  });
+</script>`}</code></pre>
                 </div>
               </CardContent>
               <CardFooter>
                 <Button onClick={() => {
-                  navigator.clipboard.writeText(`<iframe src="${window.location.origin}/embed" width="100%" height="800" frameborder="0"></iframe>`);
+                  navigator.clipboard.writeText(`<iframe src="${window.location.origin}/embed" width="100%" style="border: none; min-height: 500px;" id="real-estate-iframe"></iframe>
+<script>
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'resize-iframe') {
+      const iframe = document.getElementById('real-estate-iframe');
+      if (iframe) {
+        iframe.style.height = e.data.height + 'px';
+      }
+    }
+  });
+</script>`);
                   toast.success("Code in die Zwischenablage kopiert!");
                 }}>
                   In Zwischenablage kopieren
