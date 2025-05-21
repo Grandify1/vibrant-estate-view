@@ -6,7 +6,6 @@ import AdminHeader from "@/components/admin/AdminHeader";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useProperties } from "@/hooks/useProperties";
-import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
 
 const PropertyFormPage = () => {
