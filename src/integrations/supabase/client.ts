@@ -13,9 +13,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false,
-    flowType: 'implicit',
-    storage: localStorage, // Explizite Speicherung im localStorage
-    storageKey: 'supabase-auth-token' // Definierter Schlüssel für die Session
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+    storage: typeof window !== 'undefined' ? localStorage : undefined,
+    storageKey: 'supabase-auth-token'
   }
 });

@@ -41,11 +41,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoadingAuth(true);
         
         // Get session
-        const { data: sessionData } = await supabase.auth.getSession();
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         const session = sessionData?.session;
         
+        if (sessionError) {
+          console.error("Fehler beim Abrufen der Session:", sessionError);
+          setIsAuthenticated(false);
+          setUser(null);
+          setCompany(null);
+          setLoadingAuth(false);
+          return;
+        }
+        
         if (session) {
-          console.log("Session found:", session.user.id);
+          console.log("Session gefunden:", session.user.id);
           setIsAuthenticated(true);
           
           // Load user data from profile
@@ -56,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .maybeSingle();
             
           if (profileData) {
-            console.log("Profile data:", profileData);
+            console.log("Profildaten:", profileData);
             setUser({
               id: session.user.id,
               email: session.user.email || '',
@@ -67,23 +76,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             // If user is associated with a company, load company data
             if (profileData.company_id) {
+              console.log("Lade Unternehmensdaten für ID:", profileData.company_id);
               await loadCompanyData(profileData.company_id);
+            } else {
+              console.log("Benutzer hat kein Unternehmen");
+              setCompany(null);
             }
           } else {
-            console.log("No profile found or error:", error);
+            console.error("Kein Profil gefunden oder Fehler:", error);
+            
+            // Automatisch ein Profil erstellen, wenn keins existiert
+            if (error && error.code === 'PGRST116') {
+              console.log("Erstelle neues Profil für Benutzer:", session.user.id);
+              const { error: createError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: session.user.id,
+                  first_name: session.user.user_metadata?.first_name || null,
+                  last_name: session.user.user_metadata?.last_name || null
+                });
+                
+              if (createError) {
+                console.error("Fehler beim Erstellen des Profils:", createError);
+              } else {
+                console.log("Profil erfolgreich erstellt");
+              }
+            }
+            
             setUser({
               id: session.user.id,
-              email: session.user.email || ''
+              email: session.user.email || '',
+              first_name: session.user.user_metadata?.first_name,
+              last_name: session.user.user_metadata?.last_name
             });
           }
         } else {
-          console.log("No session found");
+          console.log("Keine Session gefunden");
           setIsAuthenticated(false);
           setUser(null);
           setCompany(null);
         }
       } catch (error) {
-        console.error("Error loading session:", error);
+        console.error("Fehler beim Laden der Session:", error);
+        setIsAuthenticated(false);
+        setUser(null);
+        setCompany(null);
       } finally {
         console.log("Session check complete, setting loadingAuth to false");
         setLoadingAuth(false);
@@ -95,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth state changed:", event);
+        console.log("Auth state changed:", event, session?.user.id);
         
         if (event === 'SIGNED_IN' && session) {
           setIsAuthenticated(true);
@@ -108,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .maybeSingle();
             
           if (profileData) {
+            console.log("Profildaten nach SIGNED_IN:", profileData);
             setUser({
               id: session.user.id,
               email: session.user.email || '',
@@ -119,15 +157,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // If user is associated with a company, load company data
             if (profileData.company_id) {
               await loadCompanyData(profileData.company_id);
+            } else {
+              console.log("Benutzer hat kein Unternehmen nach SIGNED_IN");
+              setCompany(null);
             }
           } else {
             console.error("Profile error:", error);
+            
+            // Automatisch ein Profil erstellen, wenn keins existiert
+            if (error && error.code === 'PGRST116') {
+              console.log("Erstelle neues Profil für Benutzer nach SIGNED_IN:", session.user.id);
+              const { error: createError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: session.user.id,
+                  first_name: session.user.user_metadata?.first_name || null,
+                  last_name: session.user.user_metadata?.last_name || null
+                });
+                
+              if (createError) {
+                console.error("Fehler beim Erstellen des Profils nach SIGNED_IN:", createError);
+              } else {
+                console.log("Profil erfolgreich erstellt nach SIGNED_IN");
+              }
+            }
+            
             setUser({
               id: session.user.id,
-              email: session.user.email || ''
+              email: session.user.email || '',
+              first_name: session.user.user_metadata?.first_name,
+              last_name: session.user.user_metadata?.last_name
             });
           }
         } else if (event === 'SIGNED_OUT') {
+          console.log("Benutzer hat sich abgemeldet");
           setIsAuthenticated(false);
           setUser(null);
           setCompany(null);
@@ -143,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Load company data
   const loadCompanyData = async (companyId: string) => {
     try {
-      console.log("Loading company data for ID:", companyId);
+      console.log("Lade Unternehmensdaten für ID:", companyId);
       const { data: companyData, error } = await supabase
         .from('companies')
         .select('*')
@@ -151,39 +214,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
       
       if (error) {
-        console.error("Error loading company data:", error);
+        console.error("Fehler beim Laden der Unternehmensdaten:", error);
         return;
       }
       
       if (companyData) {
-        console.log("Company data loaded:", companyData);
+        console.log("Unternehmensdaten geladen:", companyData);
         setCompany(companyData as Company);
       } else {
-        console.log("No company found with ID:", companyId);
+        console.log("Kein Unternehmen mit ID gefunden:", companyId);
+        setCompany(null);
       }
     } catch (error) {
-      console.error("Error loading company data:", error);
+      console.error("Fehler beim Laden der Unternehmensdaten:", error);
+      setCompany(null);
     }
   };
   
   // Login with Supabase
   const login = async (email: string, password: string) => {
     try {
+      console.log("Login versuchen mit Email:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
       if (error) {
-        toast.error("Login error: " + error.message);
+        console.error("Login Fehler:", error);
+        toast.error("Login Fehler: " + error.message);
         return false;
       }
       
-      toast.success("Successfully logged in!");
+      console.log("Login erfolgreich:", data.user?.id);
+      toast.success("Erfolgreich eingeloggt!");
       return true;
     } catch (error) {
-      console.error("Error during login:", error);
-      toast.error("An error occurred");
+      console.error("Fehler beim Login:", error);
+      toast.error("Ein Fehler ist aufgetreten");
       return false;
     }
   };
@@ -206,18 +274,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       if (error) {
-        toast.error("Registration error: " + error.message);
+        toast.error("Registrierungsfehler: " + error.message);
         return false;
       }
       
       // Automatically login
       await login(email, password);
       
-      toast.success("Registration successful! You are now logged in.");
+      toast.success("Registrierung erfolgreich! Sie sind jetzt angemeldet.");
       return true;
     } catch (error) {
-      console.error("Error during registration:", error);
-      toast.error("An error occurred");
+      console.error("Fehler bei der Registrierung:", error);
+      toast.error("Ein Fehler ist aufgetreten");
       return false;
     }
   };
@@ -225,12 +293,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Create company
   const createCompany = async (companyData: Omit<Company, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
-      toast.error("You must be logged in to create a company");
+      toast.error("Sie müssen angemeldet sein, um ein Unternehmen zu erstellen");
       return false;
     }
     
     try {
-      console.log("Creating company with data:", companyData);
+      console.log("Erstelle Unternehmen mit Daten:", companyData);
+      
+      // Überprüfen der Authentifizierung
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData.session) {
+        console.error("Keine aktive Sitzung:", sessionError);
+        toast.error("Sie sind nicht angemeldet. Bitte melden Sie sich erneut an.");
+        return false;
+      }
       
       // Create company
       const { data: newCompany, error: companyError } = await supabase
@@ -240,12 +317,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
       
       if (companyError) {
-        console.error("Company creation error:", companyError);
-        toast.error("Error creating company: " + companyError.message);
+        console.error("Fehler beim Erstellen des Unternehmens:", companyError);
+        toast.error("Fehler beim Erstellen des Unternehmens: " + companyError.message);
+        
+        // Wenn es ein RLS-Fehler ist, versuchen wir einen alternativen Ansatz
+        if (companyError.code === '42501' || companyError.message.includes('row-level security policy')) {
+          console.log("RLS-Fehler beim Erstellen des Unternehmens, versuche alternativen Ansatz...");
+          
+          // Aktualisieren des Profils vor dem Erstellen des Unternehmens
+          const { error: profileUpdateError } = await supabase
+            .from('profiles')
+            .update({ 
+              first_name: user.first_name || "",
+              last_name: user.last_name || ""
+            })
+            .eq('id', user.id);
+            
+          if (profileUpdateError) {
+            console.error("Fehler beim Aktualisieren des Profils:", profileUpdateError);
+          } else {
+            // Zweiter Versuch, das Unternehmen zu erstellen
+            const { data: retryCompany, error: retryError } = await supabase
+              .from('companies')
+              .insert(companyData)
+              .select()
+              .single();
+              
+            if (retryError) {
+              console.error("Wiederholter Fehler beim Erstellen des Unternehmens:", retryError);
+            } else if (retryCompany) {
+              console.log("Unternehmen erfolgreich erstellt (2. Versuch):", retryCompany);
+              
+              // Benutzerprofil mit der Unternehmens-ID aktualisieren
+              const { error: linkError } = await supabase
+                .from('profiles')
+                .update({ company_id: retryCompany.id })
+                .eq('id', user.id);
+                
+              if (!linkError) {
+                // Update local state
+                setUser(prev => prev ? { ...prev, company_id: retryCompany.id } : null);
+                setCompany(retryCompany as Company);
+                
+                toast.success("Unternehmen erfolgreich erstellt");
+                return true;
+              }
+            }
+          }
+        }
+        
         return false;
       }
       
-      console.log("Company created successfully:", newCompany);
+      console.log("Unternehmen erfolgreich erstellt:", newCompany);
       
       // Link user profile with company
       const { error: profileError } = await supabase
@@ -254,8 +378,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', user.id);
       
       if (profileError) {
-        console.error("Profile linking error:", profileError);
-        toast.error("Error linking profile: " + profileError.message);
+        console.error("Fehler beim Verknüpfen des Profils:", profileError);
+        toast.error("Fehler beim Verknüpfen des Profils: " + profileError.message);
         return false;
       }
       
@@ -263,11 +387,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(prev => prev ? { ...prev, company_id: newCompany.id } : null);
       setCompany(newCompany as Company);
       
-      toast.success("Company created successfully");
+      toast.success("Unternehmen erfolgreich erstellt");
       return true;
     } catch (error: any) {
-      console.error("Error creating company:", error);
-      toast.error("An error occurred");
+      console.error("Fehler beim Erstellen des Unternehmens:", error);
+      toast.error("Ein Fehler ist aufgetreten");
       return false;
     }
   };
@@ -275,7 +399,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Update company
   const updateCompany = async (companyData: Partial<Omit<Company, 'id' | 'created_at' | 'updated_at'>>) => {
     if (!user || !company) {
-      toast.error("You must be logged in and have a company to make changes");
+      toast.error("Sie müssen angemeldet sein und ein Unternehmen haben, um Änderungen vorzunehmen");
       return false;
     }
     
@@ -286,7 +410,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', company.id);
       
       if (error) {
-        toast.error("Error updating company: " + error.message);
+        toast.error("Fehler beim Aktualisieren des Unternehmens: " + error.message);
         return false;
       }
       
@@ -295,8 +419,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       return true;
     } catch (error: any) {
-      console.error("Error updating company:", error);
-      toast.error("An error occurred");
+      console.error("Fehler beim Aktualisieren des Unternehmens:", error);
+      toast.error("Ein Fehler ist aufgetreten");
       return false;
     }
   };
@@ -307,9 +431,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAuthenticated(false);
       setUser(null);
       setCompany(null);
-      toast.info("Logged out");
+      toast.info("Abgemeldet");
     }).catch(error => {
-      console.error("Error during logout:", error);
+      console.error("Fehler beim Abmelden:", error);
     });
   };
   
