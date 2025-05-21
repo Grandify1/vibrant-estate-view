@@ -10,7 +10,6 @@ import Embed from "./pages/Embed";
 import PropertyDetail from "./pages/PropertyDetail";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
-import CompanySetup from "./pages/CompanySetup";
 import { AuthProvider } from "./hooks/useAuth";
 import { PropertiesProvider } from "./hooks/useProperties";
 import { AgentsProvider } from "./hooks/useAgents";
@@ -30,7 +29,6 @@ const App = () => (
                 <Route path="/" element={<Navigate to="/admin" replace />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/company-setup" element={<CompanySetup />} />
                 <Route path="/embed" element={<Embed />} />
                 <Route path="/property/:propertyId" element={<PropertyDetail />} />
                 <Route path="*" element={<NotFound />} />

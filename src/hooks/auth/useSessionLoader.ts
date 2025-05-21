@@ -7,8 +7,7 @@ import { toast } from "sonner";
 export const useSessionLoader = (
   setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>,
   setLoadingAuth: React.Dispatch<React.SetStateAction<boolean>>,
-  setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>,
-  loadCompanyData: (companyId: string) => Promise<void>
+  setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>
 ) => {
   // Handle profile creation or loading
   const handleProfileData = async (userId: string) => {
@@ -30,17 +29,8 @@ export const useSessionLoader = (
           id: userId,
           email: email,
           first_name: profileData.first_name,
-          last_name: profileData.last_name,
-          company_id: profileData.company_id
+          last_name: profileData.last_name
         });
-        
-        // If user is associated with a company, load company data
-        if (profileData.company_id) {
-          console.log("Lade Unternehmensdaten für ID:", profileData.company_id);
-          await loadCompanyData(profileData.company_id);
-        } else {
-          console.log("Benutzer hat kein Unternehmen");
-        }
       } else {
         if (error) {
           console.log("Profil error:", error);
@@ -156,5 +146,5 @@ export const useSessionLoader = (
         authListener.unsubscribe();
       }
     };
-  }, [setIsAuthenticated, setLoadingAuth, setUser, loadCompanyData]);
+  }, [setIsAuthenticated, setLoadingAuth, setUser]);
 };

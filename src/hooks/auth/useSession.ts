@@ -1,7 +1,6 @@
 
 import { useSessionState } from "./useSessionState";
 import { useSessionLoader } from "./useSessionLoader";
-import { useCompanyLoader } from "./useCompanyLoader";
 
 export const useSession = () => {
   const {
@@ -10,26 +9,19 @@ export const useSession = () => {
     loadingAuth,
     setLoadingAuth,
     user,
-    setUser,
-    company,
-    setCompany
+    setUser
   } = useSessionState();
-  
-  const { loadCompanyData } = useCompanyLoader(setCompany);
   
   useSessionLoader(
     setIsAuthenticated,
     setLoadingAuth,
-    setUser,
-    loadCompanyData
+    setUser
   );
 
   return {
     isAuthenticated,
     loadingAuth,
     user,
-    setUser,
-    company,
-    setCompany
+    setUser
   };
 };

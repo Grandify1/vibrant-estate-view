@@ -14,27 +14,19 @@ import { toast } from "sonner";
 
 // Property Tab Komponente 
 const PropertyTab = () => {
-  const { company } = useAuth();
-  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Immobilien verwalten</h2>
       </div>
       
-      {company?.id ? (
-        <PropertyListWrapper companyId={company.id} />
-      ) : (
-        <div className="text-center py-8">
-          <p>Kein Unternehmen gefunden. Bitte erstellen Sie zuerst ein Unternehmen.</p>
-        </div>
-      )}
+      <PropertyListWrapper />
     </div>
   );
 };
 
 export default function Admin() {
-  const { isAuthenticated, loadingAuth, user } = useAuth();
+  const { isAuthenticated, loadingAuth } = useAuth();
   const [activeTab, setActiveTab] = useState("properties");
   const navigate = useNavigate();
   const [authTimeout, setAuthTimeout] = useState(false);
@@ -54,18 +46,16 @@ export default function Admin() {
   
   // Display appropriate UI based on auth state
   useEffect(() => {
-    console.log("Admin: Auth Status:", { isAuthenticated, loadingAuth, user });
+    console.log("Admin: Auth Status:", { isAuthenticated, loadingAuth });
     
     if (!loadingAuth) {
       if (!isAuthenticated) {
         console.log("Admin: Nicht authentifiziert, leite zur Auth-Seite weiter");
-      } else if (user && !user.company_id) {
-        console.log("Admin: Authentifiziert aber kein Unternehmen, leite zur Unternehmenseinrichtung weiter");
       } else {
-        console.log("Admin: Authentifiziert mit Unternehmen", user?.company_id);
+        console.log("Admin: Authentifiziert");
       }
     }
-  }, [isAuthenticated, loadingAuth, user]);
+  }, [isAuthenticated, loadingAuth]);
   
   // If auth is taking too long, show a helpful message
   if (authTimeout) {
@@ -101,12 +91,6 @@ export default function Admin() {
   // If not authenticated, redirect to auth page
   if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
-  }
-  
-  // If user has no company, redirect to company setup
-  if (isAuthenticated && user && !user.company_id) {
-    console.log("Admin: Weiterleitung zur Unternehmenseinrichtung");
-    return <Navigate to="/company-setup" replace />;
   }
   
   return (
