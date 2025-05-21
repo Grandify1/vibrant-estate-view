@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useProperties } from "@/hooks/useProperties";
@@ -34,6 +33,34 @@ export default function PropertyDetailPage() {
     }
   }, [property?.id]);
   
+  // Add meta tags to properly format the page
+  useEffect(() => {
+    if (property) {
+      // Set page title
+      document.title = `${property.title} | Immobilien`;
+      
+      // Remove any existing canonical links
+      const existingCanonical = document.querySelector('link[rel="canonical"]');
+      if (existingCanonical) {
+        existingCanonical.remove();
+      }
+      
+      // Add canonical link
+      const canonicalLink = document.createElement('link');
+      canonicalLink.rel = 'canonical';
+      canonicalLink.href = window.location.href;
+      document.head.appendChild(canonicalLink);
+      
+      // Clean up when component unmounts
+      return () => {
+        document.title = 'Immobilien';
+        if (canonicalLink.parentNode) {
+          canonicalLink.parentNode.removeChild(canonicalLink);
+        }
+      };
+    }
+  }, [property]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4">
@@ -139,10 +166,8 @@ export default function PropertyDetailPage() {
     <div className="mx-auto max-w-7xl">
       {/* Back Button */}
       <div className="py-4 px-4 sm:px-6 lg:px-8">
-        <Button variant="outline" asChild size="sm" className="mb-4">
-          <Link to="/embed">
-            <ChevronLeft className="mr-1 h-4 w-4" /> Zurück zur Übersicht
-          </Link>
+        <Button variant="outline" onClick={() => window.close()} size="sm" className="mb-4">
+          <ChevronLeft className="mr-1 h-4 w-4" /> Schließen
         </Button>
       </div>
       

@@ -4,7 +4,6 @@ import { Property } from "@/types/property";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Link } from "react-router-dom";
 import {
   Tabs,
   TabsList,
@@ -90,6 +89,12 @@ export default function PropertyGrid({ properties }: PropertyGridProps) {
     });
   });
   
+  const getPropertyDetailUrl = (propertyId: string) => {
+    // Konstruiere die vollständige URL zur Property-Detail-Seite
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/property/${propertyId}`;
+  };
+  
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-6">
@@ -124,7 +129,12 @@ export default function PropertyGrid({ properties }: PropertyGridProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {properties.map((property) => (
             <Card key={property.id} className="property-card overflow-hidden">
-              <Link to={`/property/${property.id}`} className="cursor-pointer block">
+              <a 
+                href={getPropertyDetailUrl(property.id)} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="cursor-pointer block"
+              >
                 <div className="h-48 w-full relative">
                   <ImageWithFallback
                     src={getMainImage(property)}
@@ -158,7 +168,7 @@ export default function PropertyGrid({ properties }: PropertyGridProps) {
                     </div>
                   </div>
                 </CardContent>
-              </Link>
+              </a>
             </Card>
           ))}
         </div>
@@ -166,8 +176,10 @@ export default function PropertyGrid({ properties }: PropertyGridProps) {
         <div className="space-y-4">
           {properties.map((property) => (
             <Card key={property.id} className="property-card overflow-hidden">
-              <Link 
-                to={`/property/${property.id}`}
+              <a 
+                href={getPropertyDetailUrl(property.id)}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="cursor-pointer flex flex-col sm:flex-row"
               >
                 <div className="sm:w-1/3 h-48 sm:h-auto relative">
@@ -233,7 +245,7 @@ export default function PropertyGrid({ properties }: PropertyGridProps) {
                     </div>
                   </div>
                 </CardContent>
-              </Link>
+              </a>
             </Card>
           ))}
         </div>
