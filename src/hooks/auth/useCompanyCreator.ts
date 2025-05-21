@@ -153,6 +153,7 @@ export const useCompanyCreator = (
               setUser(prev => prev ? { ...prev, company_id: newCompany.id } : null);
               setCompany(newCompany as Company);
               toast.success("Unternehmen erfolgreich erstellt");
+              return true;
             }
             
             return true;
