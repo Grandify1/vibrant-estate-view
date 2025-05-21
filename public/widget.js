@@ -2,100 +2,73 @@
 /**
  * ImmoUpload Widget
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
+ * Version 2.0 - Two-Part Embed System
  */
 (function() {
-  // Widget Konfiguration auslesen
-  const script = document.getElementById('immo-widget');
-  const container = document.getElementById('immo-widget-container');
+  // Globales Objekt für das Widget erstellen
+  window.ImmoWidget = window.ImmoWidget || {};
+  
+  // Widget bereits initialisiert?
+  if (window.ImmoWidget.initialized) return;
   
   // Basis-URL ermitteln (woher das Script geladen wurde)
+  const script = document.currentScript || (function() {
+    const scripts = document.getElementsByTagName('script');
+    return scripts[scripts.length - 1];
+  })();
+  
   const baseUrl = script.src.split('/widget.js')[0];
   
   // Konfigurationsoptionen
   const widgetHeight = script.getAttribute('data-height') || 'auto';
   const widgetWidth = script.getAttribute('data-width') || '100%';
   
-  // Fehlerbehandlung: Container prüfen
-  if (!container) {
-    console.error('ImmoUpload Widget: Container mit ID "immo-widget-container" nicht gefunden.');
-    return;
-  }
-  
-  // Container-Style direkt setzen
-  container.style.overflow = 'hidden';
-  container.style.position = 'relative';
-  
-  // Iframe erstellen
-  const iframe = document.createElement('iframe');
-  iframe.src = baseUrl + '/embed';
-  iframe.style.width = widgetWidth;
-  iframe.style.border = 'none';
-  iframe.style.minHeight = '500px'; // Optimale Anfangshöhe
-  iframe.style.maxWidth = '100%';
-  iframe.id = 'immo-widget-iframe';
-  iframe.setAttribute('scrolling', 'no');
-  iframe.setAttribute('title', 'Immobilien Übersicht');
-  
-  // Iframe zum Container hinzufügen
-  container.appendChild(iframe);
-  
-  // Flag für Dialog-Status
-  let isDialogOpen = false;
-  
-  // Definitionen für Dialog-Management
+  // Definitionen für Portal-Verwaltung
   const portalId = 'immo-widget-portal-container';
   
-  // Dialog-Portal Container für das gesamte Dokument erstellen wenn benötigt
+  // Portal Container erstellen - für Modals und Dialoge
   let portalContainer = document.getElementById(portalId);
   if (!portalContainer) {
     portalContainer = document.createElement('div');
     portalContainer.id = portalId;
     portalContainer.style.position = 'fixed';
-    portalContainer.style.zIndex = '999999'; // Höchster z-index
+    portalContainer.style.zIndex = '999999';
     portalContainer.style.top = '0';
     portalContainer.style.left = '0';
     portalContainer.style.width = '100%';
     portalContainer.style.height = '100%';
-    portalContainer.style.overflow = 'visible'; // Wichtig: Overflow muss visible sein
-    portalContainer.style.pointerEvents = 'none'; // Nur für Dialoge aktivieren
-    portalContainer.style.display = 'none'; // Standardmäßig ausgeblendet
+    portalContainer.style.overflow = 'visible';
+    portalContainer.style.pointerEvents = 'none';
+    portalContainer.style.display = 'none';
     document.body.appendChild(portalContainer);
   }
   
-  // Höhenanpassung durch Nachrichtenaustausch
-  let resizeTimeout;
-  let lastHeight = 0;
+  // Flag für Dialog-Status
+  let isDialogOpen = false;
   
+  // Globale Event-Handler für Nachrichtenaustausch
   window.addEventListener('message', function(e) {
-    // Sicherheits-Check: Origin überprüfen
+    // Sicherheits-Check: Origin für lokale Entwicklung toleranter behandeln
     if (e.origin !== baseUrl && baseUrl !== '') {
-      // Toleranter Modus für lokale Entwicklung
       if (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1')) {
-        console.warn('ImmoUpload Widget: Nachricht von nicht vertrauenswürdiger Quelle ignoriert.');
+        // Nur im Produktionsmodus strikt prüfen
+        console.warn('ImmoWidget: Nachricht von nicht vertrauenswürdiger Quelle ignoriert.');
         return;
       }
     }
     
+    // Behandlung von Resize-Events für das iframe
     if (e.data && e.data.type === 'resize-iframe') {
       // Keine Höhenanpassung wenn Dialog geöffnet ist, um Springen zu vermeiden
       if (isDialogOpen) return;
       
-      // Doppelte Höhenaktualisierungen vermeiden
-      if (lastHeight === e.data.height) return;
-      lastHeight = e.data.height;
-      
-      // Resize-Events reduzieren (Debouncing)
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        const iframe = document.getElementById('immo-widget-iframe');
-        if (iframe) {
-          // Minimale Höhe setzen ohne großen Buffer
-          iframe.style.height = (e.data.height + 5) + 'px';
-        }
-      }, 50);
+      const iframe = document.getElementById('immo-widget-iframe');
+      if (iframe) {
+        iframe.style.height = (e.data.height + 5) + 'px';
+      }
     }
     
-    // Spezieller Event-Typ für Dialog-Öffnung
+    // Behandlung Dialog geöffnet
     if (e.data && e.data.type === 'dialog-opened') {
       isDialogOpen = true;
       
@@ -103,7 +76,7 @@
       portalContainer.style.display = 'block';
       portalContainer.style.pointerEvents = 'auto';
       
-      // Body Scroll Lock anwenden - WICHTIG für Position: absolute
+      // Body Scroll Lock anwenden
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'relative';
       
@@ -119,6 +92,7 @@
       });
     }
     
+    // Behandlung Dialog geschlossen
     if (e.data && e.data.type === 'dialog-closed') {
       isDialogOpen = false;
       
@@ -128,7 +102,7 @@
         if (!isDialogOpen) {
           portalContainer.style.display = 'none';
         }
-      }, 300); // Kurze Verzögerung um Animation zu ermöglichen
+      }, 300);
       
       // Body Scroll wiederherstellen
       document.body.style.overflow = '';
@@ -155,17 +129,6 @@
         }
       }, 500);
     }
-
-    // Wenn Dialog-Inhalt gerendert werden soll
-    if (e.data && e.data.type === 'render-dialog-content') {
-      // Sicherstellen, dass unser Portal-Container sichtbar ist
-      portalContainer.style.display = 'block';
-      
-      // Dialog-Inhalt vom iframe empfangen und im Portal-Container rendern
-      if (e.data.content) {
-        portalContainer.innerHTML = e.data.content;
-      }
-    }
   });
   
   // Fenstergrößenänderungen behandeln
@@ -181,15 +144,56 @@
     }, 100);
   });
   
-  // Ereignis auslösen, wenn Widget fertig geladen ist
-  iframe.addEventListener('load', function() {
-    // Event auslösen, damit die Website weiß, dass das Widget geladen wurde
-    const event = new CustomEvent('immo-widget-loaded');
-    document.dispatchEvent(event);
+  // Initialisierungsfunktion für das Widget
+  window.ImmoWidget.initialize = function(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.error('ImmoUpload Widget: Container mit ID "' + containerId + '" nicht gefunden.');
+      return;
+    }
+    
+    // Container-Style setzen
+    container.style.overflow = 'hidden';
+    container.style.position = 'relative';
+    
+    // Iframe erstellen
+    const iframe = document.createElement('iframe');
+    iframe.src = baseUrl + '/embed';
+    iframe.style.width = widgetWidth;
+    iframe.style.border = 'none';
+    iframe.style.minHeight = '500px';
+    iframe.style.maxWidth = '100%';
+    iframe.id = 'immo-widget-iframe';
+    iframe.setAttribute('scrolling', 'no');
+    iframe.setAttribute('title', 'Immobilien Übersicht');
+    
+    // Iframe zum Container hinzufügen
+    container.appendChild(iframe);
     
     // Nach dem Laden eine erste Höhenanpassung vornehmen
-    setTimeout(() => {
-      iframe.contentWindow.postMessage({ type: 'parent-resize' }, '*');
-    }, 300);
+    iframe.addEventListener('load', function() {
+      // Event auslösen, damit die Website weiß, dass das Widget geladen wurde
+      const event = new CustomEvent('immo-widget-loaded');
+      document.dispatchEvent(event);
+      
+      setTimeout(() => {
+        iframe.contentWindow.postMessage({ type: 'parent-resize' }, '*');
+      }, 300);
+    });
+  };
+  
+  // Widget als initialisiert markieren
+  window.ImmoWidget.initialized = true;
+  
+  // Automatisch alle Container mit der Klasse "immo-widget-container" initialisieren
+  document.addEventListener('DOMContentLoaded', function() {
+    const autoContainers = document.querySelectorAll('.immo-widget-container');
+    autoContainers.forEach(function(container, index) {
+      const containerId = container.id || 'immo-widget-container-' + index;
+      if (!container.id) {
+        container.id = containerId;
+      }
+      window.ImmoWidget.initialize(containerId);
+    });
   });
 })();
