@@ -9,13 +9,13 @@
  * @param blob Original image blob
  * @param maxWidth Maximum width for the resized image
  * @param quality Compression quality (0-1)
- * @returns Promise with the compressed image blob and format
+ * @returns Promise with the compressed image blob
  */
 export async function compressImage(
   blob: Blob,
   maxWidth = 1200,
   quality = 0.8
-): Promise<{ compressedBlob: Blob; format: string }> {
+): Promise<Blob> {
   // Validate blob
   if (!blob || !(blob instanceof Blob)) {
     console.error("Invalid blob provided to compressImage");
@@ -54,7 +54,7 @@ export async function compressImage(
       // If we can't get context, return original blob
       URL.revokeObjectURL(url);
       console.error("Could not get canvas context");
-      return { compressedBlob: blob, format: blob.type.split('/')[1] || 'jpeg' };
+      return blob;
     }
     
     // Draw image on canvas (resizing it)
@@ -70,7 +70,7 @@ export async function compressImage(
       });
       
       if (webpBlob) {
-        return { compressedBlob: webpBlob, format: 'webp' };
+        return webpBlob;
       }
     } catch (error) {
       console.warn("WebP compression failed, falling back to JPEG");
@@ -82,14 +82,14 @@ export async function compressImage(
     });
     
     if (jpegBlob) {
-      return { compressedBlob: jpegBlob, format: 'jpeg' };
+      return jpegBlob;
     }
     
     // If all conversions fail, return original
-    return { compressedBlob: blob, format: blob.type.split('/')[1] || 'jpeg' };
+    return blob;
   } catch (error) {
     console.error("Error in image compression:", error);
     // Return original blob as fallback
-    return { compressedBlob: blob, format: blob.type.split('/')[1] || 'jpeg' };
+    return blob;
   }
 }

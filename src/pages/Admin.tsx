@@ -7,9 +7,10 @@ import LoginForm from "@/components/admin/LoginForm";
 import SetPasswordForm from "@/components/admin/SetPasswordForm";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
-import PropertyList from "@/components/admin/PropertyList";
+import PropertyListWrapper from "@/components/admin/PropertyListWrapper";
 import AgentTab from "@/components/admin/AgentTab";
 import EmbedCodeTab from "@/components/admin/EmbedCodeTab";
+import AdminContent from "@/components/admin/AdminContent";
 
 // Property Tab Komponente hier erstellen
 const PropertyTab = () => {
@@ -21,7 +22,7 @@ const PropertyTab = () => {
         <h2 className="text-2xl font-bold">Immobilien verwalten</h2>
       </div>
       
-      <PropertyList />
+      <PropertyListWrapper companyId={company?.id} />
     </div>
   );
 };
@@ -81,4 +82,4 @@ export default function Admin() {
       </div>
     </div>
   );
-}
+};

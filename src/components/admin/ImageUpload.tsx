@@ -46,7 +46,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         }
         
         // Bild komprimieren
-        const compressedFile = await compressImage(file, maxHeight);
+        const compressedBlob = await compressImage(file, maxHeight);
         
         // Zufälligen Dateinamen generieren
         const fileExt = file.name.split('.').pop();
@@ -56,7 +56,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         // Zu Supabase hochladen
         const { data, error } = await supabase.storage
           .from('properties')
-          .upload(filePath, compressedFile);
+          .upload(filePath, compressedBlob);
           
         if (error) {
           toast.error(`Fehler beim Hochladen von ${file.name}: ${error.message}`);
