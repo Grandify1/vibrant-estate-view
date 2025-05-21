@@ -45,15 +45,19 @@ export default function Admin() {
   
   // Add a timeout for authentication to prevent infinite loading
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    
     if (loadingAuth) {
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setAuthTimeout(true);
       }, 5000); // 5 seconds timeout
-      
-      return () => clearTimeout(timer);
     } else {
       setAuthTimeout(false);
     }
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [loadingAuth]);
   
   // Display appropriate UI based on auth state
@@ -75,7 +79,25 @@ export default function Admin() {
     setUserChangedTab(true); // Benutzer hat manuell gewechselt
   };
   
-  // If auth is taking too long, show a helpful message
+  // Separate useEffect to handle tab changes based on company status
+  useEffect(() => {
+    // Always use the same hooks in the same order, regardless of conditions
+    if (!loadingAuth && isAuthenticated) {
+      if (!company && activeTab === "properties" && !userChangedTab) {
+        // Nur weiterleiten, wenn kein Unternehmen existiert, wir auf der Immobilienseite sind,
+        // und der Benutzer nicht manuell gewechselt hat
+        setActiveTab("settings");
+        toast.info("Bitte erstellen Sie zuerst ein Unternehmen, um Immobilien zu verwalten");
+      } else if (company && activeTab === "settings" && !userChangedTab && 
+                location.state?.activeTab !== "settings") {
+        // Nur weiterleiten, wenn wir ein Unternehmen haben, bei Einstellungen sind,
+        // der Benutzer nicht manuell gewechselt hat und nicht explizit zu Einstellungen navigiert wurde
+        setActiveTab("properties");
+      }
+    }
+  }, [isAuthenticated, company, activeTab, loadingAuth, location.state, userChangedTab]);
+  
+  // Render loading state, error state, or redirect based on auth status
   if (authTimeout) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -94,7 +116,6 @@ export default function Admin() {
     );
   }
   
-  // If auth is still loading, show loading state
   if (loadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -106,29 +127,11 @@ export default function Admin() {
     );
   }
   
-  // If not authenticated, redirect to auth page
   if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
   }
-
-  // Setze den aktiven Tab basierend auf dem Unternehmensstatus
-  // Separate useEffect to handle tab changes based on company status
-  useEffect(() => {
-    if (!loadingAuth && isAuthenticated) {
-      if (!company && activeTab === "properties" && !userChangedTab) {
-        // Nur weiterleiten, wenn kein Unternehmen existiert, wir auf der Immobilienseite sind,
-        // und der Benutzer nicht manuell gewechselt hat
-        setActiveTab("settings");
-        toast.info("Bitte erstellen Sie zuerst ein Unternehmen, um Immobilien zu verwalten");
-      } else if (company && activeTab === "settings" && !userChangedTab && 
-                location.state?.activeTab !== "settings") {
-        // Nur weiterleiten, wenn wir ein Unternehmen haben, bei Einstellungen sind,
-        // der Benutzer nicht manuell gewechselt hat und nicht explizit zu Einstellungen navigiert wurde
-        setActiveTab("properties");
-      }
-    }
-  }, [isAuthenticated, company, activeTab, loadingAuth, location.state, userChangedTab]);
   
+  // Main component render - only happens when authenticated
   return (
     <div className="min-h-screen flex flex-col">
       <AdminHeader />
