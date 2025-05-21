@@ -1,18 +1,11 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogTitle, DialogContent, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Property } from "@/types/property";
 import { Separator } from "@/components/ui/separator";
 import { Bath, Bed, Calendar, Home, MapPin, Ruler } from "lucide-react";
 import PropertyContactForm from "./ContactForm";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 
 interface PropertyDetailProps {
   property: Property | null;
@@ -22,40 +15,32 @@ interface PropertyDetailProps {
 
 export default function PropertyDetail({ property, isOpen, onClose }: PropertyDetailProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [imagesLoaded, setImagesLoaded] = useState<boolean[]>([]);
   
-  // Neue State-Variable für geladene Bilder
-  const [loadedImages, setLoadedImages] = useState<{[key: string]: boolean}>({});
-  
-  // Reset wenn sich die property ändert
+  // Reset values when property changes
   useEffect(() => {
-    if (property) {
+    if (property && property.images) {
       setActiveImageIndex(0);
-      setLoadedImages({});
+      setImagesLoaded(Array(property.images.length).fill(false));
     }
   }, [property?.id]);
   
   if (!property) return null;
   
+  // Format price with dots as thousand separators
   const formatNumber = (value: string) => {
     if (!value) return '';
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
   
-  // Verbesserte Bildverarbeitung
-  const getImageUrl = (imageUrl: string): string => {
-    if (!imageUrl) {
-      return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
-    }
-    
-    // Prüfen Sie, ob die Bild-URL gültig ist
-    if (imageUrl.startsWith('http')) {
-      return imageUrl;
-    }
-    
+  // Get valid image URL or fallback
+  const getValidImageUrl = (url: string | undefined): string => {
+    if (!url) return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
+    if (url.startsWith('http')) return url;
     return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
   };
-  
-  // Holen Sie alle Bilder und stellen Sie sicher, dass wir mindestens eines haben
+
+  // Get all images with validation
   const getImages = () => {
     if (!property.images || property.images.length === 0) {
       return [{
@@ -64,60 +49,67 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
         isFeatured: true
       }];
     }
-    
-    // Sortieren Sie Bilder, um das ausgewählte zuerst zu platzieren
-    return [...property.images].sort((a, b) => {
-      if (a.isFeatured) return -1;
-      if (b.isFeatured) return 1;
-      return 0;
-    });
+    return property.images;
   };
   
-  // Bild-Komponente mit Ladezustand und Fallback
-  const ImageWithFallback = ({ src, alt, className, onLoad }: { 
-    src: string; 
-    alt: string; 
-    className: string;
-    onLoad?: () => void;
-  }) => {
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasError, setHasError] = useState(false);
+  const images = getImages();
+  
+  // Simplified image component with proper error handling
+  const PropertyImage = ({ src, alt, className }: { src: string; alt: string; className: string }) => {
+    const [loaded, setLoaded] = useState(false);
+    const [error, setError] = useState(false);
     
     return (
       <div className="relative w-full h-full">
-        {isLoading && (
+        {!loaded && !error && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse" />
         )}
-        
-        {hasError ? (
+        {error ? (
           <div className="absolute inset-0 bg-gray-300 flex items-center justify-center">
-            <span className="text-gray-500">Bild konnte nicht geladen werden</span>
+            <span className="text-gray-500">Bild nicht verfügbar</span>
           </div>
         ) : (
           <img 
             src={src}
             alt={alt}
             className={className}
-            onLoad={() => {
-              setIsLoading(false);
-              if (onLoad) onLoad();
-            }}
-            onError={() => {
-              setIsLoading(false);
-              setHasError(true);
-            }}
-            style={{ visibility: isLoading ? 'hidden' : 'visible' }}
+            onLoad={() => setLoaded(true)}
+            onError={() => setError(true)}
+            style={{ display: loaded ? 'block' : 'none' }}
           />
         )}
       </div>
     );
   };
   
-  const images = getImages();
-  const currentImageUrl = images[activeImageIndex]?.url || "";
+  // Custom button component for image navigation
+  const NavButton = ({ direction, onClick }: { direction: 'prev' | 'next'; onClick: () => void }) => {
+    return (
+      <button
+        onClick={onClick}
+        className={`absolute top-1/2 -translate-y-1/2 ${direction === 'prev' ? 'left-2' : 'right-2'} 
+                   bg-white/80 hover:bg-white rounded-full p-2 shadow-md z-10`}
+        aria-label={direction === 'prev' ? 'Vorheriges Bild' : 'Nächstes Bild'}
+      >
+        {direction === 'prev' ? (
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
+        )}
+      </button>
+    );
+  };
   
-  const handleImageLoad = (imageId: string) => {
-    setLoadedImages(prev => ({...prev, [imageId]: true}));
+  const handlePrevClick = () => {
+    setActiveImageIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
+  };
+  
+  const handleNextClick = () => {
+    setActiveImageIndex(prev => (prev < images.length - 1 ? prev + 1 : 0));
   };
   
   const renderDetailItem = (label: string, value: string | undefined) => {
@@ -133,57 +125,46 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-auto p-0">
-        <DialogTitle className="sr-only">Immobiliendetails</DialogTitle>
-        <DialogDescription className="sr-only">Detaillierte Informationen zur Immobilie</DialogDescription>
-        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
           {/* Linke Spalte - Bildgalerie */}
           <div className="md:col-span-2 relative">
-            <div className="aspect-[4/3] bg-gray-100">
-              <ImageWithFallback 
-                src={getImageUrl(currentImageUrl)}
+            {/* Hauptbild */}
+            <div className="aspect-[4/3] bg-gray-100 relative">
+              <PropertyImage 
+                src={getValidImageUrl(images[activeImageIndex]?.url)}
                 alt={property.title}
                 className="w-full h-full object-cover"
               />
+              
+              {/* Navigationsbuttons */}
+              {images.length > 1 && (
+                <>
+                  <NavButton direction="prev" onClick={handlePrevClick} />
+                  <NavButton direction="next" onClick={handleNextClick} />
+                </>
+              )}
             </div>
             
+            {/* Miniaturbilder */}
             {images.length > 1 && (
-              <div className="p-4 overflow-x-auto">
-                <Carousel 
-                  className="w-full"
-                  opts={{
-                    align: 'start',
-                    loop: false,
-                  }}
-                >
-                  <CarouselContent>
-                    {images.map((image, index) => (
-                      <CarouselItem key={image.id || `img-${index}`} className="basis-1/4 sm:basis-1/5 md:basis-1/6 lg:basis-1/7">
-                        <button
-                          onClick={() => setActiveImageIndex(index)}
-                          className={`w-full h-16 flex-shrink-0 rounded border-2 overflow-hidden ${
-                            index === activeImageIndex 
-                              ? 'border-estate' 
-                              : 'border-transparent'
-                          }`}
-                        >
-                          <ImageWithFallback
-                            src={getImageUrl(image.url)}
-                            alt={`Bild ${index + 1}`}
-                            className="w-full h-full object-cover"
-                            onLoad={() => handleImageLoad(image.id || `img-${index}`)}
-                          />
-                        </button>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  {images.length > 4 && (
-                    <>
-                      <CarouselPrevious className="left-2" />
-                      <CarouselNext className="right-2" />
-                    </>
-                  )}
-                </Carousel>
+              <div className="p-4 flex space-x-2 overflow-x-auto">
+                {images.map((image, index) => (
+                  <button
+                    key={image.id || `img-${index}`}
+                    onClick={() => setActiveImageIndex(index)}
+                    className={`w-16 h-16 flex-shrink-0 rounded overflow-hidden ${
+                      index === activeImageIndex 
+                        ? 'ring-2 ring-estate' 
+                        : 'ring-1 ring-transparent'
+                    }`}
+                  >
+                    <PropertyImage
+                      src={getValidImageUrl(image.url)}
+                      alt={`Bild ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -300,10 +281,10 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                           <h4 className="font-medium">{plan.name}</h4>
                         </div>
                         <div className="aspect-property bg-gray-100 relative h-48">
-                          <ImageWithFallback
-                            src={getImageUrl(plan.url)}
+                          <PropertyImage
+                            src={getValidImageUrl(plan.url)}
                             alt={plan.name}
-                            className="absolute inset-0 w-full h-full object-contain"
+                            className="w-full h-full object-contain"
                           />
                         </div>
                       </div>

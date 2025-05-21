@@ -13,11 +13,11 @@ const EmbedPageContent = () => {
   const [activeProperties, setActiveProperties] = useState<Property[]>([]);
   const [isOffline, setIsOffline] = useState(false);
   
-  // Netzwerkstatus prüfen
+  // Check network status
   useEffect(() => {
     const handleOnline = () => {
       setIsOffline(false);
-      retryOperation(); // Properties abrufen, wenn wieder online
+      retryOperation(); // Get properties again when back online
     };
     
     const handleOffline = () => {
@@ -34,36 +34,42 @@ const EmbedPageContent = () => {
     };
   }, [retryOperation]);
   
-  // Aktive Properties aktualisieren, wenn sich die Properties-Liste ändert
+  // Update active properties when properties list changes
   useEffect(() => {
     if (!loading && properties && properties.length > 0) {
-      // Filtern Sie nur aktive Properties
+      // Filter only active properties
       const active = properties.filter(property => property.status === 'active');
+      console.log("Properties in grid:", active);
       
-      // Setzen Sie aktive Properties aus der gefilterten Liste
+      // Set active properties from filtered list
       setActiveProperties(active);
+      
+      // Log image info for debugging
+      active.forEach(property => {
+        console.log(`Property ${property.id} images:`, property.images);
+        property.images?.forEach(img => {
+          console.log(`Image URL: ${img.url}, is blob: ${img.url?.startsWith('blob:')}, isFeatured: ${img.isFeatured}`);
+        });
+      });
     } else {
       setActiveProperties([]);
     }
   }, [properties, loading]);
   
   const handlePropertyClick = (property: Property) => {
-    // Vorbereitung vor dem Öffnen des Dialogs
-    setSelectedProperty(null); // Zurücksetzen des alten Property
+    console.log("Property clicked:", property.id);
+    console.log("Property images:", property.images);
     
-    // Verzögerung, um die Komponente vollständig zurückzusetzen
+    setSelectedProperty(property);
+    
+    // Use setTimeout to ensure state is updated before opening the dialog
     setTimeout(() => {
-      setSelectedProperty(property);
       setDetailOpen(true);
-    }, 10);
+    }, 0);
   };
 
   const handleDetailClose = () => {
     setDetailOpen(false);
-    // Erst nach dem Schließen des Dialogs setSelectedProperty zurücksetzen
-    setTimeout(() => {
-      setSelectedProperty(null);
-    }, 300);
   };
   
   const handleRetry = () => {
