@@ -21,8 +21,8 @@
     return;
   }
   
-  // Container-Style direkt setzen für Modals
-  container.style.overflow = 'visible';
+  // Container-Style direkt setzen
+  container.style.overflow = 'hidden';
   container.style.position = 'relative';
   
   // Iframe erstellen
@@ -32,7 +32,6 @@
   iframe.style.border = 'none';
   iframe.style.minHeight = '500px'; // Optimale Anfangshöhe
   iframe.style.maxWidth = '100%';
-  iframe.style.overflow = 'visible'; // Erlaubt Overflow für den Dialog
   iframe.id = 'immo-widget-iframe';
   iframe.setAttribute('scrolling', 'no');
   iframe.setAttribute('title', 'Immobilien Übersicht');
@@ -43,18 +42,23 @@
   // Flag für Dialog-Status
   let isDialogOpen = false;
   
-  // Modal container für absolute positioning erstellen
-  const modalContainer = document.createElement('div');
-  modalContainer.id = 'immo-widget-modal-container';
-  modalContainer.style.display = 'none';
-  modalContainer.style.position = 'fixed';
-  modalContainer.style.top = '0';
-  modalContainer.style.left = '0';
-  modalContainer.style.width = '100%';
-  modalContainer.style.height = '100%';
-  modalContainer.style.zIndex = '999999';
-  modalContainer.style.pointerEvents = 'none'; // Durchsichtig für Klicks
-  document.body.appendChild(modalContainer);
+  // Definitionen für Dialog-Management
+  const portalId = 'immo-widget-portal-container';
+  
+  // Dialog-Portal Container für das gesamte Dokument erstellen wenn benötigt
+  let portalContainer = document.getElementById(portalId);
+  if (!portalContainer) {
+    portalContainer = document.createElement('div');
+    portalContainer.id = portalId;
+    portalContainer.style.position = 'fixed';
+    portalContainer.style.zIndex = '999999'; // Höchster z-index
+    portalContainer.style.top = '0';
+    portalContainer.style.left = '0';
+    portalContainer.style.width = '0';
+    portalContainer.style.height = '0';
+    portalContainer.style.overflow = 'visible'; // Wichtig: Overflow muss visible sein
+    document.body.appendChild(portalContainer);
+  }
   
   // Höhenanpassung durch Nachrichtenaustausch
   let resizeTimeout;
@@ -84,7 +88,7 @@
         const iframe = document.getElementById('immo-widget-iframe');
         if (iframe) {
           // Minimale Höhe setzen ohne großen Buffer
-          iframe.style.height = (e.data.height + 20) + 'px';
+          iframe.style.height = (e.data.height + 5) + 'px';
         }
       }, 50);
     }
@@ -93,27 +97,10 @@
     if (e.data && e.data.type === 'dialog-opened') {
       isDialogOpen = true;
       
-      // Wenn Dialog geöffnet ist, das Modal aktivieren
-      const modalContainer = document.getElementById('immo-widget-modal-container');
-      if (modalContainer) {
-        modalContainer.style.display = 'block';
-        modalContainer.style.pointerEvents = 'auto'; // Aktiviere Interaktion
-      }
-
-      // Modalen Hintergrund hinzufügen
-      const modalBackdrop = document.createElement('div');
-      modalBackdrop.id = 'immo-widget-modal-backdrop';
-      modalBackdrop.style.position = 'fixed';
-      modalBackdrop.style.top = '0';
-      modalBackdrop.style.left = '0';
-      modalBackdrop.style.width = '100%';
-      modalBackdrop.style.height = '100%';
-      modalBackdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-      modalBackdrop.style.zIndex = '9998';
-      document.body.style.overflow = 'hidden'; // Body Scroll verhindern
-      document.body.appendChild(modalBackdrop);
+      // Body Scroll Lock anwenden
+      document.body.style.overflow = 'hidden';
       
-      // Alle scroll locks aufheben
+      // Alle scroll locks aufheben in der Übersiecht
       document.querySelectorAll('html, body, #root, [id^="__"], [class*="container"]').forEach(el => {
         if (el) {
           if (!el.dataset.originalOverflow) {
@@ -127,20 +114,8 @@
     if (e.data && e.data.type === 'dialog-closed') {
       isDialogOpen = false;
       
-      // Modalen Container deaktivieren
-      const modalContainer = document.getElementById('immo-widget-modal-container');
-      if (modalContainer) {
-        modalContainer.style.display = 'none';
-        modalContainer.style.pointerEvents = 'none';
-      }
-      
-      // Modalen Hintergrund entfernen
-      const modalBackdrop = document.getElementById('immo-widget-modal-backdrop');
-      if (modalBackdrop && modalBackdrop.parentNode) {
-        modalBackdrop.parentNode.removeChild(modalBackdrop);
-      }
-      
-      document.body.style.overflow = ''; // Body Scroll wiederherstellen
+      // Body Scroll wiederherstellen
+      document.body.style.overflow = '';
       
       // Styles zurücksetzen mit Verzögerung
       setTimeout(() => {

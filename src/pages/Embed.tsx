@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect, useRef } from "react";
 import PropertyGrid from "@/components/embed/PropertyGrid";
 import PropertyDetail from "@/components/embed/PropertyDetail";
@@ -53,7 +52,7 @@ const EmbedPageContent = () => {
 
   // Send dialog state to parent window for overflow handling
   useEffect(() => {
-    if (window.parent !== window) {
+    if (window !== window.parent) {
       // Send dialog state to parent window
       window.parent.postMessage({ 
         type: detailOpen ? 'dialog-opened' : 'dialog-closed' 
@@ -63,6 +62,7 @@ const EmbedPageContent = () => {
       if (detailOpen) {
         document.body.style.overflow = 'visible';
         document.documentElement.style.overflow = 'visible';
+        document.body.style.position = 'static';
       }
     }
   }, [detailOpen]);
@@ -70,7 +70,7 @@ const EmbedPageContent = () => {
   // Update parent iframe height when content changes
   useEffect(() => {
     const updateFrameHeight = () => {
-      if (containerRef.current && window.parent !== window) {
+      if (containerRef.current && window !== window.parent) {
         const height = containerRef.current.offsetHeight;
         // Only send height updates when dialog is closed to prevent jumpy behavior
         if (!detailOpen) {
