@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { ImageUpload } from './ImageUpload';
 
-// Diese Komponente dient nur als Wrapper, um den Typfehler zu beheben
 interface ImageUploadWrapperProps {
   onUploaded: (urls: string[]) => void;
   maxFiles?: number;
@@ -16,33 +14,18 @@ const ImageUploadWrapper: React.FC<ImageUploadWrapperProps> = ({
   buttonText, 
   accept 
 }) => {
-  // Vor dem Übergeben an die ImageUpload-Komponente wandeln wir das Format der Datei
-  const handleUploaded = (files: any[]) => {
-    // Extrahieren von URLs aus den hochgeladenen Dateien
-    const urls = files.map(file => {
-      if (typeof file === 'string') {
-        return file;
-      }
-      // Wenn es sich um ein Blob-Objekt handelt, erstellen wir eine URL
-      if (file instanceof Blob) {
-        return URL.createObjectURL(file);
-      }
-      // Wenn es ein komprimiertes Bild-Objekt ist
-      if (file.compressedBlob) {
-        return URL.createObjectURL(file.compressedBlob);
-      }
-      return '';
-    }).filter(url => url !== '');
-    
-    onUploaded(urls);
+  // Convert the handler to match what ImageUpload expects
+  const handleImageChange = (urls: string | string[]) => {
+    // Ensure we're always dealing with an array of URLs
+    const urlArray = Array.isArray(urls) ? urls : [urls];
+    onUploaded(urlArray);
   };
 
   return (
     <ImageUpload
-      onUploaded={handleUploaded}
-      maxFiles={maxFiles}
-      buttonText={buttonText}
-      accept={accept}
+      onImageChange={handleImageChange}
+      multiple={maxFiles !== undefined && maxFiles > 1}
+      maxHeight={800}
     />
   );
 };

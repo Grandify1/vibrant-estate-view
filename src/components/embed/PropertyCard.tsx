@@ -43,19 +43,19 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onClick }) => {
         <p className="text-gray-600 text-sm mb-2 truncate">{property.address}</p>
         
         {property.details?.price && (
-          <p className="font-bold text-primary">{formatPrice(property.details.price)} €</p>
+          <p className="font-bold text-primary">{formatPrice(Number(property.details.price))} €</p>
         )}
         
         <div className="flex mt-2 text-sm text-gray-600">
-          {property.details?.size && (
+          {property.details?.livingArea && (
             <div className="mr-3">
-              <span className="font-medium">{property.details.size}</span> m²
+              <span className="font-medium">{property.details.livingArea}</span> m²
             </div>
           )}
           
           {property.details?.rooms && (
             <div>
-              <span className="font-medium">{property.details.rooms}</span> {property.details.rooms === 1 ? "Zimmer" : "Zimmer"}
+              <span className="font-medium">{property.details.rooms}</span> {property.details.rooms === "1" ? "Zimmer" : "Zimmer"}
             </div>
           )}
         </div>

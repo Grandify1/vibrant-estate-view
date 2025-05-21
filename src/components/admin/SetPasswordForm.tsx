@@ -5,12 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const SetPasswordForm = ({ onSetPassword }: { onSetPassword?: (password: string) => boolean }) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const { setAdminPassword } = useAuth();
+  const { /* no longer using setAdminPassword */ } = useAuth();
   
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -26,8 +27,10 @@ const SetPasswordForm = ({ onSetPassword }: { onSetPassword?: (password: string)
       return;
     }
     
-    // Verwende die direkte Funktion aus useAuth statt die übergebene Funktion
-    setAdminPassword(password);
+    // Use the callback prop instead
+    if (onSetPassword && onSetPassword(password)) {
+      toast.success("Passwort erfolgreich gespeichert");
+    }
   };
   
   return (

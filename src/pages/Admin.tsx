@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import AdminHeader from "@/components/admin/AdminHeader";
-import AdminContent from "@/components/admin/AdminContent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LoginForm from "@/components/admin/LoginForm";
 import SetPasswordForm from "@/components/admin/SetPasswordForm";
@@ -22,7 +21,7 @@ const PropertyTab = () => {
         <h2 className="text-2xl font-bold">Immobilien verwalten</h2>
       </div>
       
-      <PropertyList companyId={company?.id} />
+      <PropertyList />
     </div>
   );
 };
@@ -58,7 +57,7 @@ export default function Admin() {
       <AdminHeader />
       
       <div className="flex-grow bg-gray-50 p-4 md:p-8">
-        <AdminContent>
+        <div className="container mx-auto">
           <Tabs defaultValue="properties" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-8">
               <TabsTrigger value="properties">Immobilien</TabsTrigger>
@@ -78,7 +77,7 @@ export default function Admin() {
               <EmbedCodeTab />
             </TabsContent>
           </Tabs>
-        </AdminContent>
+        </div>
       </div>
     </div>
   );

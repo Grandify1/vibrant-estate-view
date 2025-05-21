@@ -53,6 +53,7 @@ const AgentTab: React.FC = () => {
     }
   };
   
+  // Fix the type mismatch - AgentList expects a function that takes an id string
   const handleDelete = async (id: string) => {
     if (window.confirm("Sind Sie sicher, dass Sie diesen Makler löschen möchten?")) {
       await deleteAgent(id);
