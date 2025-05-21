@@ -43,7 +43,7 @@ const EmbedPageContent = () => {
     console.log("Properties length:", properties.length);
     console.log("Loading state:", loading);
     
-    // Check image URLs in properties
+    // Check if images have valid URLs (not blob urls)
     properties.forEach((property, index) => {
       console.log(`Property ${index} (${property.id}) images:`, property.images);
       if (property.images && property.images.length > 0) {
@@ -55,7 +55,7 @@ const EmbedPageContent = () => {
       }
     });
     
-    // Filter active properties with additional logging
+    // Filter for only active properties with additional logging
     const active = properties.filter(property => {
       console.log(`Property ${property.id} status: ${property.status}`);
       return property.status === 'active';
@@ -63,16 +63,7 @@ const EmbedPageContent = () => {
     
     console.log("Active properties:", active);
     
-    // Check if any active property has valid images (not blob urls)
-    const hasValidImages = active.some(p => 
-      p.images && 
-      p.images.length > 0 && 
-      p.images.some(img => img.url && !img.url.startsWith('blob:'))
-    );
-    
-    console.log("Has valid images:", hasValidImages);
-    
-    // Only show actual properties, no demos
+    // Set active properties from filtered list, never show demo properties
     setActiveProperties(loading ? [] : active);
   }, [properties, loading]);
   
@@ -119,7 +110,7 @@ const EmbedPageContent = () => {
       ) : activeProperties.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64">
           <p className="text-xl mb-4">Derzeit alle Immobilien verkauft</p>
-          <p>Aktuell sind alle Immobilien verkauft oder es wurden noch keine Immobilien hinzugefügt.</p>
+          <p>Aktuell sind alle Immobilien verkauft oder reserviert.</p>
         </div>
       ) : (
         <PropertyGrid 

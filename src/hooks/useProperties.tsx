@@ -1,3 +1,4 @@
+
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { Property, initialProperty } from "../types/property";
@@ -85,15 +86,26 @@ const uploadImageToStorage = async (imageBlob: string, propertyId: string, image
     
     const blob = await response.blob();
     
-    // Generate a unique file path (use file extension from blob type if available)
+    // Generate a unique file path with specific file extension
     const fileExtension = blob.type.split('/')[1] || 'jpg';
     const filePath = `${propertyId}/${imageId}.${fileExtension}`;
     console.log(`Uploading image to ${filePath}, type: ${blob.type}, size: ${blob.size} bytes`);
     
-    // Upload to Supabase Storage
+    // Add more detailed logging for debugging
+    console.log("Supabase storage upload parameters:", {
+      bucketId: 'prop-images',
+      path: filePath,
+      fileType: blob.type,
+      fileSize: blob.size
+    });
+    
+    // Upload to Supabase Storage with improved error handling
     const { data, error } = await supabase.storage
       .from('prop-images')
-      .upload(filePath, blob, { upsert: true });
+      .upload(filePath, blob, { 
+        upsert: true,
+        contentType: blob.type
+      });
     
     if (error) {
       console.error("Error uploading image to storage:", error);
@@ -291,7 +303,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
           if (!error) {
             success = true;
           } else {
-            console.log(`Attempt ${retries + 1} failed, retrying...`);
+            console.log(`Attempt ${retries + 1} failed, retrying...`, error);
             retries++;
             await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
           }
@@ -476,6 +488,8 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
         throw new Error("Keine Internetverbindung");
       }
       
+      console.log("Updating property:", id, "with update:", propertyUpdate);
+      
       // Process images if they've changed
       let processedImages = propertyUpdate.images;
       if (propertyUpdate.images) {
@@ -571,7 +585,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
           if (!error) {
             success = true;
           } else {
-            console.log(`Update attempt ${retries + 1} failed, retrying...`);
+            console.log(`Update attempt ${retries + 1} failed, retrying...`, error);
             retries++;
             await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
           }
