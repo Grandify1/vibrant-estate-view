@@ -50,12 +50,22 @@ const EmbedPageContent = () => {
     }
   }, [properties, loading]);
 
+  // Send dialog state to parent window
+  useEffect(() => {
+    if (window.parent !== window) {
+      // Sende Dialog-Status an das übergeordnete Fenster
+      window.parent.postMessage({ 
+        type: detailOpen ? 'dialog-opened' : 'dialog-closed' 
+      }, '*');
+    }
+  }, [detailOpen]);
+  
   // Update parent iframe height when content changes
   useEffect(() => {
     const updateFrameHeight = () => {
       if (containerRef.current && window.parent !== window) {
         const height = containerRef.current.offsetHeight;
-        // Minimaler Puffer um Scrollbars zu vermeiden
+        // Senden der berechneten Höhe an den Parent
         window.parent.postMessage({ type: 'resize-iframe', height: height }, '*');
       }
     };

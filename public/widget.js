@@ -26,12 +26,16 @@
   iframe.src = baseUrl + '/embed';
   iframe.style.width = widgetWidth;
   iframe.style.border = 'none';
-  iframe.style.minHeight = '500px';
+  iframe.style.minHeight = '700px'; // Höhere Mindesthöhe für bessere Darstellung
   iframe.style.maxWidth = '100%';
-  iframe.style.overflow = 'hidden';
+  iframe.style.overflow = 'visible'; // Erlaubt Inhalte, die über die Grenzen hinausgehen
   iframe.id = 'immo-widget-iframe';
   iframe.setAttribute('scrolling', 'no');
   iframe.setAttribute('title', 'Immobilien Übersicht');
+  
+  // CSS für das Container-Element hinzufügen um Überlauf zu erlauben
+  container.style.overflow = 'visible';
+  container.style.position = 'relative';
   
   // Iframe zum Container hinzufügen
   container.appendChild(iframe);
@@ -61,7 +65,7 @@
         const iframe = document.getElementById('immo-widget-iframe');
         if (iframe) {
           // Setze eine vernünftige Mindesthöhe um sicherzustellen, dass genug Platz ist
-          const newHeight = Math.max(e.data.height + 20, 500);
+          const newHeight = Math.max(e.data.height + 50, 700);
           iframe.style.height = newHeight + 'px';
           
           // Event auslösen, damit die Website auf die Größenänderung reagieren kann
@@ -71,6 +75,26 @@
           document.dispatchEvent(event);
         }
       }, 50);
+    }
+    
+    // Spezieller Event-Typ für Dialog-Öffnung/Schließung
+    if (e.data && e.data.type === 'dialog-opened') {
+      const iframe = document.getElementById('immo-widget-iframe');
+      if (iframe) {
+        // CSS-Modifikation damit Modals richtig angezeigt werden können
+        iframe.style.overflow = 'visible';
+        container.style.overflow = 'visible'; 
+      }
+    }
+    
+    if (e.data && e.data.type === 'dialog-closed') {
+      const iframe = document.getElementById('immo-widget-iframe');
+      if (iframe) {
+        // Nach dem Schließen des Dialogs Zustand zurücksetzen
+        setTimeout(() => {
+          iframe.style.overflow = 'hidden';
+        }, 500); // Verzögerung für eine glatte Animation
+      }
     }
   });
   
