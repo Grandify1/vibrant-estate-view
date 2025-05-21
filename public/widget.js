@@ -103,7 +103,10 @@
               // Wenn es ein interner Property-Link ist
               if (href && href.startsWith('/property/')) {
                 e.preventDefault();
-                window.open(baseUrl + href, '_blank');
+                
+                // Vollständige URL zum Property-Detail erstellen (ohne localhost)
+                const detailUrl = baseUrl + href;
+                window.open(detailUrl, '_blank');
               }
             }
           });
@@ -141,8 +144,14 @@
   
   // Globale Event-Handler für Nachrichtenaustausch
   window.addEventListener('message', function(e) {
-    // Sicherheits-Check
-    const allowedOrigins = [baseUrl, 'https://kmzlkfwxeghvlgtilzjh.supabase.co'];
+    // Sicherheits-Check - erlauben Sie auch die Produktions-Domain
+    const allowedOrigins = [
+      baseUrl, 
+      'https://kmzlkfwxeghvlgtilzjh.supabase.co',
+      'https://as-immobilien.info'
+    ];
+    
+    // Prüfen, ob die Ursprungs-Domain erlaubt ist
     if (!allowedOrigins.some(origin => e.origin.includes(origin)) && 
         !e.origin.includes('localhost') && 
         !e.origin.includes('127.0.0.1')) {
@@ -169,7 +178,8 @@
       // Skip requests to analytics/tracking endpoints that might cause CORS issues
       if (typeof url === 'string' && (
           url.includes('/cdn-cgi/rum') || 
-          url.includes('dash.immoupload.com')
+          url.includes('dash.immoupload.com') ||
+          url.includes('localhost:3000')
       )) {
         // Cancel the request by pointing it to a data URL
         arguments[1] = 'data:text/plain,{}';

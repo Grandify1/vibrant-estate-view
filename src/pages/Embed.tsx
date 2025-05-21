@@ -80,16 +80,19 @@ export default function Embed() {
   }, [companyId, location.pathname]);
 
   // Bestimmen Sie, ob die aktuelle Route die Hauptembed-Seite oder eine Detailseite ist
-  const isMainPage = location.pathname === '/embed';
+  const isPropertyDetailRoute = location.pathname.startsWith('/embed/property/');
+
+  // Extract property ID if on detail route
+  const propertyId = isPropertyDetailRoute 
+    ? location.pathname.split('/').pop() 
+    : null;
 
   return (
     <div className="w-full bg-white py-2">
-      {isMainPage ? (
+      {!isPropertyDetailRoute ? (
         <PropertyGrid properties={properties} loading={loading} error={error} />
       ) : (
-        <Routes>
-          <Route path="/property/:propertyId" element={<PropertyDetail />} />
-        </Routes>
+        <PropertyDetail />
       )}
     </div>
   );

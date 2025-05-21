@@ -33,6 +33,7 @@ const App = () => (
                 <Route path="/admin/properties/edit/:id" element={<PropertyFormPage />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/embed" element={<Embed />} />
+                <Route path="/embed/property/:propertyId" element={<Embed />} />
                 <Route path="/property/:propertyId" element={<PropertyDetail />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
