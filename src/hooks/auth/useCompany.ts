@@ -132,16 +132,23 @@ export const useCompany = (user: AuthUser | null) => {
       
       console.log("Updating company with ID:", company.id);
       
-      // Remove undefined values to avoid overwriting with null
+      // Wir entfernen leere Strings, da diese zu 400-Fehlern führen können
       const cleanUpdates = Object.entries(updates).reduce(
         (acc, [key, value]) => {
+          // Nur Werte einfügen, die definiert sind (nicht undefined)
           if (value !== undefined) {
-            acc[key] = value;
+            // Leere Strings durch null ersetzen
+            acc[key] = value === "" ? null : value;
           }
           return acc;
         }, 
         {} as Record<string, any>
       );
+      
+      // Nur aktualisieren, wenn es tatsächlich Änderungen gibt
+      if (Object.keys(cleanUpdates).length === 0) {
+        return true; // Nichts zu aktualisieren
+      }
       
       const { error } = await supabase
         .from('companies')

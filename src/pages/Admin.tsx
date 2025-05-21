@@ -103,11 +103,15 @@ export default function Admin() {
     return <Navigate to="/auth" replace />;
   }
 
-  // Automatically redirect to settings if no company exists
+  // Änderungen hier: Nur zu Einstellungen weiterleiten, wenn kein Unternehmen existiert
   useEffect(() => {
     if (isAuthenticated && !company && activeTab === "properties") {
       setActiveTab("settings");
       toast.info("Bitte erstellen Sie zuerst ein Unternehmen, um Immobilien zu verwalten");
+    } else if (isAuthenticated && company && activeTab === "settings") {
+      // Wenn Unternehmen bereits existiert und wir bei Einstellungen sind, zu Immobilien wechseln
+      // Das verhindert, dass man nach dem Login immer bei Einstellungen landet
+      setActiveTab("properties");
     }
   }, [isAuthenticated, company, activeTab]);
   
