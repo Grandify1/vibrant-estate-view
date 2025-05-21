@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProperties } from "@/hooks/useProperties";
 import { Property } from "@/types/property";
 import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
 
 enum AdminView {
   LIST = "list",
@@ -18,13 +20,37 @@ enum AdminView {
 
 const AdminPage = () => {
   const { isAuthenticated, login, logout, setAdminPassword, hasSetPassword } = useAuth();
-  const { properties, addProperty, updateProperty, deleteProperty, getProperty, setPropertyStatus, loading } = useProperties();
+  const { properties, addProperty, updateProperty, deleteProperty, getProperty, setPropertyStatus, loading, lastError, retryOperation } = useProperties();
   
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [adminView, setAdminView] = useState<AdminView>(AdminView.LIST);
   const [editPropertyId, setEditPropertyId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  
+  // Check network status
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log("Connection restored, back online");
+      setIsOffline(false);
+    };
+    
+    const handleOffline = () => {
+      console.log("Connection lost, offline");
+      setIsOffline(true);
+      toast.error("Keine Internetverbindung. Einige Funktionen sind möglicherweise eingeschränkt.");
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    setIsOffline(!navigator.onLine);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
   
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +69,11 @@ const AdminPage = () => {
   };
   
   const handlePropertySubmit = async (propertyData: Omit<Property, "id" | "createdAt" | "updatedAt">) => {
+    if (isOffline) {
+      toast.error("Keine Internetverbindung. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.");
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
       // Ensure propertyData contains the status field
@@ -76,6 +107,11 @@ const AdminPage = () => {
   };
   
   const handleDeleteProperty = async (id: string) => {
+    if (isOffline) {
+      toast.error("Keine Internetverbindung. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.");
+      return;
+    }
+    
     try {
       await deleteProperty(id);
     } catch (error) {
@@ -91,6 +127,10 @@ const AdminPage = () => {
   const handleCancel = () => {
     setAdminView(AdminView.LIST);
     setEditPropertyId(null);
+  };
+  
+  const handleRetry = () => {
+    retryOperation();
   };
 
   const renderSetPassword = () => (
@@ -165,7 +205,10 @@ const AdminPage = () => {
         <h1 className="text-3xl font-bold">Immobilien Admin-Portal</h1>
         <div className="flex space-x-4">
           {adminView === AdminView.LIST && (
-            <Button onClick={() => setAdminView(AdminView.CREATE)}>
+            <Button 
+              onClick={() => setAdminView(AdminView.CREATE)}
+              disabled={isOffline}
+            >
               Neue Immobilie
             </Button>
           )}
@@ -174,6 +217,48 @@ const AdminPage = () => {
           </Button>
         </div>
       </div>
+      
+      {isOffline && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <AlertCircle className="h-5 w-5 text-yellow-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                Sie sind offline. Einige Funktionen sind möglicherweise nicht verfügbar. 
+                <button 
+                  onClick={handleRetry}
+                  className="ml-2 font-medium text-yellow-700 underline"
+                >
+                  Erneut versuchen
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {lastError && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <AlertCircle className="h-5 w-5 text-red-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">
+                {lastError}
+                <button 
+                  onClick={handleRetry}
+                  className="ml-2 font-medium text-red-700 underline"
+                >
+                  Erneut versuchen
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       {loading && adminView === AdminView.LIST ? (
         <div className="flex justify-center items-center h-64">
@@ -211,7 +296,7 @@ const AdminPage = () => {
               <CardFooter>
                 <Button onClick={() => {
                   navigator.clipboard.writeText(`<iframe src="${window.location.origin}/embed" width="100%" height="800" frameborder="0"></iframe>`);
-                  alert("Code in die Zwischenablage kopiert!");
+                  toast.success("Code in die Zwischenablage kopiert!");
                 }}>
                   In Zwischenablage kopieren
                 </Button>

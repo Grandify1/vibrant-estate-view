@@ -15,6 +15,8 @@ interface PropertiesContextType {
   getActiveProperties: () => Property[];
   setPropertyStatus: (id: string, status: 'active' | 'sold' | 'archived') => Promise<void>;
   loading: boolean;
+  retryOperation: () => Promise<void>;
+  lastError: string | null;
 }
 
 const PropertiesContext = createContext<PropertiesContextType | undefined>(undefined);
@@ -63,40 +65,94 @@ const fromSupabaseProperty = (dbProperty: any): Property => {
 export function PropertiesProvider({ children }: { children: ReactNode }) {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [pendingOperation, setPendingOperation] = useState<(() => Promise<void>) | null>(null);
   
-  // Load properties from Supabase on component mount
+  // Check network status
+  const [isOnline, setIsOnline] = useState(true);
+  
   useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        setLoading(true);
-        console.log("Fetching properties from Supabase...");
-        const { data, error } = await supabase
-          .from('properties')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error('Error fetching properties:', error);
-          toast.error("Fehler beim Laden der Immobilien");
-          return;
-        }
-        
-        console.log("Fetched properties from Supabase:", data);
-        const mappedProperties = data.map(fromSupabaseProperty);
-        setProperties(mappedProperties);
-      } catch (error) {
-        console.error('Error in fetchProperties:', error);
-        toast.error("Fehler beim Laden der Immobilien");
-      } finally {
-        setLoading(false);
+    const handleOnline = () => {
+      console.log("Connection restored, back online");
+      setIsOnline(true);
+      // Try to retry pending operation if any
+      if (pendingOperation) {
+        retryOperation();
       }
     };
     
+    const handleOffline = () => {
+      console.log("Connection lost, offline");
+      setIsOnline(false);
+      toast.error("Verbindung verloren. Bitte überprüfen Sie Ihre Internetverbindung.");
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [pendingOperation]);
+  
+  // Load properties from Supabase on component mount
+  const fetchProperties = async () => {
+    try {
+      setLoading(true);
+      setLastError(null);
+      console.log("Fetching properties from Supabase...");
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching properties:', error);
+        setLastError(`Fehler beim Laden der Immobilien: ${error.message}`);
+        toast.error("Fehler beim Laden der Immobilien");
+        return;
+      }
+      
+      console.log("Fetched properties from Supabase:", data);
+      const mappedProperties = data.map(fromSupabaseProperty);
+      setProperties(mappedProperties);
+    } catch (error) {
+      console.error('Error in fetchProperties:', error);
+      setLastError(`Unbekannter Fehler beim Laden der Immobilien: ${error}`);
+      toast.error("Fehler beim Laden der Immobilien");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     fetchProperties();
   }, []);
   
+  const retryOperation = async () => {
+    if (pendingOperation) {
+      try {
+        await pendingOperation();
+        setPendingOperation(null);
+        setLastError(null);
+      } catch (error) {
+        console.error("Retry operation failed:", error);
+        toast.error("Erneuter Versuch fehlgeschlagen");
+      }
+    } else {
+      await fetchProperties();
+    }
+  };
+  
   const addProperty = async (propertyData: Omit<Property, "id" | "createdAt" | "updatedAt">) => {
     try {
+      if (!isOnline) {
+        toast.error("Keine Internetverbindung. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.");
+        setPendingOperation(() => () => addProperty(propertyData));
+        throw new Error("Keine Internetverbindung");
+      }
+      
       // Ensure at least one image is marked as featured
       const images = [...(propertyData.images || [])];
       if (images.length > 0 && !images.some(img => img.isFeatured)) {
@@ -117,21 +173,53 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       const supabaseData = toSupabaseProperty(propertyToAdd);
       console.log("Converted to Supabase format:", supabaseData);
       
-      // Insert into Supabase
-      const { data, error } = await supabase
-        .from('properties')
-        .insert(supabaseData)
-        .select('*')
-        .single();
+      // Enhanced error handling for the network request
+      let retries = 0;
+      const maxRetries = 2;
+      let success = false;
+      let data;
+      let error;
+      
+      while (retries <= maxRetries && !success) {
+        try {
+          const response = await supabase
+            .from('properties')
+            .insert(supabaseData)
+            .select('*')
+            .single();
+          
+          data = response.data;
+          error = response.error;
+          
+          if (!error) {
+            success = true;
+          } else {
+            console.log(`Attempt ${retries + 1} failed, retrying...`);
+            retries++;
+            await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
+          }
+        } catch (e) {
+          console.error(`Network error on attempt ${retries + 1}:`, e);
+          retries++;
+          
+          if (retries > maxRetries) {
+            throw e;
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
+        }
+      }
       
       if (error) {
-        console.error("Error adding property to Supabase:", error);
+        console.error("Error adding property to Supabase after retries:", error);
+        setLastError(`Fehler beim Erstellen der Immobilie: ${error.message}`);
         toast.error("Fehler beim Erstellen der Immobilie: " + error.message);
         throw error;
       }
       
       if (!data) {
         console.error("No data returned after insert");
+        setLastError("Fehler beim Erstellen der Immobilie: Keine Daten zurückgegeben");
         toast.error("Fehler beim Erstellen der Immobilie: Keine Daten zurückgegeben");
         throw new Error("No data returned after insert");
       }
@@ -141,16 +229,31 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       const newProperty = fromSupabaseProperty(data);
       setProperties(prev => [newProperty, ...prev]);
       toast.success("Immobilie erfolgreich erstellt");
+      setLastError(null);
       return newProperty;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in addProperty:", error);
+      const errorMessage = error?.message || "Unbekannter Fehler";
+      setLastError(`Fehler beim Erstellen der Immobilie: ${errorMessage}`);
       toast.error("Fehler beim Erstellen der Immobilie");
+      
+      // Save the operation for later retry
+      if (!isOnline) {
+        setPendingOperation(() => () => addProperty(propertyData));
+      }
+      
       throw error;
     }
   };
   
   const updateProperty = async (id: string, propertyUpdate: Partial<Property>) => {
     try {
+      if (!isOnline) {
+        toast.error("Keine Internetverbindung. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.");
+        setPendingOperation(() => () => updateProperty(id, propertyUpdate));
+        throw new Error("Keine Internetverbindung");
+      }
+      
       // Ensure at least one image is marked as featured if images are being updated
       if (propertyUpdate.images && propertyUpdate.images.length > 0) {
         if (!propertyUpdate.images.some(img => img.isFeatured)) {
@@ -175,15 +278,45 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       
       console.log("Updating property:", id, "with update:", supabaseUpdate);
       
-      const { error } = await supabase
-        .from('properties')
-        .update(supabaseUpdate)
-        .eq('id', id);
+      // Enhanced error handling for the network request
+      let retries = 0;
+      const maxRetries = 2;
+      let success = false;
+      let updateError;
       
-      if (error) {
-        console.error("Error updating property in Supabase:", error);
-        toast.error("Fehler beim Aktualisieren der Immobilie: " + error.message);
-        throw error;
+      while (retries <= maxRetries && !success) {
+        try {
+          const { error } = await supabase
+            .from('properties')
+            .update(supabaseUpdate)
+            .eq('id', id);
+          
+          updateError = error;
+          
+          if (!error) {
+            success = true;
+          } else {
+            console.log(`Update attempt ${retries + 1} failed, retrying...`);
+            retries++;
+            await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
+          }
+        } catch (e) {
+          console.error(`Network error on update attempt ${retries + 1}:`, e);
+          retries++;
+          
+          if (retries > maxRetries) {
+            throw e;
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
+        }
+      }
+      
+      if (updateError) {
+        console.error("Error updating property in Supabase:", updateError);
+        setLastError(`Fehler beim Aktualisieren der Immobilie: ${updateError.message}`);
+        toast.error("Fehler beim Aktualisieren der Immobilie: " + updateError.message);
+        throw updateError;
       }
       
       // Get the updated property from the database
@@ -204,32 +337,86 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
           property.id === id ? updatedProperty : property
         )
       );
+      setLastError(null);
       toast.success("Immobilie aktualisiert");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in updateProperty:", error);
+      const errorMessage = error?.message || "Unbekannter Fehler";
+      setLastError(`Fehler beim Aktualisieren der Immobilie: ${errorMessage}`);
       toast.error("Fehler beim Aktualisieren der Immobilie");
+      
+      // Save the operation for later retry
+      if (!isOnline) {
+        setPendingOperation(() => () => updateProperty(id, propertyUpdate));
+      }
+      
       throw error;
     }
   };
   
   const deleteProperty = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('properties')
-        .delete()
-        .eq('id', id);
+      if (!isOnline) {
+        toast.error("Keine Internetverbindung. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.");
+        setPendingOperation(() => () => deleteProperty(id));
+        throw new Error("Keine Internetverbindung");
+      }
       
-      if (error) {
-        console.error("Error deleting property from Supabase:", error);
-        toast.error("Fehler beim Löschen der Immobilie: " + error.message);
-        throw error;
+      // Enhanced error handling for the network request
+      let retries = 0;
+      const maxRetries = 2;
+      let success = false;
+      let deleteError;
+      
+      while (retries <= maxRetries && !success) {
+        try {
+          const { error } = await supabase
+            .from('properties')
+            .delete()
+            .eq('id', id);
+          
+          deleteError = error;
+          
+          if (!error) {
+            success = true;
+          } else {
+            console.log(`Delete attempt ${retries + 1} failed, retrying...`);
+            retries++;
+            await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
+          }
+        } catch (e) {
+          console.error(`Network error on delete attempt ${retries + 1}:`, e);
+          retries++;
+          
+          if (retries > maxRetries) {
+            throw e;
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
+        }
+      }
+      
+      if (deleteError) {
+        console.error("Error deleting property from Supabase:", deleteError);
+        setLastError(`Fehler beim Löschen der Immobilie: ${deleteError.message}`);
+        toast.error("Fehler beim Löschen der Immobilie: " + deleteError.message);
+        throw deleteError;
       }
       
       setProperties(prev => prev.filter(property => property.id !== id));
+      setLastError(null);
       toast.success("Immobilie gelöscht");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in deleteProperty:", error);
+      const errorMessage = error?.message || "Unbekannter Fehler";
+      setLastError(`Fehler beim Löschen der Immobilie: ${errorMessage}`);
       toast.error("Fehler beim Löschen der Immobilie");
+      
+      // Save the operation for later retry
+      if (!isOnline) {
+        setPendingOperation(() => () => deleteProperty(id));
+      }
+      
       throw error;
     }
   };
@@ -272,7 +459,9 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
         getProperty,
         getActiveProperties,
         setPropertyStatus,
-        loading
+        loading,
+        retryOperation,
+        lastError
       }}
     >
       {children}
