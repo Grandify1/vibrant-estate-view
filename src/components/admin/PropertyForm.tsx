@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,9 +16,10 @@ interface PropertyFormProps {
   onSubmit: (property: Omit<Property, "id" | "createdAt" | "updatedAt">) => void;
   onCancel: () => void;
   isEditing?: boolean;
+  isSubmitting?: boolean;
 }
 
-export default function PropertyForm({ property = initialProperty, onSubmit, onCancel, isEditing = false }: PropertyFormProps) {
+export default function PropertyForm({ property = initialProperty, onSubmit, onCancel, isEditing = false, isSubmitting = false }: PropertyFormProps) {
   const [formData, setFormData] = useState<Omit<Property, "id" | "createdAt" | "updatedAt">>({
     title: property.title,
     address: property.address,
@@ -581,8 +581,10 @@ export default function PropertyForm({ property = initialProperty, onSubmit, onC
       </Tabs>
       
       <div className="flex justify-end gap-4">
-        <Button type="button" variant="outline" onClick={onCancel}>Abbrechen</Button>
-        <Button type="submit">{isEditing ? 'Speichern' : 'Erstellen'}</Button>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Abbrechen</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Wird gespeichert...' : isEditing ? 'Speichern' : 'Erstellen'}
+        </Button>
       </div>
     </form>
   );

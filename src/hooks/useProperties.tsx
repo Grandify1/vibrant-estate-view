@@ -26,7 +26,7 @@ const toSupabaseProperty = (property: Omit<Property, "id" | "createdAt" | "updat
     status: property.status || 'active',
     highlights: property.highlights || [],
     images: property.images || [],
-    floor_plans: property.floorPlans || [],
+    floor_plans: property.floorPlans || [], // Convert floorPlans to floor_plans
     details: property.details || {},
     energy: property.energy || {},
     description: property.description || '',
@@ -106,10 +106,14 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       
       console.log("Adding new property with status:", propertyToAdd.status);
       
+      // Convert to Supabase format
+      const supabaseData = toSupabaseProperty(propertyToAdd);
+      console.log("Converted to Supabase format:", supabaseData);
+      
       // Insert into Supabase
       const { data, error } = await supabase
         .from('properties')
-        .insert(toSupabaseProperty(propertyToAdd))
+        .insert(supabaseData)
         .select('*')
         .single();
       
