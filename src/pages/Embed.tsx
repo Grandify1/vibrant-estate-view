@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import PropertyGrid from "@/components/embed/PropertyGrid";
 import PropertyDetail from "@/components/embed/PropertyDetail";
@@ -142,8 +143,8 @@ const EmbedPage = () => {
     console.log("Active properties:", active);
     console.log("All properties:", properties);
     
-    // Wenn keine aktiven Properties gefunden wurden, verwenden wir die Demo-Properties
-    const propertiesToDisplay = active.length > 0 ? active : demoProperties;
+    // Wenn keine aktiven Properties gefunden wurden und nicht mehr im Ladezustand sind, verwenden wir die Demo-Properties
+    const propertiesToDisplay = loading ? [] : (active.length > 0 ? active : demoProperties);
     console.log("Properties to display:", propertiesToDisplay);
     
     setActiveProperties(propertiesToDisplay);
@@ -159,6 +160,12 @@ const EmbedPage = () => {
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+          <span className="ml-3">Immobilien werden geladen...</span>
+        </div>
+      ) : activeProperties.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64">
+          <p className="text-xl mb-4">Keine aktiven Immobilien gefunden.</p>
+          <p>Entweder wurden noch keine Immobilien hinzugefügt oder alle sind als verkauft/archiviert markiert.</p>
         </div>
       ) : (
         <PropertyGrid 

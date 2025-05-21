@@ -22,7 +22,7 @@ const PropertiesContext = createContext<PropertiesContextType | undefined>(undef
 // Helper functions to convert between our frontend model and Supabase model
 const toSupabaseProperty = (property: Omit<Property, "id" | "createdAt" | "updatedAt">) => {
   // Convert specific properties to the expected Json type for Supabase
-  return {
+  const supabaseProperty = {
     title: property.title,
     address: property.address,
     status: property.status || 'active',
@@ -35,9 +35,13 @@ const toSupabaseProperty = (property: Omit<Property, "id" | "createdAt" | "updat
     amenities: property.amenities || '',
     location: property.location || ''
   };
+  
+  console.log("Converting to Supabase format:", supabaseProperty);
+  return supabaseProperty;
 };
 
 const fromSupabaseProperty = (dbProperty: any): Property => {
+  console.log("Converting from Supabase:", dbProperty);
   return {
     id: dbProperty.id,
     title: dbProperty.title,
@@ -65,6 +69,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
     const fetchProperties = async () => {
       try {
         setLoading(true);
+        console.log("Fetching properties from Supabase...");
         const { data, error } = await supabase
           .from('properties')
           .select('*')
@@ -121,9 +126,17 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         console.error("Error adding property to Supabase:", error);
-        toast.error("Fehler beim Erstellen der Immobilie");
+        toast.error("Fehler beim Erstellen der Immobilie: " + error.message);
         throw error;
       }
+      
+      if (!data) {
+        console.error("No data returned after insert");
+        toast.error("Fehler beim Erstellen der Immobilie: Keine Daten zurückgegeben");
+        throw new Error("No data returned after insert");
+      }
+      
+      console.log("New property added to Supabase:", data);
       
       const newProperty = fromSupabaseProperty(data);
       setProperties(prev => [newProperty, ...prev]);
@@ -169,7 +182,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         console.error("Error updating property in Supabase:", error);
-        toast.error("Fehler beim Aktualisieren der Immobilie");
+        toast.error("Fehler beim Aktualisieren der Immobilie: " + error.message);
         throw error;
       }
       
@@ -208,7 +221,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         console.error("Error deleting property from Supabase:", error);
-        toast.error("Fehler beim Löschen der Immobilie");
+        toast.error("Fehler beim Löschen der Immobilie: " + error.message);
         throw error;
       }
       
