@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Property, PropertyImage, PropertyHighlight, PropertyDetails, EnergyDetails, FloorPlan, initialProperty } from "@/types/property";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types";
 
-// Hilfsfunktion für Typumwandlungen mit Fallback-Werten
+// Helper function for type conversions with fallback values
 const safelyParseJson = <T extends unknown>(jsonValue: any, fallback: T): T => {
   if (!jsonValue) return fallback;
   if (Array.isArray(jsonValue)) return jsonValue as unknown as T;
@@ -15,7 +16,7 @@ const safelyParseJson = <T extends unknown>(jsonValue: any, fallback: T): T => {
 
 interface PropertiesContextType {
   properties: Property[];
-  addProperty: (property: Omit<Property, "id" | "created_at" | "updated_at">) => Promise<Property | null>;
+  addProperty: (property: Omit<Property, "id" | "createdAt" | "updatedAt">) => Promise<Property | null>;
   updateProperty: (id: string, updates: Partial<Property>) => Promise<void>;
   deleteProperty: (id: string) => Promise<void>;
   getProperty: (id: string) => Property | undefined;
@@ -33,7 +34,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
   const [lastError, setLastError] = useState<string | null>(null);
   const { company } = useAuth();
   
-  // Immobilien aus Supabase laden
+  // Load properties from Supabase
   const fetchProperties = async () => {
     if (!company) {
       setProperties([]);
@@ -63,27 +64,36 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
           const emptyImages: PropertyImage[] = [];
           const emptyFloorPlans: FloorPlan[] = [];
           const emptyDetails: PropertyDetails = {
-            price: 0,
-            livingArea: 0,
-            plotArea: 0,
-            rooms: 0,
-            bathrooms: 0,
-            bedrooms: 0,
-            constructionYear: 0,
-            lastRenovation: 0,
+            price: '',
+            livingArea: '',
+            plotArea: '',
+            rooms: '',
+            bathrooms: '',
+            bedrooms: '',
+            constructionYear: '',
+            lastRenovation: '',
             availability: '',
             propertyType: '',
-            floor: 0,
-            totalFloors: 0,
-            parkingSpaces: 0
+            floor: '',
+            totalFloors: '',
+            parkingSpaces: '',
+            availableFrom: '',
+            maintenanceFee: '',
+            condition: '',
+            heatingType: '',
+            energySource: ''
           };
           const emptyEnergy: EnergyDetails = {
             certificateAvailable: false,
-            energyClass: '',
-            energyConsumptionValue: 0,
+            certificateType: '',
+            energyConsumption: '',
+            energyEfficiencyClass: '',
             includesWarmWater: false,
             primaryEnergyCarrier: '',
-            finalEnergyDemand: 0
+            finalEnergyDemand: '',
+            constructionYear: '',
+            validUntil: '',
+            createdAt: ''
           };
           
           return {
@@ -96,8 +106,8 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
             description: item.description || '',
             amenities: item.amenities || '',
             location: item.location || '',
-            created_at: item.created_at,
-            updated_at: item.updated_at,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at,
             highlights: safelyParseJson<PropertyHighlight[]>(item.highlights, emptyHighlights),
             images: safelyParseJson<PropertyImage[]>(item.images, emptyImages),
             floorPlans: safelyParseJson<FloorPlan[]>(item.floor_plans, emptyFloorPlans),
@@ -116,13 +126,13 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
     }
   };
   
-  // Beim Laden der Komponente oder Änderung des Unternehmens Immobilien laden
+  // Load properties when component loads or company changes
   useEffect(() => {
     fetchProperties();
   }, [company]);
   
-  // Neue Immobilie hinzufügen
-  const addProperty = async (propertyData: Omit<Property, "id" | "created_at" | "updated_at">): Promise<Property | null> => {
+  // Add a new property
+  const addProperty = async (propertyData: Omit<Property, "id" | "createdAt" | "updatedAt">): Promise<Property | null> => {
     if (!company) {
       toast.error("Sie müssen einem Unternehmen angehören, um Immobilien hinzuzufügen");
       return null;
@@ -162,14 +172,14 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
         id: data.id,
         title: data.title,
         address: data.address,
-        status: data.status,
+        status: data.status as 'active' | 'sold' | 'archived',
         company_id: data.company_id,
         agent_id: data.agent_id,
         description: data.description || '',
         amenities: data.amenities || '',
         location: data.location || '',
-        created_at: data.created_at,
-        updated_at: data.updated_at,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
         highlights: safelyParseJson<PropertyHighlight[]>(data.highlights, []),
         images: safelyParseJson<PropertyImage[]>(data.images, []),
         floorPlans: safelyParseJson<FloorPlan[]>(data.floor_plans, []),
@@ -190,7 +200,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
     }
   };
   
-  // Immobilie aktualisieren
+  // Update a property
   const updateProperty = async (id: string, updates: Partial<Property>) => {
     try {
       const dbUpdates: Record<string, any> = {};
@@ -220,7 +230,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
         return;
       }
       
-      // Lokale Zustandsaktualisierung
+      // Update local state
       setProperties(prev => 
         prev.map(property => 
           property.id === id ? { ...property, ...updates } : property
@@ -236,7 +246,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
     }
   };
   
-  // Status einer Immobilie ändern
+  // Set property status
   const setPropertyStatus = async (id: string, status: 'active' | 'sold' | 'archived') => {
     try {
       const { error } = await supabase
@@ -251,7 +261,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
         return;
       }
       
-      // Lokale Zustandsaktualisierung
+      // Update local state
       setProperties(prev => 
         prev.map(property => 
           property.id === id ? { ...property, status } : property
@@ -266,7 +276,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
     }
   };
   
-  // Immobilie löschen
+  // Delete a property
   const deleteProperty = async (id: string) => {
     try {
       const { error } = await supabase
@@ -281,7 +291,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
         return;
       }
       
-      // Lokale Zustandsaktualisierung
+      // Update local state
       setProperties(prev => prev.filter(property => property.id !== id));
       toast.success("Immobilie erfolgreich gelöscht");
       setLastError(null);
@@ -292,21 +302,21 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
     }
   };
   
-  // Immobilie nach ID abrufen
+  // Get property by ID
   const getProperty = (id: string) => {
     return properties.find(property => property.id === id);
   };
   
-  // Immobilien filtern
+  // Filter properties
   const filterProperties = (filters: Record<string, any>) => {
     let filtered = [...properties];
     
-    // Filter nach Status
+    // Filter by status
     if (filters.status) {
       filtered = filtered.filter(property => property.status === filters.status);
     }
     
-    // Weitere Filter können hier hinzugefügt werden
+    // Additional filters can be added here
     
     return filtered;
   };

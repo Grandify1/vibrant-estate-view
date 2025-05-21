@@ -21,6 +21,9 @@ export interface EnergyDetails {
   certificateType?: string;
   energyConsumption?: string;
   energyEfficiencyClass?: string;
+  includesWarmWater: boolean;
+  primaryEnergyCarrier?: string;
+  finalEnergyDemand?: string;
   constructionYear?: string;
   validUntil?: string;
   createdAt?: string;
@@ -40,6 +43,11 @@ export interface PropertyDetails {
   condition: string;
   heatingType: string;
   energySource: string;
+  floor: string;
+  totalFloors: string;
+  parkingSpaces: string;
+  lastRenovation?: string;
+  availability?: string;
 }
 
 export interface Property {
@@ -56,6 +64,7 @@ export interface Property {
   amenities: string;
   location: string;
   agent_id?: string | null;
+  company_id?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -152,7 +161,10 @@ export const initialProperty: Property = {
     constructionYear: '',
     condition: '',
     heatingType: '',
-    energySource: ''
+    energySource: '',
+    floor: '',
+    totalFloors: '',
+    parkingSpaces: ''
   },
   energy: {
     certificateAvailable: false,
@@ -161,12 +173,16 @@ export const initialProperty: Property = {
     energyEfficiencyClass: '',
     constructionYear: '',
     validUntil: '',
-    createdAt: ''
+    createdAt: '',
+    includesWarmWater: false,
+    primaryEnergyCarrier: '',
+    finalEnergyDemand: ''
   },
   description: '',
   amenities: '',
   location: '',
   agent_id: null,
+  company_id: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString()
 };
