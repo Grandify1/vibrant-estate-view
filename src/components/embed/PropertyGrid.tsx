@@ -4,6 +4,7 @@ import { Property } from "@/types/property";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Link } from "react-router-dom";
 import {
   Tabs,
   TabsList,
@@ -13,10 +14,9 @@ import { Bath, Bed, Home, MapPin, Ruler } from "lucide-react";
 
 interface PropertyGridProps {
   properties: Property[];
-  onPropertyClick: (property: Property) => void;
 }
 
-export default function PropertyGrid({ properties, onPropertyClick }: PropertyGridProps) {
+export default function PropertyGrid({ properties }: PropertyGridProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   
   // Get featured image or first image with proper URL handling
@@ -124,7 +124,7 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {properties.map((property) => (
             <Card key={property.id} className="property-card overflow-hidden">
-              <div onClick={() => onPropertyClick(property)} className="cursor-pointer">
+              <Link to={`/property/${property.id}`} className="cursor-pointer block">
                 <div className="h-48 w-full relative">
                   <ImageWithFallback
                     src={getMainImage(property)}
@@ -158,7 +158,7 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
                     </div>
                   </div>
                 </CardContent>
-              </div>
+              </Link>
             </Card>
           ))}
         </div>
@@ -166,8 +166,8 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
         <div className="space-y-4">
           {properties.map((property) => (
             <Card key={property.id} className="property-card overflow-hidden">
-              <div 
-                onClick={() => onPropertyClick(property)} 
+              <Link 
+                to={`/property/${property.id}`}
                 className="cursor-pointer flex flex-col sm:flex-row"
               >
                 <div className="sm:w-1/3 h-48 sm:h-auto relative">
@@ -233,7 +233,7 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
                     </div>
                   </div>
                 </CardContent>
-              </div>
+              </Link>
             </Card>
           ))}
         </div>

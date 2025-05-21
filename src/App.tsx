@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import Embed from "./pages/Embed";
+import PropertyDetail from "./pages/PropertyDetail";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./hooks/useAuth";
 import { PropertiesProvider } from "./hooks/useProperties";
@@ -25,6 +26,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/embed" element={<Embed />} />
+              <Route path="/property/:propertyId" element={<PropertyDetail />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

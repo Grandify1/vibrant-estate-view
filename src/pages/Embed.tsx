@@ -1,15 +1,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import PropertyGrid from "@/components/embed/PropertyGrid";
-import PropertyDetail from "@/components/embed/PropertyDetail";
 import { useProperties } from "@/hooks/useProperties";
 import { Property } from "@/types/property";
 import { PropertiesProvider } from "@/hooks/useProperties"; 
 
 const EmbedPageContent = () => {
   const { properties, loading, lastError, retryOperation } = useProperties();
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
   const [activeProperties, setActiveProperties] = useState<Property[]>([]);
   const [isOffline, setIsOffline] = useState(false);
   
@@ -50,25 +47,12 @@ const EmbedPageContent = () => {
     }
   }, [properties, loading]);
 
-  // Send dialog state to parent window for overflow handling
-  useEffect(() => {
-    if (window !== window.parent) {
-      // Send dialog state to parent window
-      window.parent.postMessage({ 
-        type: detailOpen ? 'dialog-opened' : 'dialog-closed' 
-      }, '*');
-    }
-  }, [detailOpen]);
-  
   // Update parent iframe height when content changes
   useEffect(() => {
     const updateFrameHeight = () => {
       if (containerRef.current && window !== window.parent) {
         const height = containerRef.current.offsetHeight;
-        // Only send height updates when dialog is closed to prevent jumpy behavior
-        if (!detailOpen) {
-          window.parent.postMessage({ type: 'resize-iframe', height }, '*');
-        }
+        window.parent.postMessage({ type: 'resize-iframe', height }, '*');
       }
     };
 
@@ -91,10 +75,7 @@ const EmbedPageContent = () => {
 
     // Create MutationObserver to watch for DOM changes
     const observer = new MutationObserver(() => {
-      // Only update height if dialog is closed
-      if (!detailOpen) {
-        updateFrameHeight();
-      }
+      updateFrameHeight();
     });
 
     if (containerRef.current) {
@@ -112,16 +93,7 @@ const EmbedPageContent = () => {
       window.removeEventListener('message', handleParentMessage);
       observer.disconnect();
     };
-  }, [activeProperties, loading, detailOpen, lastError, isOffline]);
-  
-  const handlePropertyClick = (property: Property) => {
-    setSelectedProperty(property);
-    setDetailOpen(true);
-  };
-
-  const handleDetailClose = () => {
-    setDetailOpen(false);
-  };
+  }, [activeProperties, loading, lastError, isOffline]);
   
   const handleRetry = () => {
     retryOperation();
@@ -164,15 +136,6 @@ const EmbedPageContent = () => {
       ) : (
         <PropertyGrid 
           properties={activeProperties} 
-          onPropertyClick={handlePropertyClick}
-        />
-      )}
-      
-      {selectedProperty && (
-        <PropertyDetail 
-          property={selectedProperty}
-          isOpen={detailOpen}
-          onClose={handleDetailClose}
         />
       )}
     </div>
