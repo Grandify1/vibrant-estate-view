@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LoginForm from "@/components/admin/LoginForm";
 import SetPasswordForm from "@/components/admin/SetPasswordForm";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import PropertyListWrapper from "@/components/admin/PropertyListWrapper";
 import AgentTab from "@/components/admin/AgentTab";
 import EmbedCodeTab from "@/components/admin/EmbedCodeTab";
@@ -37,6 +37,19 @@ const PropertyTab = () => {
 export default function Admin() {
   const { isAuthenticated, loadingAuth, user } = useAuth();
   const [activeTab, setActiveTab] = useState("properties");
+  const navigate = useNavigate();
+  const [showError, setShowError] = useState(false);
+  
+  // Wenn die Authentifizierung länger als erwartet dauert, Fehler anzeigen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (loadingAuth) {
+        setShowError(true);
+      }
+    }, 5000); // 5 Sekunden warten, bevor ein Fehler angezeigt wird
+    
+    return () => clearTimeout(timer);
+  }, [loadingAuth]);
   
   // Wenn die Authentifizierung noch lädt, zeige einen Ladebildschirm
   if (loadingAuth) {
@@ -45,6 +58,22 @@ export default function Admin() {
         <div className="text-center">
           <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" />
           <p className="mt-4 text-lg font-medium text-gray-700">Wird geladen...</p>
+          
+          {showError && (
+            <div className="mt-6 p-4 border border-red-300 rounded bg-red-50 text-red-800">
+              <div className="flex items-center">
+                <AlertCircle className="h-5 w-5 mr-2" />
+                <p className="font-medium">Die Anmeldung dauert länger als erwartet</p>
+              </div>
+              <p className="mt-2 text-sm">Versuchen Sie, die Seite zu aktualisieren oder sich erneut anzumelden.</p>
+              <button 
+                className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                onClick={() => navigate('/auth')}
+              >
+                Zur Anmeldeseite
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );

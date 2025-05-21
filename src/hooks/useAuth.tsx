@@ -27,11 +27,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Dynamically use the current URL for Supabase
-const getCurrentUrl = () => {
-  return window.location.origin;
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
@@ -42,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
+        console.log("Checking session...");
         setLoadingAuth(true);
         
         // Get session
@@ -49,20 +45,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const session = sessionData?.session;
         
         if (session) {
-          const { user } = session;
+          console.log("Session found:", session.user.id);
           setIsAuthenticated(true);
           
           // Load user data from profile
           const { data: profileData, error } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', user.id)
+            .eq('id', session.user.id)
             .maybeSingle();
             
           if (profileData) {
+            console.log("Profile data:", profileData);
             setUser({
-              id: user.id,
-              email: user.email || '',
+              id: session.user.id,
+              email: session.user.email || '',
               first_name: profileData.first_name,
               last_name: profileData.last_name,
               company_id: profileData.company_id
@@ -73,13 +70,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               await loadCompanyData(profileData.company_id);
             }
           } else {
-            console.error("Profile error:", error);
+            console.log("No profile found or error:", error);
             setUser({
-              id: user.id,
-              email: user.email || ''
+              id: session.user.id,
+              email: session.user.email || ''
             });
           }
         } else {
+          console.log("No session found");
           setIsAuthenticated(false);
           setUser(null);
           setCompany(null);
@@ -87,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error("Error loading session:", error);
       } finally {
+        console.log("Session check complete, setting loadingAuth to false");
         setLoadingAuth(false);
       }
     };
@@ -96,6 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event);
+        
         if (event === 'SIGNED_IN' && session) {
           setIsAuthenticated(true);
           
@@ -264,7 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       toast.success("Company created successfully");
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating company:", error);
       toast.error("An error occurred");
       return false;
@@ -293,7 +294,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCompany(prev => prev ? { ...prev, ...companyData } as Company : null);
       
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating company:", error);
       toast.error("An error occurred");
       return false;
