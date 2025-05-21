@@ -29,7 +29,8 @@ export const useSessionLoader = (
           id: userId,
           email: email,
           first_name: profileData.first_name,
-          last_name: profileData.last_name
+          last_name: profileData.last_name,
+          company_id: profileData.company_id // Make sure to include company_id
         });
       } else {
         if (error) {
@@ -61,7 +62,8 @@ export const useSessionLoader = (
               id: userId,
               email: email,
               first_name: metadata?.first_name,
-              last_name: metadata?.last_name
+              last_name: metadata?.last_name,
+              company_id: null // Initialize company_id as null for new users
             });
           }
         }
