@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const CompanySetupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const CompanySetupPage: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Redirect if not authenticated
   useEffect(() => {
@@ -44,6 +46,7 @@ const CompanySetupPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null);
     
     try {
       if (!name.trim()) {
@@ -52,30 +55,54 @@ const CompanySetupPage: React.FC = () => {
         return;
       }
       
-      console.log('Creating company with data:', {
+      // First, directly create the company using Supabase client
+      // This bypasses any potential issues with the createCompany function
+      const companyData = {
         name,
         address: address || null,
         phone: phone || null,
         email: email || null,
         logo: null
-      });
+      };
       
-      const success = await createCompany({
-        name,
-        address: address || null,
-        phone: phone || null,
-        email: email || null,
-        logo: null
-      });
+      console.log('Creating company with data:', companyData);
       
-      if (success) {
-        toast.success('Unternehmen erfolgreich erstellt!');
-        navigate('/admin');
-      } else {
-        toast.error('Fehler beim Erstellen des Unternehmens');
+      // Attempt direct database insertion first
+      const { data: newCompany, error: insertError } = await supabase
+        .from('companies')
+        .insert(companyData)
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error("Company creation error:", insertError);
+        setErrorMessage(`Fehler beim Erstellen des Unternehmens: ${insertError.message}`);
+        toast.error(`Fehler beim Erstellen des Unternehmens: ${insertError.message}`);
+        setIsLoading(false);
+        return;
+      }
+      
+      if (newCompany) {
+        // If direct insertion was successful, update the user's profile with the company ID
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ company_id: newCompany.id })
+          .eq('id', user?.id);
+        
+        if (profileError) {
+          console.error("Profile update error:", profileError);
+          toast.error(`Unternehmen erstellt, aber Profilaktualisierung fehlgeschlagen: ${profileError.message}`);
+        } else {
+          toast.success('Unternehmen erfolgreich erstellt!');
+          // Force a reload of the Auth context to get the updated profile
+          setTimeout(() => {
+            navigate('/admin');
+          }, 1000);
+        }
       }
     } catch (error) {
-      console.error('Error creating company:', error);
+      console.error('Unexpected error creating company:', error);
+      setErrorMessage('Ein unerwarteter Fehler ist aufgetreten');
       toast.error('Ein unerwarteter Fehler ist aufgetreten');
     } finally {
       setIsLoading(false);
@@ -94,6 +121,12 @@ const CompanySetupPage: React.FC = () => {
         
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {errorMessage && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+                {errorMessage}
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="company-name">Unternehmensname *</Label>
               <Input
