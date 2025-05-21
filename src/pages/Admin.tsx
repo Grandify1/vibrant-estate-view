@@ -32,6 +32,7 @@ export default function Admin() {
   const location = useLocation();
   const [authTimeout, setAuthTimeout] = useState(false);
   const [userChangedTab, setUserChangedTab] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
   // Check for redirects from location state
   useEffect(() => {
@@ -60,6 +61,14 @@ export default function Admin() {
     };
   }, [loadingAuth]);
   
+  // Track when initial load is complete
+  useEffect(() => {
+    if (!loadingAuth && company !== undefined) {
+      // Mark initial load as complete once we have auth and company status
+      setInitialLoadComplete(true);
+    }
+  }, [loadingAuth, company]);
+  
   // Display appropriate UI based on auth state
   useEffect(() => {
     console.log("Admin: Auth Status:", { isAuthenticated, loadingAuth });
@@ -81,8 +90,8 @@ export default function Admin() {
   
   // Separate useEffect to handle tab changes based on company status
   useEffect(() => {
-    // Always use the same hooks in the same order, regardless of conditions
-    if (!loadingAuth && isAuthenticated) {
+    // Only run this effect after initial load is complete to prevent flash messages
+    if (initialLoadComplete && !loadingAuth && isAuthenticated) {
       if (!company && activeTab === "properties" && !userChangedTab) {
         // Nur weiterleiten, wenn kein Unternehmen existiert, wir auf der Immobilienseite sind,
         // und der Benutzer nicht manuell gewechselt hat
@@ -95,7 +104,7 @@ export default function Admin() {
         setActiveTab("properties");
       }
     }
-  }, [isAuthenticated, company, activeTab, loadingAuth, location.state, userChangedTab]);
+  }, [initialLoadComplete, isAuthenticated, company, activeTab, loadingAuth, userChangedTab]);
   
   // Render loading state, error state, or redirect based on auth status
   if (authTimeout) {
