@@ -135,6 +135,28 @@
     }
   });
   
+  // Disable tracking and analytics requests to avoid CORS issues
+  const originalXHR = window.XMLHttpRequest;
+  window.XMLHttpRequest = function() {
+    const xhr = new originalXHR();
+    const originalOpen = xhr.open;
+    
+    xhr.open = function() {
+      const url = arguments[1];
+      // Skip requests to analytics/tracking endpoints that might cause CORS issues
+      if (typeof url === 'string' && (
+          url.includes('/cdn-cgi/rum') || 
+          url.includes('dash.immoupload.com')
+      )) {
+        // Cancel the request by pointing it to a data URL
+        arguments[1] = 'data:text/plain,{}';
+      }
+      return originalOpen.apply(this, arguments);
+    };
+    
+    return xhr;
+  };
+  
   // Widget als initialisiert markieren
   window.ImmoWidget.initialized = true;
 })();
