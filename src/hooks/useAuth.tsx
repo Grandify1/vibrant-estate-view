@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { toast } from "sonner";
@@ -313,7 +314,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Session beim Erstellen des Unternehmens:", session?.user.id);
       
       // Try direct SQL approach with RPC call - safer with RLS
-      const { data: companyData: rpcResult, error: rpcError } = await supabase.rpc('create_company', {
+      // Fixed: remove the double alias "data: companyData:" to just "data: rpcResult"
+      const { data: rpcResult, error: rpcError } = await supabase.rpc('create_company', {
         name_param: companyData.name,
         address_param: companyData.address || null,
         phone_param: companyData.phone || null,
