@@ -3,11 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import PropertyGrid from '@/components/embed/PropertyGrid';
 import { Property } from '@/types/property';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import PropertyDetail from './PropertyDetail';
 
 export default function Embed() {
   const [searchParams] = useSearchParams();
   const companyId = searchParams.get('companyId');
+  const navigate = useNavigate();
+  const location = useLocation();
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,12 +73,24 @@ export default function Embed() {
       }
     };
 
-    fetchProperties();
-  }, [companyId]);
+    // Nur Immobilien laden, wenn wir auf der Hauptseite sind
+    if (location.pathname === '/embed') {
+      fetchProperties();
+    }
+  }, [companyId, location.pathname]);
+
+  // Bestimmen Sie, ob die aktuelle Route die Hauptembed-Seite oder eine Detailseite ist
+  const isMainPage = location.pathname === '/embed';
 
   return (
     <div className="w-full bg-white py-2">
-      <PropertyGrid properties={properties} loading={loading} error={error} />
+      {isMainPage ? (
+        <PropertyGrid properties={properties} loading={loading} error={error} />
+      ) : (
+        <Routes>
+          <Route path="/property/:propertyId" element={<PropertyDetail />} />
+        </Routes>
+      )}
     </div>
   );
 }

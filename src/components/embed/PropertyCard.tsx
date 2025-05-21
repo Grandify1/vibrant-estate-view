@@ -5,7 +5,7 @@ import { formatPrice } from '@/utils/formatUtils';
 
 interface PropertyCardProps {
   property: Property;
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, onClick }) => {

@@ -88,6 +88,29 @@
       
       // Periodisch die Höhe anpassen
       setInterval(() => adjustIframeHeight(iframe), 1000);
+      
+      // Links innerhalb des iframes abfangen und in neuem Tab öffnen
+      try {
+        const iframeContent = iframe.contentWindow;
+        
+        if (iframeContent) {
+          iframeContent.addEventListener('click', function(e) {
+            // Wenn es ein Link-Element ist
+            if (e.target.closest('a')) {
+              const link = e.target.closest('a');
+              const href = link.getAttribute('href');
+              
+              // Wenn es ein interner Property-Link ist
+              if (href && href.startsWith('/property/')) {
+                e.preventDefault();
+                window.open(baseUrl + href, '_blank');
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.log('Konnte keine Click-Handler im iframe registrieren (CORS)');
+      }
     });
   }
   
