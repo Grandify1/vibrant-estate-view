@@ -1,3 +1,4 @@
+
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { Property, initialProperty } from "../types/property";
@@ -59,6 +60,58 @@ const fromSupabaseProperty = (dbProperty: any): Property => {
     createdAt: dbProperty.created_at,
     updatedAt: dbProperty.updated_at
   };
+};
+
+// Helper function to upload an image to Supabase Storage
+const uploadImageToStorage = async (imageBlob: string, propertyId: string, imageId: string): Promise<string> => {
+  try {
+    // Extract the blob URL
+    if (!imageBlob.startsWith('blob:')) {
+      // If not a blob URL, return as is (might be already a valid URL)
+      if (imageBlob.startsWith('http')) {
+        return imageBlob;
+      }
+      // If neither blob nor http, return empty which will trigger fallback
+      console.error("Invalid image URL format:", imageBlob);
+      return "";
+    }
+    
+    // Convert blob URL to actual blob
+    console.log(`Fetching blob data for ${imageBlob}`);
+    const response = await fetch(imageBlob);
+    if (!response.ok) {
+      console.error("Failed to fetch blob:", response.statusText);
+      return "";
+    }
+    
+    const blob = await response.blob();
+    
+    // Generate a unique file path
+    const filePath = `${propertyId}/${imageId}.${blob.type.split('/')[1] || 'jpg'}`;
+    console.log(`Uploading image to ${filePath}`);
+    
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('prop-images')
+      .upload(filePath, blob, { upsert: true });
+    
+    if (error) {
+      console.error("Error uploading image to storage:", error);
+      return "";
+    }
+    
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('prop-images')
+      .getPublicUrl(filePath);
+    
+    console.log("Image uploaded successfully, public URL:", publicUrlData.publicUrl);
+    return publicUrlData.publicUrl;
+    
+  } catch (error) {
+    console.error("Error in uploadImageToStorage:", error);
+    return "";
+  }
 };
 
 export function PropertiesProvider({ children }: { children: ReactNode }) {
@@ -157,8 +210,43 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
         throw new Error("Keine Internetverbindung");
       }
       
+      // Generate a temporary ID for file uploads
+      const tempId = `temp-${Date.now()}`;
+      
+      // Process images - upload blobs to storage
+      const processedImages = await Promise.all(
+        (propertyData.images || []).map(async (img, index) => {
+          const publicUrl = await uploadImageToStorage(
+            img.url, 
+            tempId, 
+            img.id || `img-${index}`
+          );
+          
+          return {
+            ...img,
+            url: publicUrl || img.url // fallback to original if upload failed
+          };
+        })
+      );
+      
+      // Process floor plans - upload blobs to storage
+      const processedFloorPlans = await Promise.all(
+        (propertyData.floorPlans || []).map(async (plan, index) => {
+          const publicUrl = await uploadImageToStorage(
+            plan.url, 
+            tempId, 
+            plan.id || `plan-${index}`
+          );
+          
+          return {
+            ...plan,
+            url: publicUrl || plan.url // fallback to original if upload failed
+          };
+        })
+      );
+      
       // Ensure at least one image is marked as featured
-      const images = [...(propertyData.images || [])];
+      const images = [...processedImages];
       if (images.length > 0 && !images.some(img => img.isFeatured)) {
         images[0].isFeatured = true;
       }
@@ -168,10 +256,12 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       const propertyToAdd = {
         ...propertyData,
         status,
-        images
+        images,
+        floorPlans: processedFloorPlans
       };
       
       console.log("Adding new property with status:", propertyToAdd.status);
+      console.log("Processed images:", propertyToAdd.images);
       
       // Convert to Supabase format
       const supabaseData = toSupabaseProperty(propertyToAdd);
@@ -230,6 +320,126 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       
       console.log("New property added to Supabase:", data);
       
+      // After property is saved successfully, update image paths with the real property ID
+      if (processedImages.length > 0 || processedFloorPlans.length > 0) {
+        // Update images with real property ID
+        const updatedImages = await Promise.all(
+          processedImages.map(async (img, index) => {
+            // Only process blob URLs that were temporarily uploaded
+            if (img.url && img.url.includes(`${tempId}/`)) {
+              // Extract the file name from the temp URL
+              const urlParts = img.url.split('/');
+              const fileName = urlParts[urlParts.length - 1];
+              
+              // Create a new path with the real property ID
+              const newFilePath = `${data.id}/${img.id || `img-${index}`}.${fileName.split('.')[1] || 'jpg'}`;
+              
+              try {
+                // Copy the file to the new location
+                const { data: copyData, error: copyError } = await supabase.storage
+                  .from('prop-images')
+                  .copy(`${tempId}/${fileName}`, newFilePath);
+                
+                if (copyError) {
+                  console.error("Error copying image to permanent location:", copyError);
+                  return img;
+                }
+                
+                // Get public URL for the new location
+                const { data: publicUrlData } = supabase.storage
+                  .from('prop-images')
+                  .getPublicUrl(newFilePath);
+                
+                console.log("Image copied to permanent location:", publicUrlData.publicUrl);
+                
+                // Delete the temporary file
+                await supabase.storage
+                  .from('prop-images')
+                  .remove([`${tempId}/${fileName}`]);
+                
+                return {
+                  ...img,
+                  url: publicUrlData.publicUrl
+                };
+              } catch (error) {
+                console.error("Error updating image path:", error);
+                return img;
+              }
+            }
+            
+            return img;
+          })
+        );
+        
+        // Update floor plans with real property ID
+        const updatedFloorPlans = await Promise.all(
+          processedFloorPlans.map(async (plan, index) => {
+            // Only process blob URLs that were temporarily uploaded
+            if (plan.url && plan.url.includes(`${tempId}/`)) {
+              // Extract the file name from the temp URL
+              const urlParts = plan.url.split('/');
+              const fileName = urlParts[urlParts.length - 1];
+              
+              // Create a new path with the real property ID
+              const newFilePath = `${data.id}/${plan.id || `plan-${index}`}.${fileName.split('.')[1] || 'jpg'}`;
+              
+              try {
+                // Copy the file to the new location
+                const { data: copyData, error: copyError } = await supabase.storage
+                  .from('prop-images')
+                  .copy(`${tempId}/${fileName}`, newFilePath);
+                
+                if (copyError) {
+                  console.error("Error copying floor plan to permanent location:", copyError);
+                  return plan;
+                }
+                
+                // Get public URL for the new location
+                const { data: publicUrlData } = supabase.storage
+                  .from('prop-images')
+                  .getPublicUrl(newFilePath);
+                
+                console.log("Floor plan copied to permanent location:", publicUrlData.publicUrl);
+                
+                // Delete the temporary file
+                await supabase.storage
+                  .from('prop-images')
+                  .remove([`${tempId}/${fileName}`]);
+                
+                return {
+                  ...plan,
+                  url: publicUrlData.publicUrl
+                };
+              } catch (error) {
+                console.error("Error updating floor plan path:", error);
+                return plan;
+              }
+            }
+            
+            return plan;
+          })
+        );
+        
+        // Update the property with the permanent image URLs
+        const updateData = {
+          images: updatedImages as unknown as Json,
+          floor_plans: updatedFloorPlans as unknown as Json
+        };
+        
+        const { error: updateError } = await supabase
+          .from('properties')
+          .update(updateData)
+          .eq('id', data.id);
+        
+        if (updateError) {
+          console.error("Error updating image URLs:", updateError);
+        } else {
+          // Update our local data
+          data.images = updatedImages;
+          data.floor_plans = updatedFloorPlans;
+        }
+      }
+      
       const newProperty = fromSupabaseProperty(data);
       setProperties(prev => [newProperty, ...prev]);
       toast.success("Immobilie erfolgreich erstellt");
@@ -261,27 +471,80 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
         throw new Error("Keine Internetverbindung");
       }
       
+      // Process images if they've changed
+      let processedImages = propertyUpdate.images;
+      if (propertyUpdate.images) {
+        processedImages = await Promise.all(
+          propertyUpdate.images.map(async (img, index) => {
+            // Only process blob URLs
+            if (img.url && img.url.startsWith('blob:')) {
+              const publicUrl = await uploadImageToStorage(
+                img.url, 
+                id, 
+                img.id || `img-${index}`
+              );
+              
+              return {
+                ...img,
+                url: publicUrl || img.url // fallback to original if upload failed
+              };
+            }
+            return img;
+          })
+        );
+      }
+      
+      // Process floor plans if they've changed
+      let processedFloorPlans = propertyUpdate.floorPlans;
+      if (propertyUpdate.floorPlans) {
+        processedFloorPlans = await Promise.all(
+          propertyUpdate.floorPlans.map(async (plan, index) => {
+            // Only process blob URLs
+            if (plan.url && plan.url.startsWith('blob:')) {
+              const publicUrl = await uploadImageToStorage(
+                plan.url, 
+                id, 
+                plan.id || `plan-${index}`
+              );
+              
+              return {
+                ...plan,
+                url: publicUrl || plan.url // fallback to original if upload failed
+              };
+            }
+            return plan;
+          })
+        );
+      }
+      
       // Ensure at least one image is marked as featured if images are being updated
-      if (propertyUpdate.images && propertyUpdate.images.length > 0) {
-        if (!propertyUpdate.images.some(img => img.isFeatured)) {
-          propertyUpdate.images[0].isFeatured = true;
+      if (processedImages && processedImages.length > 0) {
+        if (!processedImages.some(img => img.isFeatured)) {
+          processedImages[0].isFeatured = true;
         }
       }
+      
+      // Build the update object with processed images and floor plans
+      const updatedPropertyData = {
+        ...propertyUpdate,
+        images: processedImages,
+        floorPlans: processedFloorPlans
+      };
       
       // Convert to Supabase format - only include fields that exist in the Supabase table
       const supabaseUpdate: any = {};
       
-      if (propertyUpdate.title !== undefined) supabaseUpdate.title = propertyUpdate.title;
-      if (propertyUpdate.address !== undefined) supabaseUpdate.address = propertyUpdate.address;
-      if (propertyUpdate.status !== undefined) supabaseUpdate.status = propertyUpdate.status;
-      if (propertyUpdate.highlights !== undefined) supabaseUpdate.highlights = propertyUpdate.highlights as unknown as Json;
-      if (propertyUpdate.images !== undefined) supabaseUpdate.images = propertyUpdate.images as unknown as Json;
-      if (propertyUpdate.floorPlans !== undefined) supabaseUpdate.floor_plans = propertyUpdate.floorPlans as unknown as Json;
-      if (propertyUpdate.details !== undefined) supabaseUpdate.details = propertyUpdate.details as unknown as Json;
-      if (propertyUpdate.energy !== undefined) supabaseUpdate.energy = propertyUpdate.energy as unknown as Json;
-      if (propertyUpdate.description !== undefined) supabaseUpdate.description = propertyUpdate.description;
-      if (propertyUpdate.amenities !== undefined) supabaseUpdate.amenities = propertyUpdate.amenities;
-      if (propertyUpdate.location !== undefined) supabaseUpdate.location = propertyUpdate.location;
+      if (updatedPropertyData.title !== undefined) supabaseUpdate.title = updatedPropertyData.title;
+      if (updatedPropertyData.address !== undefined) supabaseUpdate.address = updatedPropertyData.address;
+      if (updatedPropertyData.status !== undefined) supabaseUpdate.status = updatedPropertyData.status;
+      if (updatedPropertyData.highlights !== undefined) supabaseUpdate.highlights = updatedPropertyData.highlights as unknown as Json;
+      if (updatedPropertyData.images !== undefined) supabaseUpdate.images = updatedPropertyData.images as unknown as Json;
+      if (updatedPropertyData.floorPlans !== undefined) supabaseUpdate.floor_plans = updatedPropertyData.floorPlans as unknown as Json;
+      if (updatedPropertyData.details !== undefined) supabaseUpdate.details = updatedPropertyData.details as unknown as Json;
+      if (updatedPropertyData.energy !== undefined) supabaseUpdate.energy = updatedPropertyData.energy as unknown as Json;
+      if (updatedPropertyData.description !== undefined) supabaseUpdate.description = updatedPropertyData.description;
+      if (updatedPropertyData.amenities !== undefined) supabaseUpdate.amenities = updatedPropertyData.amenities;
+      if (updatedPropertyData.location !== undefined) supabaseUpdate.location = updatedPropertyData.location;
       
       console.log("Updating property:", id, "with update:", supabaseUpdate);
       

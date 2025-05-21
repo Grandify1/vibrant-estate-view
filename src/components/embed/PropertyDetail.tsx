@@ -67,6 +67,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   };
   
   const images = getImages();
+  console.log("Detail view images:", images);
   const currentImage = images[activeImageIndex]?.url || getFeaturedImage();
   
   const renderDetailItem = (label: string, value: string | undefined) => {

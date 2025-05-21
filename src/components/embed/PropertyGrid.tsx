@@ -26,7 +26,7 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
     
     // Handle blob URLs and empty URLs
     if (!imageUrl || imageUrl.startsWith('blob:')) {
-      console.log('Invalid image URL detected, using placeholder');
+      console.log('Invalid image URL detected for property', property.id, ', using placeholder');
       return 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop';
     }
     
@@ -56,6 +56,12 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
   }
   
   console.log("Properties in grid:", properties);
+  properties.forEach(property => {
+    console.log(`Property ${property.id} images:`, property.images);
+    property.images.forEach(img => {
+      console.log(`Image URL: ${img.url}, is blob: ${img.url?.startsWith('blob:')}, isFeatured: ${img.isFeatured}`);
+    });
+  });
   
   return (
     <div className="w-full">
@@ -92,7 +98,7 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
           {properties.map((property) => (
             <Card key={property.id} className="property-card overflow-hidden">
               <div onClick={() => onPropertyClick(property)} className="cursor-pointer">
-                <div className="aspect-property relative">
+                <div className="aspect-property relative h-48">
                   <img 
                     src={getMainImage(property)} 
                     alt={property.title} 

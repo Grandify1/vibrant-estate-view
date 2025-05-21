@@ -128,6 +128,7 @@ const EmbedPageContent = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [activeProperties, setActiveProperties] = useState<Property[]>([]);
   const [isOffline, setIsOffline] = useState(false);
+  const [useDemoProperties, setUseDemoProperties] = useState(false);
   
   // Check network status
   useEffect(() => {
@@ -180,13 +181,23 @@ const EmbedPageContent = () => {
     console.log("Active properties:", active);
     console.log("All properties:", properties);
     
-    // Wenn keine aktiven Properties gefunden wurden und nicht mehr im Ladezustand sind, verwenden wir die Demo-Properties
-    // IMPORTANT: We'll check property.images.length to NOT use demo properties if real ones exist without images
-    const shouldUseDemoProperties = 
-      !loading && 
-      (active.length === 0 || (active.length > 0 && active.every(p => !p.images || p.images.length === 0)));
+    // Check if any active property has valid images (not blob urls)
+    const hasValidImages = active.some(p => 
+      p.images && 
+      p.images.length > 0 && 
+      p.images.some(img => img.url && !img.url.startsWith('blob:'))
+    );
     
-    const propertiesToDisplay = loading ? [] : (shouldUseDemoProperties ? demoProperties : active);
+    console.log("Has valid images:", hasValidImages);
+    
+    // Use demo properties only when absolutely necessary
+    const needsDemoProperties = 
+      !loading && 
+      (active.length === 0 || !hasValidImages);
+    
+    setUseDemoProperties(needsDemoProperties);
+    
+    const propertiesToDisplay = loading ? [] : (needsDemoProperties ? demoProperties : active);
     console.log("Properties to display:", propertiesToDisplay);
     
     setActiveProperties(propertiesToDisplay);
@@ -238,10 +249,19 @@ const EmbedPageContent = () => {
           <p>Entweder wurden noch keine Immobilien hinzugefügt oder alle sind als verkauft/archiviert markiert.</p>
         </div>
       ) : (
-        <PropertyGrid 
-          properties={activeProperties} 
-          onPropertyClick={handlePropertyClick}
-        />
+        <>
+          {useDemoProperties && (
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-700">
+                <strong>Hinweis:</strong> Es werden Demo-Immobilien angezeigt, da keine echten Immobilien mit gültigen Bildern gefunden wurden.
+              </p>
+            </div>
+          )}
+          <PropertyGrid 
+            properties={activeProperties} 
+            onPropertyClick={handlePropertyClick}
+          />
+        </>
       )}
       
       <PropertyDetail 
