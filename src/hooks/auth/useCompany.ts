@@ -54,9 +54,9 @@ export const useCompany = (user: AuthUser | null) => {
         return false;
       }
       
-      console.log("Creating company for user:", user.id);
+      console.log("Creating company with user ID:", user.id);
       
-      // Insert company data
+      // Insert company data - this should be allowed by our new RLS policy
       const { data: newCompany, error } = await supabase
         .from('companies')
         .insert({
@@ -76,43 +76,49 @@ export const useCompany = (user: AuthUser | null) => {
       
       console.log("Company created successfully:", newCompany.id);
       
-      // Check if profile exists first
-      const { data: profileExists } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
-        
-      if (profileExists) {
-        // Update existing profile with company_id
-        console.log("Updating existing profile with company ID");
-        const { error: updateError } = await supabase
+      // Now handle the profile update/creation
+      try {
+        // Check if profile exists first
+        const { data: profileExists } = await supabase
           .from('profiles')
-          .update({ company_id: newCompany.id })
-          .eq('id', user.id);
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
           
-        if (updateError) {
-          console.error("Fehler beim Aktualisieren des Profils:", updateError);
-          toast.error("Unternehmen erstellt, aber Fehler bei der Profilaktualisierung");
-          return false;
+        if (profileExists) {
+          // Update existing profile with company_id
+          console.log("Updating existing profile with company ID");
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ company_id: newCompany.id })
+            .eq('id', user.id);
+            
+          if (updateError) {
+            console.error("Fehler beim Aktualisieren des Profils:", updateError);
+            toast.error("Unternehmen erstellt, aber Fehler bei der Profilaktualisierung");
+            // Continue anyway as the company was created
+          }
+        } else {
+          // Create new profile with company_id
+          console.log("Creating new profile with company ID");
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              company_id: newCompany.id,
+              first_name: user.first_name || null,
+              last_name: user.last_name || null
+            });
+            
+          if (insertError) {
+            console.error("Fehler beim Erstellen des Profils:", insertError);
+            toast.error("Unternehmen erstellt, aber Fehler beim Erstellen des Profils");
+            // Continue anyway as the company was created
+          }
         }
-      } else {
-        // Create new profile with company_id
-        console.log("Creating new profile with company ID");
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            company_id: newCompany.id,
-            first_name: user.first_name || null,
-            last_name: user.last_name || null
-          });
-          
-        if (insertError) {
-          console.error("Fehler beim Erstellen des Profils:", insertError);
-          toast.error("Unternehmen erstellt, aber Fehler beim Erstellen des Profils");
-          return false;
-        }
+      } catch (profileError) {
+        console.error("Fehler bei der Profilverwaltung:", profileError);
+        // Continue anyway as the company was created
       }
       
       // Update local state
