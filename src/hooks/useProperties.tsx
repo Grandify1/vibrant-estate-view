@@ -24,8 +24,15 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
   const [properties, setProperties] = useLocalStorage<Property[]>("properties", []);
   
   const addProperty = (propertyData: Omit<Property, "id" | "createdAt" | "updatedAt">) => {
+    // Ensure at least one image is marked as featured
+    const images = [...propertyData.images];
+    if (images.length > 0 && !images.some(img => img.isFeatured)) {
+      images[0].isFeatured = true;
+    }
+    
     const newProperty: Property = {
       ...propertyData,
+      images: images,
       id: generateId(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -37,6 +44,13 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
   };
   
   const updateProperty = (id: string, propertyUpdate: Partial<Property>) => {
+    // Ensure at least one image is marked as featured if images are being updated
+    if (propertyUpdate.images && propertyUpdate.images.length > 0) {
+      if (!propertyUpdate.images.some(img => img.isFeatured)) {
+        propertyUpdate.images[0].isFeatured = true;
+      }
+    }
+    
     setProperties(prev => 
       prev.map(property => 
         property.id === id 

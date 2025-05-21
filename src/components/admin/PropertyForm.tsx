@@ -41,13 +41,26 @@ export default function PropertyForm({ property = initialProperty, onSubmit, onC
     
     if (name.includes(".")) {
       const [section, field] = name.split(".");
-      setFormData(prev => ({
-        ...prev,
-        [section]: {
-          ...prev[section as keyof typeof prev],
-          [field]: value
-        }
-      }));
+      setFormData(prev => {
+        if (section === "details") {
+          return {
+            ...prev,
+            details: {
+              ...prev.details,
+              [field]: value
+            }
+          };
+        } else if (section === "energy") {
+          return {
+            ...prev,
+            energy: {
+              ...prev.energy,
+              [field]: value
+            }
+          };
+        } 
+        return prev;
+      });
     } else {
       setFormData(prev => ({
         ...prev,
@@ -59,13 +72,23 @@ export default function PropertyForm({ property = initialProperty, onSubmit, onC
   const handleSelectChange = (field: string, value: string) => {
     if (field.includes(".")) {
       const [section, subField] = field.split(".");
-      setFormData(prev => ({
-        ...prev,
-        [section]: {
-          ...prev[section as keyof typeof prev],
-          [subField]: value
-        }
-      }));
+      if (section === "details") {
+        setFormData(prev => ({
+          ...prev,
+          details: {
+            ...prev.details,
+            [subField]: value
+          }
+        }));
+      } else if (section === "energy") {
+        setFormData(prev => ({
+          ...prev,
+          energy: {
+            ...prev.energy,
+            [subField]: value
+          }
+        }));
+      }
     } else {
       setFormData(prev => ({
         ...prev,
@@ -76,23 +99,25 @@ export default function PropertyForm({ property = initialProperty, onSubmit, onC
   
   const handleSwitchChange = (field: string, checked: boolean) => {
     const [section, subField] = field.split(".");
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section as keyof typeof prev],
-        [subField]: checked
-      }
-    }));
+    if (section === "energy") {
+      setFormData(prev => ({
+        ...prev,
+        energy: {
+          ...prev.energy,
+          [subField]: checked
+        }
+      }));
+    }
   };
   
-  const handleImageChange = (images: any[]) => {
+  const handleImageChange = (images: Array<any>) => {
     setFormData(prev => ({
       ...prev,
       images
     }));
   };
   
-  const handleFloorPlanChange = (floorPlans: any[]) => {
+  const handleFloorPlanChange = (floorPlans: Array<any>) => {
     setFormData(prev => ({
       ...prev,
       floorPlans
