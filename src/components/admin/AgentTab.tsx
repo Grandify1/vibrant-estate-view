@@ -1,102 +1,87 @@
 
 import React, { useState } from 'react';
-import AgentList from '@/components/admin/AgentList';
-import AgentForm from '@/components/admin/AgentForm';
-import { Button } from '@/components/ui/button';
-import { useAgents } from '@/hooks/useAgents';
+import { Button } from "@/components/ui/button";
 import { Agent } from '@/types/agent';
-
-enum AgentView {
-  LIST = 'list',
-  CREATE = 'create',
-  EDIT = 'edit',
-}
+import { useAgents } from '@/hooks/useAgents';
+import AgentList from './AgentList';
+import AgentForm from './AgentForm';
+import { useAuth } from '@/hooks/useAuth';
 
 const AgentTab: React.FC = () => {
-  const [view, setView] = useState<AgentView>(AgentView.LIST);
-  const [editAgentId, setEditAgentId] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<Agent | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { addAgent, updateAgent, deleteAgent, getAgent } = useAgents();
+  const { agents, addAgent, updateAgent, deleteAgent } = useAgents();
+  const { company } = useAuth();
   
-  const handleCreateNew = () => {
-    setView(AgentView.CREATE);
+  const handleCreateClick = () => {
+    setIsCreating(true);
+    setEditingAgent(undefined);
   };
   
-  const handleEdit = (id: string) => {
-    setEditAgentId(id);
-    setView(AgentView.EDIT);
+  const handleEditClick = (agent: Agent) => {
+    setIsCreating(false);
+    setEditingAgent(agent);
   };
   
-  const handleDelete = async (id: string) => {
-    await deleteAgent(id);
+  const handleFormCancel = () => {
+    setIsCreating(false);
+    setEditingAgent(undefined);
   };
   
-  const handleSubmit = async (data: Omit<Agent, 'id' | 'company_id' | 'created_at' | 'updated_at'>) => {
+  const handleSubmit = async (data: Omit<Agent, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       setIsSubmitting(true);
       
-      if (view === AgentView.CREATE) {
-        await addAgent(data);
-      } else if (view === AgentView.EDIT && editAgentId) {
-        await updateAgent(editAgentId, data);
+      if (isCreating) {
+        // Ensure company_id is included
+        await addAgent({
+          ...data,
+          company_id: company?.id || ''
+        });
+      } else if (editingAgent) {
+        await updateAgent(editingAgent.id, data);
       }
       
-      setView(AgentView.LIST);
-      setEditAgentId(null);
+      setIsCreating(false);
+      setEditingAgent(undefined);
     } catch (error) {
-      console.error('Error submitting agent:', error);
+      console.error("Error submitting agent:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
   
-  const handleCancel = () => {
-    setView(AgentView.LIST);
-    setEditAgentId(null);
-  };
-  
-  const getAgentForEdit = () => {
-    if (!editAgentId) return undefined;
-    return getAgent(editAgentId);
+  const handleDelete = async (id: string) => {
+    if (confirm("Sind Sie sicher, dass Sie diesen Makler löschen möchten?")) {
+      await deleteAgent(id);
+    }
   };
   
   return (
-    <div>
-      {view === AgentView.LIST && (
+    <div className="space-y-6">
+      {(isCreating || editingAgent) ? (
+        <AgentForm 
+          agent={editingAgent}
+          onSubmit={handleSubmit}
+          onCancel={handleFormCancel}
+          isEditing={!!editingAgent}
+          isSubmitting={isSubmitting}
+        />
+      ) : (
         <>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Makler</h2>
-            <Button onClick={handleCreateNew}>+ Neuer Makler</Button>
-          </div>
-          <AgentList 
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        </>
-      )}
-      
-      {(view === AgentView.CREATE || view === AgentView.EDIT) && (
-        <>
-          <div className="mb-6 flex items-center">
-            <Button 
-              variant="ghost" 
-              onClick={handleCancel}
-              className="mr-4"
-            >
-              ← Zurück zur Übersicht
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">Makler verwalten</h2>
+            <Button onClick={handleCreateClick}>
+              Neuen Makler erstellen
             </Button>
-            <h2 className="text-2xl font-bold">
-              {view === AgentView.CREATE ? 'Neuen Makler erstellen' : 'Makler bearbeiten'}
-            </h2>
           </div>
           
-          <AgentForm 
-            agent={getAgentForEdit()}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            isEditing={view === AgentView.EDIT}
-            isSubmitting={isSubmitting}
+          <AgentList 
+            agents={agents}
+            onEdit={handleEditClick}
+            onDelete={handleDelete}
           />
         </>
       )}

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Agent, initialAgent } from '@/types/agent';
+import { Agent } from '@/types/agent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -67,7 +67,7 @@ const AgentForm: React.FC<AgentFormProps> = ({
                 
                 <ImageUpload 
                   initialImage={imageUrl || undefined}
-                  onImageChange={handleImageUpload}
+                  onImageChange={(url) => handleImageUpload(url as string)}
                   maxHeight={400}
                 />
               </div>
