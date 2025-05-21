@@ -24,8 +24,9 @@ export async function compressImage(
   const url = URL.createObjectURL(blob);
   
   // Wait for image to load
-  await new Promise((resolve) => {
+  await new Promise((resolve, reject) => {
     img.onload = resolve;
+    img.onerror = reject;
     img.src = url;
   });
   
@@ -112,6 +113,10 @@ export async function compressImage(
  * Detects if browser supports AVIF format
  */
 function supportsAvif(): boolean {
-  const canvas = document.createElement('canvas');
-  return canvas.toDataURL('image/avif').indexOf('data:image/avif') === 0;
+  try {
+    const canvas = document.createElement('canvas');
+    return canvas.toDataURL('image/avif').indexOf('data:image/avif') === 0;
+  } catch (error) {
+    return false;
+  }
 }

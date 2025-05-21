@@ -198,7 +198,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
               </div>
             </div>
             
-            {property.highlights.length > 0 && (
+            {property.highlights && property.highlights.length > 0 && (
               <div className="mt-4">
                 <h3 className="font-medium">Highlights</h3>
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -267,7 +267,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
               {renderDetailItem("Hausgeld", property.details.maintenanceFee ? `${property.details.maintenanceFee} €` : undefined)}
             </div>
             
-            {property.energy.certificateAvailable && (
+            {property.energy && property.energy.certificateAvailable && (
               <>
                 <Separator className="my-6" />
                 <div>
@@ -284,7 +284,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
               </>
             )}
             
-            {property.floorPlans.length > 0 && (
+            {property.floorPlans && property.floorPlans.length > 0 && (
               <>
                 <Separator className="my-6" />
                 <div>

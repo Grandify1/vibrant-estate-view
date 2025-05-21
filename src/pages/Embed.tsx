@@ -38,38 +38,20 @@ const EmbedPageContent = () => {
   
   // Update active properties whenever the properties list changes
   useEffect(() => {
-    // Enhanced debugging
-    console.log("Raw properties array:", properties);
-    console.log("Properties length:", properties.length);
-    console.log("Loading state:", loading);
-    
-    // Check if images have valid URLs (not blob urls)
-    properties.forEach((property, index) => {
-      console.log(`Property ${index} (${property.id}) images:`, property.images);
-      if (property.images && property.images.length > 0) {
-        property.images.forEach((img, i) => {
-          console.log(`Image ${i} URL: ${img.url}, isFeatured: ${img.isFeatured}`);
-        });
-      } else {
-        console.log(`Property ${index} has no images.`);
-      }
-    });
-    
-    // Filter for only active properties with additional logging
-    const active = properties.filter(property => {
-      console.log(`Property ${property.id} status: ${property.status}`);
-      return property.status === 'active';
-    });
-    
-    console.log("Active properties:", active);
-    
-    // Set active properties from filtered list, never show demo properties
-    setActiveProperties(loading ? [] : active);
+    if (!loading && properties && properties.length > 0) {
+      // Filter for only active properties with additional logging
+      const active = properties.filter(property => property.status === 'active');
+      console.log("Active properties count:", active.length);
+      
+      // Set active properties from filtered list
+      setActiveProperties(active);
+    } else {
+      setActiveProperties([]);
+    }
   }, [properties, loading]);
   
   const handlePropertyClick = (property: Property) => {
-    console.log("Property clicked:", property);
-    console.log("Property images:", property.images);
+    console.log("Property clicked:", property.id, property.title);
     setSelectedProperty(property);
     setDetailOpen(true);
   };
@@ -119,11 +101,13 @@ const EmbedPageContent = () => {
         />
       )}
       
-      <PropertyDetail 
-        property={selectedProperty}
-        isOpen={detailOpen}
-        onClose={() => setDetailOpen(false)}
-      />
+      {selectedProperty && (
+        <PropertyDetail 
+          property={selectedProperty}
+          isOpen={detailOpen}
+          onClose={() => setDetailOpen(false)}
+        />
+      )}
     </div>
   );
 };
