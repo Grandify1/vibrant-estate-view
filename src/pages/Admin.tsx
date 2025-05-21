@@ -3,17 +3,15 @@ import React, { useState, useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import LoginForm from "@/components/admin/LoginForm";
-import SetPasswordForm from "@/components/admin/SetPasswordForm";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, AlertCircle } from "lucide-react";
 import PropertyListWrapper from "@/components/admin/PropertyListWrapper";
 import AgentTab from "@/components/admin/AgentTab";
 import EmbedCodeTab from "@/components/admin/EmbedCodeTab";
-import AdminContent from "@/components/admin/AdminContent";
 import SettingsTab from "@/components/admin/SettingsTab";
+import { toast } from "sonner";
 
-// Property Tab Komponente hier erstellen
+// Property Tab Komponente 
 const PropertyTab = () => {
   const { company } = useAuth();
   
@@ -39,11 +37,31 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("properties");
   const navigate = useNavigate();
   const [showError, setShowError] = useState(false);
+  const [authStatus, setAuthStatus] = useState<string>("Authentifizierung wird geprüft...");
   
-  // Wenn die Authentifizierung länger als erwartet dauert, Fehler anzeigen
+  // Verbesserte Authentifizierungs-Überprüfung mit Logs
+  useEffect(() => {
+    console.log("Admin: Auth Status:", { isAuthenticated, loadingAuth, user });
+    
+    if (!loadingAuth) {
+      if (!isAuthenticated) {
+        console.log("Admin: Nicht authentifiziert, leite zur Auth-Seite weiter");
+        setAuthStatus("Nicht authentifiziert");
+      } else if (isAuthenticated && user && !user.company_id) {
+        console.log("Admin: Authentifiziert aber kein Unternehmen, leite zur Unternehmenseinrichtung weiter");
+        setAuthStatus("Kein Unternehmen");
+      } else {
+        console.log("Admin: Authentifiziert mit Unternehmen", user?.company_id);
+        setAuthStatus("Authentifiziert");
+      }
+    }
+  }, [isAuthenticated, loadingAuth, user]);
+  
+  // Verbesserte Fehlerbehandlung mit Timeout
   useEffect(() => {
     const timer = setTimeout(() => {
       if (loadingAuth) {
+        console.log("Admin: Authentifizierung dauert zu lange, zeige Fehler");
         setShowError(true);
       }
     }, 5000); // 5 Sekunden warten, bevor ein Fehler angezeigt wird
@@ -51,13 +69,14 @@ export default function Admin() {
     return () => clearTimeout(timer);
   }, [loadingAuth]);
   
-  // Wenn die Authentifizierung noch lädt, zeige einen Ladebildschirm
+  // Wenn die Authentifizierung noch lädt, zeige einen verbesserten Ladebildschirm
   if (loadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" />
-          <p className="mt-4 text-lg font-medium text-gray-700">Wird geladen...</p>
+          <p className="mt-4 text-lg font-medium text-gray-700">Authentifizierung...</p>
+          <p className="mt-2 text-sm text-gray-500">{authStatus}</p>
           
           {showError && (
             <div className="mt-6 p-4 border border-red-300 rounded bg-red-50 text-red-800">
@@ -68,7 +87,10 @@ export default function Admin() {
               <p className="mt-2 text-sm">Versuchen Sie, die Seite zu aktualisieren oder sich erneut anzumelden.</p>
               <button 
                 className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                onClick={() => navigate('/auth')}
+                onClick={() => {
+                  toast.info("Weiterleitung zur Anmeldeseite...");
+                  navigate('/auth');
+                }}
               >
                 Zur Anmeldeseite
               </button>
@@ -81,11 +103,13 @@ export default function Admin() {
   
   // Wenn der Nutzer nicht eingeloggt ist, zur Auth-Seite weiterleiten
   if (!isAuthenticated) {
+    console.log("Admin: Weiterleitung zur Auth-Seite");
     return <Navigate to="/auth" />;
   }
   
   // Wenn der Nutzer noch kein Unternehmen hat, zur Unternehmenseinrichtung weiterleiten
   if (isAuthenticated && user && !user.company_id) {
+    console.log("Admin: Weiterleitung zur Unternehmenseinrichtung");
     return <Navigate to="/company-setup" />;
   }
   
@@ -123,4 +147,4 @@ export default function Admin() {
       </div>
     </div>
   );
-};
+}

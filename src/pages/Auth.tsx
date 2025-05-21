@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const AuthPage: React.FC = () => {
   const navigate = useNavigate();
@@ -26,17 +28,32 @@ const AuthPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
   
-  // Weiterleitung, wenn bereits authentifiziert
+  // Auth-Status für Debugging
+  const [authStatus, setAuthStatus] = useState<string>("Prüfe Authentifizierung...");
+  
+  // Verbesserte Weiterleitung mit Logs
   useEffect(() => {
-    if (isAuthenticated && !loadingAuth) {
-      navigate('/admin');
+    console.log("Auth: Auth Status:", { isAuthenticated, loadingAuth, user });
+    
+    if (!loadingAuth) {
+      if (isAuthenticated) {
+        console.log("Auth: Authentifiziert, leite zur Admin-Seite weiter");
+        setAuthStatus("Authentifiziert, leite weiter...");
+        navigate('/admin');
+      } else {
+        console.log("Auth: Nicht authentifiziert");
+        setAuthStatus("Nicht authentifiziert");
+      }
     }
-  }, [isAuthenticated, loadingAuth, navigate]);
+  }, [isAuthenticated, loadingAuth, navigate, user]);
   
   if (loadingAuth) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+      <div className="flex items-center justify-center min-h-screen flex-col">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <div className="text-sm text-gray-500">
+          {authStatus}
+        </div>
       </div>
     );
   }
@@ -46,10 +63,17 @@ const AuthPage: React.FC = () => {
     setLoginLoading(true);
     
     try {
+      console.log("Auth: Versuche Login mit Email:", loginEmail);
       const success = await login(loginEmail, loginPassword);
+      console.log("Auth: Login Ergebnis:", success);
+      
       if (success) {
+        toast.success("Erfolgreich angemeldet!");
         navigate('/admin');
       }
+    } catch (error) {
+      console.error("Auth: Login Fehler:", error);
+      toast.error("Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Eingaben.");
     } finally {
       setLoginLoading(false);
     }
@@ -59,18 +83,24 @@ const AuthPage: React.FC = () => {
     e.preventDefault();
     
     if (registerPassword !== confirmPassword) {
-      alert('Passwörter stimmen nicht überein');
+      toast.error('Passwörter stimmen nicht überein');
       return;
     }
     
     setRegisterLoading(true);
     
     try {
+      console.log("Auth: Versuche Registrierung mit Email:", registerEmail);
       const success = await signup(registerEmail, registerPassword, firstName, lastName);
+      console.log("Auth: Registrierung Ergebnis:", success);
+      
       if (success) {
-        // Die Weiterleitung erfolgt automatisch durch die useEffect-Hook,
-        // da der Benutzer nach erfolgreicher Registrierung eingeloggt ist
+        toast.success("Registrierung erfolgreich!");
+        // Die Weiterleitung erfolgt automatisch durch die useEffect-Hook
       }
+    } catch (error) {
+      console.error("Auth: Registrierung Fehler:", error);
+      toast.error("Registrierung fehlgeschlagen. Bitte überprüfen Sie Ihre Eingaben.");
     } finally {
       setRegisterLoading(false);
     }
@@ -121,7 +151,7 @@ const AuthPage: React.FC = () => {
                 <Button type="submit" className="w-full" disabled={loginLoading}>
                   {loginLoading ? (
                     <span className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Anmelden...
                     </span>
                   ) : (
@@ -194,7 +224,7 @@ const AuthPage: React.FC = () => {
                 <Button type="submit" className="w-full" disabled={registerLoading}>
                   {registerLoading ? (
                     <span className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Registrieren...
                     </span>
                   ) : (

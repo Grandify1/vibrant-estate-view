@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const CompanySetupPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, company, createCompany, isAuthenticated, loadingAuth } = useAuth();
+  const { user, company, loadingAuth, isAuthenticated } = useAuth();
   
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -21,24 +21,52 @@ const CompanySetupPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!loadingAuth && !isAuthenticated) {
-      navigate('/auth');
-    }
-  }, [isAuthenticated, loadingAuth, navigate]);
+  // Für Debugging
+  const [authStatus, setAuthStatus] = useState<string>("Prüfe Authentifizierung...");
   
-  // Redirect if company already exists
+  // Verbesserte Authentifizierungs-Überprüfung mit Timeout
+  useEffect(() => {
+    console.log("CompanySetup: Auth Status:", { isAuthenticated, loadingAuth, user });
+    
+    if (!loadingAuth) {
+      if (!isAuthenticated) {
+        console.log("CompanySetup: Nicht authentifiziert, leite zur Auth-Seite weiter");
+        setAuthStatus("Nicht authentifiziert, leite weiter...");
+        navigate('/auth');
+      } else {
+        console.log("CompanySetup: Authentifiziert als", user?.id);
+        setAuthStatus("Authentifiziert");
+      }
+    }
+    
+    // Timeout falls die Auth-Prüfung zu lange dauert
+    const timeout = setTimeout(() => {
+      if (loadingAuth) {
+        console.log("CompanySetup: Auth-Prüfung Timeout, leite zur Auth-Seite weiter");
+        setAuthStatus("Timeout, leite weiter...");
+        navigate('/auth');
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timeout);
+  }, [isAuthenticated, loadingAuth, navigate, user]);
+  
+  // Weiterleitungslogik, falls Unternehmen bereits existiert
   useEffect(() => {
     if (company && company.id) {
+      console.log("CompanySetup: Unternehmen existiert bereits, leite zur Admin-Seite weiter", company);
       navigate('/admin');
     }
   }, [company, navigate]);
   
+  // Zeige Ladebildschirm während Authentifizierung geprüft wird
   if (loadingAuth) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-screen flex-col">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <div className="text-sm text-gray-500">
+          {authStatus}
+        </div>
       </div>
     );
   }
@@ -55,8 +83,15 @@ const CompanySetupPage: React.FC = () => {
         return;
       }
       
-      // First, directly create the company using Supabase client
-      // This bypasses any potential issues with the createCompany function
+      if (!user || !user.id) {
+        toast.error('Benutzer nicht gefunden. Bitte loggen Sie sich erneut ein.');
+        setIsLoading(false);
+        console.error("Kein Benutzer gefunden:", user);
+        navigate('/auth');
+        return;
+      }
+      
+      // Die Unternehmensdaten vorbereiten
       const companyData = {
         name,
         address: address || null,
@@ -65,9 +100,10 @@ const CompanySetupPage: React.FC = () => {
         logo: null
       };
       
-      console.log('Creating company with data:', companyData);
+      console.log('Erstelle Unternehmen mit Daten:', companyData);
+      console.log('User ID:', user.id);
       
-      // Attempt direct database insertion first
+      // Direkter Supabase-Aufruf für bessere Fehlerbehandlung
       const { data: newCompany, error: insertError } = await supabase
         .from('companies')
         .insert(companyData)
@@ -75,33 +111,45 @@ const CompanySetupPage: React.FC = () => {
         .single();
       
       if (insertError) {
-        console.error("Company creation error:", insertError);
+        console.error("Fehler beim Erstellen des Unternehmens:", insertError);
+        
+        // Verbesserte Fehlerbehandlung mit spezifischen Fehlermeldungen
+        if (insertError.code === '23505') {
+          toast.error(`Ein Unternehmen mit diesem Namen existiert bereits.`);
+        } else if (insertError.code === '42501' || insertError.message.includes('permission denied')) {
+          toast.error(`Berechtigungsfehler: Stellen Sie sicher, dass Sie angemeldet sind und die erforderlichen Rechte haben.`);
+        } else {
+          toast.error(`Fehler beim Erstellen des Unternehmens: ${insertError.message}`);
+        }
+        
         setErrorMessage(`Fehler beim Erstellen des Unternehmens: ${insertError.message}`);
-        toast.error(`Fehler beim Erstellen des Unternehmens: ${insertError.message}`);
         setIsLoading(false);
         return;
       }
       
       if (newCompany) {
-        // If direct insertion was successful, update the user's profile with the company ID
+        console.log("Unternehmen erfolgreich erstellt:", newCompany);
+        
+        // Benutzerprofil mit der Unternehmens-ID aktualisieren
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ company_id: newCompany.id })
-          .eq('id', user?.id);
+          .eq('id', user.id);
         
         if (profileError) {
-          console.error("Profile update error:", profileError);
-          toast.error(`Unternehmen erstellt, aber Profilaktualisierung fehlgeschlagen: ${profileError.message}`);
+          console.error("Fehler beim Aktualisieren des Profils:", profileError);
+          toast.warning(`Unternehmen erstellt, aber Profilaktualisierung fehlgeschlagen. Bitte kontaktieren Sie den Support.`);
         } else {
           toast.success('Unternehmen erfolgreich erstellt!');
-          // Force a reload of the Auth context to get the updated profile
-          setTimeout(() => {
-            navigate('/admin');
-          }, 1000);
         }
+        
+        // Kurze Pause vor Weiterleitung, damit der Toast sichtbar ist
+        setTimeout(() => {
+          navigate('/admin');
+        }, 1500);
       }
     } catch (error) {
-      console.error('Unexpected error creating company:', error);
+      console.error('Unerwarteter Fehler beim Erstellen des Unternehmens:', error);
       setErrorMessage('Ein unerwarteter Fehler ist aufgetreten');
       toast.error('Ein unerwarteter Fehler ist aufgetreten');
     } finally {
