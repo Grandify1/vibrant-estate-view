@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogOverlay } from "@/components/ui/dialog";
 import { Property } from "@/types/property";
 import { Separator } from "@/components/ui/separator";
 import { Bath, Bed, Calendar, Home, MapPin, Ruler } from "lucide-react";
@@ -15,13 +14,11 @@ interface PropertyDetailProps {
 
 export default function PropertyDetail({ property, isOpen, onClose }: PropertyDetailProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [imagesLoaded, setImagesLoaded] = useState<boolean[]>([]);
   
   // Reset values when property changes
   useEffect(() => {
     if (property && property.images) {
       setActiveImageIndex(0);
-      setImagesLoaded(Array(property.images.length).fill(false));
     }
   }, [property?.id]);
   
@@ -54,53 +51,33 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   
   const images = getImages();
   
-  // Simplified image component with proper error handling
-  const PropertyImage = ({ src, alt, className }: { src: string; alt: string; className: string }) => {
-    const [loaded, setLoaded] = useState(false);
+  // Simple image component with proper error handling
+  const PropertyImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
     const [error, setError] = useState(false);
+    const [loaded, setLoaded] = useState(false);
+
+    const onImageError = () => setError(true);
+    const onImageLoad = () => setLoaded(true);
     
+    if (error) {
+      return (
+        <div className={`flex items-center justify-center bg-gray-200 ${className}`}>
+          <span className="text-gray-500">Bild nicht verfügbar</span>
+        </div>
+      );
+    }
+
     return (
-      <div className="relative w-full h-full">
-        {!loaded && !error && (
-          <div className="absolute inset-0 bg-gray-200 animate-pulse" />
-        )}
-        {error ? (
-          <div className="absolute inset-0 bg-gray-300 flex items-center justify-center">
-            <span className="text-gray-500">Bild nicht verfügbar</span>
-          </div>
-        ) : (
-          <img 
-            src={src}
-            alt={alt}
-            className={className}
-            onLoad={() => setLoaded(true)}
-            onError={() => setError(true)}
-            style={{ display: loaded ? 'block' : 'none' }}
-          />
-        )}
+      <div className={`relative ${className}`}>
+        {!loaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
+        <img
+          src={src}
+          alt={alt}
+          className={`w-full h-full object-cover ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          onError={onImageError}
+          onLoad={onImageLoad}
+        />
       </div>
-    );
-  };
-  
-  // Custom button component for image navigation
-  const NavButton = ({ direction, onClick }: { direction: 'prev' | 'next'; onClick: () => void }) => {
-    return (
-      <button
-        onClick={onClick}
-        className={`absolute top-1/2 -translate-y-1/2 ${direction === 'prev' ? 'left-2' : 'right-2'} 
-                   bg-white/80 hover:bg-white rounded-full p-2 shadow-md z-10`}
-        aria-label={direction === 'prev' ? 'Vorheriges Bild' : 'Nächstes Bild'}
-      >
-        {direction === 'prev' ? (
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m15 18-6-6 6-6"/>
-          </svg>
-        ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m9 18 6-6-6-6"/>
-          </svg>
-        )}
-      </button>
     );
   };
   
@@ -124,28 +101,44 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-auto p-0">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-auto p-0 border bg-white">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
-          {/* Linke Spalte - Bildgalerie */}
+          {/* Left column - Image gallery */}
           <div className="md:col-span-2 relative">
-            {/* Hauptbild */}
+            {/* Main image */}
             <div className="aspect-[4/3] bg-gray-100 relative">
               <PropertyImage 
                 src={getValidImageUrl(images[activeImageIndex]?.url)}
                 alt={property.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full"
               />
               
-              {/* Navigationsbuttons */}
+              {/* Navigation buttons */}
               {images.length > 1 && (
                 <>
-                  <NavButton direction="prev" onClick={handlePrevClick} />
-                  <NavButton direction="next" onClick={handleNextClick} />
+                  <button
+                    onClick={handlePrevClick}
+                    className="absolute top-1/2 left-2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-md z-10"
+                    aria-label="Vorheriges Bild"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m15 18-6-6 6-6"/>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={handleNextClick}
+                    className="absolute top-1/2 right-2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-md z-10"
+                    aria-label="Nächstes Bild"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                  </button>
                 </>
               )}
             </div>
             
-            {/* Miniaturbilder */}
+            {/* Thumbnails */}
             {images.length > 1 && (
               <div className="p-4 flex space-x-2 overflow-x-auto">
                 {images.map((image, index) => (
@@ -161,7 +154,6 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                     <PropertyImage
                       src={getValidImageUrl(image.url)}
                       alt={`Bild ${index + 1}`}
-                      className="w-full h-full object-cover"
                     />
                   </button>
                 ))}
@@ -169,7 +161,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
             )}
           </div>
           
-          {/* Rechte Spalte - Immobiliendetails */}
+          {/* Right column - Property details */}
           <div className="p-4 md:p-6">
             <h2 className="text-2xl font-bold">{property.title}</h2>
             <p className="text-gray-600 flex items-center mt-1">

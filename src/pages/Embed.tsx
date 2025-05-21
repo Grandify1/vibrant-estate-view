@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import PropertyGrid from "@/components/embed/PropertyGrid";
 import PropertyDetail from "@/components/embed/PropertyDetail";
 import { useProperties } from "@/hooks/useProperties";
@@ -12,6 +12,9 @@ const EmbedPageContent = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [activeProperties, setActiveProperties] = useState<Property[]>([]);
   const [isOffline, setIsOffline] = useState(false);
+  
+  // Reference to container for height calculation
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Check network status
   useEffect(() => {
@@ -39,33 +42,55 @@ const EmbedPageContent = () => {
     if (!loading && properties && properties.length > 0) {
       // Filter only active properties
       const active = properties.filter(property => property.status === 'active');
-      console.log("Properties in grid:", active);
       
       // Set active properties from filtered list
       setActiveProperties(active);
-      
-      // Log image info for debugging
-      active.forEach(property => {
-        console.log(`Property ${property.id} images:`, property.images);
-        property.images?.forEach(img => {
-          console.log(`Image URL: ${img.url}, is blob: ${img.url?.startsWith('blob:')}, isFeatured: ${img.isFeatured}`);
-        });
-      });
     } else {
       setActiveProperties([]);
     }
   }, [properties, loading]);
+
+  // Update parent iframe height when content changes
+  useEffect(() => {
+    const updateFrameHeight = () => {
+      if (containerRef.current && window.parent !== window) {
+        const height = containerRef.current.offsetHeight;
+        window.parent.postMessage({ type: 'resize-frame', height: height + 16 }, '*');
+      }
+    };
+
+    // Update height initially and when properties or detail state changes
+    updateFrameHeight();
+    
+    // Add a small delay to account for content rendering
+    const timer = setTimeout(updateFrameHeight, 100);
+
+    // Add resize event listener
+    window.addEventListener('resize', updateFrameHeight);
+
+    // Create MutationObserver to watch for DOM changes
+    const observer = new MutationObserver(() => {
+      updateFrameHeight();
+    });
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current, { 
+        childList: true, 
+        subtree: true, 
+        attributes: true 
+      });
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateFrameHeight);
+      observer.disconnect();
+    };
+  }, [activeProperties, loading, detailOpen, lastError, isOffline]);
   
   const handlePropertyClick = (property: Property) => {
-    console.log("Property clicked:", property.id);
-    console.log("Property images:", property.images);
-    
     setSelectedProperty(property);
-    
-    // Use setTimeout to ensure state is updated before opening the dialog
-    setTimeout(() => {
-      setDetailOpen(true);
-    }, 0);
+    setDetailOpen(true);
   };
 
   const handleDetailClose = () => {
@@ -77,7 +102,7 @@ const EmbedPageContent = () => {
   };
   
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div ref={containerRef} className="embed-container py-6 px-4">
       {isOffline ? (
         <div className="flex flex-col items-center justify-center h-64">
           <p className="text-xl mb-4">Keine Internetverbindung</p>
