@@ -33,8 +33,8 @@ export const useCompanyCreator = (
       
       console.log("Session beim Erstellen des Unternehmens:", session.user.id);
 
-      // Insert company data
-      const { data: company, error } = await supabase
+      // First attempt to insert company data
+      let { data: companyData, error } = await supabase
         .from('companies')
         .insert(companyData)
         .select()
@@ -58,25 +58,21 @@ export const useCompanyCreator = (
           return false;
         }
         
-        if (!altCompany) {
-          return false;
-        }
-        
-        // If alternative approach worked, continue with this company
-        company = altCompany;
+        // Use the alternative company data if the first attempt failed
+        companyData = altCompany;
       }
 
-      if (!company) {
+      if (!companyData) {
         toast.error("Unternehmen konnte nicht erstellt werden");
         return false;
       }
 
-      console.log("Unternehmen erfolgreich erstellt:", company);
+      console.log("Unternehmen erfolgreich erstellt:", companyData);
 
       // Update user profile with company_id
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ company_id: company.id })
+        .update({ company_id: companyData.id })
         .eq('id', user.id);
 
       if (updateError) {
@@ -87,11 +83,11 @@ export const useCompanyCreator = (
         if (user) {
           setUser({
             ...user,
-            company_id: company.id
+            company_id: companyData.id
           });
         }
         
-        setCompany(company);
+        setCompany(companyData);
         toast.success("Unternehmen erfolgreich erstellt!");
       }
 
