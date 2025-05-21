@@ -46,6 +46,33 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
   
+  // Progressive loading for images with placeholders
+  const ImageWithFallback = ({ src, alt, className }: { src: string; alt: string; className: string }) => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(false);
+    
+    return (
+      <div className="relative w-full h-full">
+        {isLoading && (
+          <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+        )}
+        <img 
+          src={src}
+          alt={alt}
+          className={className}
+          onLoad={() => setIsLoading(false)}
+          onError={(e) => {
+            console.log('Image failed to load:', (e.target as HTMLImageElement).src);
+            setError(true);
+            setIsLoading(false);
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
+          }}
+          style={{ opacity: isLoading ? 0 : 1 }}
+        />
+      </div>
+    );
+  };
+  
   if (properties.length === 0) {
     return (
       <div className="text-center py-12">
@@ -99,14 +126,10 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
             <Card key={property.id} className="property-card overflow-hidden">
               <div onClick={() => onPropertyClick(property)} className="cursor-pointer">
                 <div className="aspect-property relative h-48">
-                  <img 
-                    src={getMainImage(property)} 
-                    alt={property.title} 
-                    className="object-cover w-full h-full" 
-                    onError={(e) => {
-                      console.log('Image failed to load:', (e.target as HTMLImageElement).src);
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
-                    }}
+                  <ImageWithFallback
+                    src={getMainImage(property)}
+                    alt={property.title}
+                    className="object-cover w-full h-full"
                   />
                   <div className="absolute top-4 right-4 bg-white bg-opacity-90 px-3 py-1 rounded font-medium text-estate">
                     {property.details.price ? `${formatNumber(property.details.price)} €` : "Auf Anfrage"}
@@ -149,14 +172,10 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
               >
                 <div className="sm:w-1/3">
                   <AspectRatio ratio={4/3} className="sm:h-full">
-                    <img 
-                      src={getMainImage(property)} 
-                      alt={property.title} 
-                      className="object-cover w-full h-full" 
-                      onError={(e) => {
-                        console.log('List view image failed to load:', (e.target as HTMLImageElement).src);
-                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
-                      }}
+                    <ImageWithFallback
+                      src={getMainImage(property)}
+                      alt={property.title}
+                      className="object-cover w-full h-full"
                     />
                   </AspectRatio>
                 </div>

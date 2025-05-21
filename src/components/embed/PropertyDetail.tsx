@@ -15,6 +15,7 @@ interface PropertyDetailProps {
 
 export default function PropertyDetail({ property, isOpen, onClose }: PropertyDetailProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
   
   if (!property) return null;
   
@@ -66,9 +67,51 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
     ];
   };
   
+  // Progressive image component with loading state
+  const ImageWithFallback = ({ src, alt, className, onLoad }: { 
+    src: string; 
+    alt: string; 
+    className: string;
+    onLoad?: () => void;
+  }) => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(false);
+    
+    return (
+      <div className="relative w-full h-full">
+        {isLoading && (
+          <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+        )}
+        <img 
+          src={src}
+          alt={alt}
+          className={className}
+          onLoad={() => {
+            setIsLoading(false);
+            if (onLoad) onLoad();
+          }}
+          onError={(e) => {
+            console.log('Image failed to load:', (e.target as HTMLImageElement).src);
+            setError(true);
+            setIsLoading(false);
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
+          }}
+          style={{ opacity: isLoading ? 0 : 1 }}
+        />
+      </div>
+    );
+  };
+  
   const images = getImages();
   console.log("Detail view images:", images);
   const currentImage = images[activeImageIndex]?.url || getFeaturedImage();
+  
+  const handleImageLoaded = (imgId: string) => {
+    setImagesLoaded(prev => ({
+      ...prev,
+      [imgId]: true
+    }));
+  };
   
   const renderDetailItem = (label: string, value: string | undefined) => {
     if (!value) return null;
@@ -90,14 +133,10 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
           {/* Left column - Image gallery */}
           <div className="md:col-span-2 relative">
             <div className="aspect-[4/3] bg-gray-100">
-              <img 
-                src={getImageUrl(currentImage)} 
-                alt={property.title} 
+              <ImageWithFallback 
+                src={getImageUrl(currentImage)}
+                alt={property.title}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.log('Main detail image failed to load:', (e.target as HTMLImageElement).src);
-                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
-                }}
               />
             </div>
             
@@ -114,14 +153,11 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                           : 'border-transparent'
                       }`}
                     >
-                      <img 
-                        src={getImageUrl(image.url)} 
+                      <ImageWithFallback
+                        src={getImageUrl(image.url)}
                         alt={`Bild ${index + 1}`}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.log('Thumbnail image failed to load:', (e.target as HTMLImageElement).src);
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
-                        }}
+                        onLoad={() => handleImageLoaded(image.id)}
                       />
                     </button>
                   ))}
@@ -242,14 +278,10 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                           <h4 className="font-medium">{plan.name}</h4>
                         </div>
                         <div className="aspect-property bg-gray-100">
-                          <img 
-                            src={getImageUrl(plan.url)} 
-                            alt={plan.name} 
+                          <ImageWithFallback
+                            src={getImageUrl(plan.url)}
+                            alt={plan.name}
                             className="w-full h-full object-contain"
-                            onError={(e) => {
-                              console.log('Floor plan image failed to load:', (e.target as HTMLImageElement).src);
-                              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
-                            }}
                           />
                         </div>
                       </div>

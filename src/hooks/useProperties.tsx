@@ -1,10 +1,10 @@
-
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { Property, initialProperty } from "../types/property";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
+import { compressImage } from "@/utils/imageCompression";
 
 interface PropertiesContextType {
   properties: Property[];
@@ -86,25 +86,29 @@ const uploadImageToStorage = async (imageBlob: string, propertyId: string, image
     
     const blob = await response.blob();
     
+    // Compress the image before uploading
+    console.log(`Compressing image, original size: ${Math.round(blob.size / 1024)}KB`);
+    const { compressedBlob, format } = await compressImage(blob, 1200, 0.8);
+    console.log(`Compression complete, new size: ${Math.round(compressedBlob.size / 1024)}KB (${Math.round((compressedBlob.size / blob.size) * 100)}% of original)`);
+    
     // Generate a unique file path with specific file extension
-    const fileExtension = blob.type.split('/')[1] || 'jpg';
-    const filePath = `${propertyId}/${imageId}.${fileExtension}`;
-    console.log(`Uploading image to ${filePath}, type: ${blob.type}, size: ${blob.size} bytes`);
+    const filePath = `${propertyId}/${imageId}.${format}`;
+    console.log(`Uploading image to ${filePath}, type: ${compressedBlob.type}, size: ${compressedBlob.size} bytes`);
     
     // Add more detailed logging for debugging
     console.log("Supabase storage upload parameters:", {
       bucketId: 'prop-images',
       path: filePath,
-      fileType: blob.type,
-      fileSize: blob.size
+      fileType: compressedBlob.type,
+      fileSize: compressedBlob.size
     });
     
     // Upload to Supabase Storage with improved error handling
     const { data, error } = await supabase.storage
       .from('prop-images')
-      .upload(filePath, blob, { 
+      .upload(filePath, compressedBlob, { 
         upsert: true,
-        contentType: blob.type
+        contentType: compressedBlob.type
       });
     
     if (error) {
