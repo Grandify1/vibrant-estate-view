@@ -9,6 +9,14 @@ import { Json } from "@/integrations/supabase/types";
 // Helper function for type conversions with fallback values
 const safelyParseJson = <T extends unknown>(jsonValue: any, fallback: T): T => {
   if (!jsonValue) return fallback;
+  if (typeof jsonValue === 'string') {
+    try {
+      return JSON.parse(jsonValue) as T;
+    } catch (e) {
+      console.error('Error parsing JSON:', e);
+      return fallback;
+    }
+  }
   if (Array.isArray(jsonValue)) return jsonValue as unknown as T;
   if (typeof jsonValue === 'object') return jsonValue as T;
   return fallback;
@@ -100,7 +108,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
             id: item.id,
             title: item.title || '',
             address: item.address || '',
-            status: item.status || 'active' as 'active' | 'sold' | 'archived',
+            status: (item.status || 'active') as 'active' | 'sold' | 'archived',
             company_id: item.company_id,
             agent_id: item.agent_id,
             description: item.description || '',
@@ -128,7 +136,12 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
   
   // Load properties when component loads or company changes
   useEffect(() => {
-    fetchProperties();
+    if (company && company.id) {
+      fetchProperties();
+    } else {
+      setProperties([]);
+      setLoading(false);
+    }
   }, [company]);
   
   // Add a new property

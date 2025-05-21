@@ -1,9 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import PropertyList from './PropertyList';
 import { useProperties } from '@/hooks/useProperties';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2, Plus } from 'lucide-react';
 
 interface PropertyListWrapperProps {
   companyId?: string;
@@ -18,6 +21,17 @@ const PropertyListWrapper: React.FC<PropertyListWrapperProps> = ({ companyId }) 
     lastError
   } = useProperties();
   const navigate = useNavigate();
+  const [isRetrying, setIsRetrying] = useState(false);
+  
+  if (!companyId) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-center text-muted-foreground">Es wurde kein Unternehmen gefunden.</p>
+        </CardContent>
+      </Card>
+    );
+  }
   
   const handleEdit = (id: string) => {
     navigate(`/admin/properties/edit/${id}`);
@@ -47,16 +61,28 @@ const PropertyListWrapper: React.FC<PropertyListWrapperProps> = ({ companyId }) 
       toast.error("Fehler beim Ändern des Status");
     }
   };
+
+  const handleCreateNew = () => {
+    navigate('/admin/properties/new');
+  };
   
   return (
-    <PropertyList
-      properties={properties}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      onChangeStatus={handleChangeStatus}
-      loading={loading}
-      error={lastError}
-    />
+    <>
+      <div className="flex justify-between items-center mb-4">
+        <div></div>
+        <Button onClick={handleCreateNew} className="flex items-center gap-1">
+          <Plus className="h-4 w-4" /> Neue Immobilie
+        </Button>
+      </div>
+      <PropertyList
+        properties={properties}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onChangeStatus={handleChangeStatus}
+        loading={loading}
+        error={lastError}
+      />
+    </>
   );
 };
 

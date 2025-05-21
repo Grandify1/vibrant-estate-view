@@ -22,7 +22,13 @@ const PropertyTab = () => {
         <h2 className="text-2xl font-bold">Immobilien verwalten</h2>
       </div>
       
-      <PropertyListWrapper companyId={company?.id} />
+      {company?.id ? (
+        <PropertyListWrapper companyId={company.id} />
+      ) : (
+        <div className="text-center py-8">
+          <p>Kein Unternehmen gefunden. Bitte erstellen Sie zuerst ein Unternehmen.</p>
+        </div>
+      )}
     </div>
   );
 };
@@ -48,7 +54,7 @@ export default function Admin() {
     return <Navigate to="/auth" />;
   }
   
-  // Wenn der Nutzer noch keine kein Unternehmen hat, zur Unternehmenseinrichtung weiterleiten
+  // Wenn der Nutzer noch kein Unternehmen hat, zur Unternehmenseinrichtung weiterleiten
   if (isAuthenticated && user && !user.company_id) {
     return <Navigate to="/company-setup" />;
   }
