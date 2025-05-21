@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Property } from '@/types/property';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,15 +6,6 @@ import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { compressImage } from '@/utils/imageCompression';
-
-interface UsePropertiesProps {
-  companyId?: string;
-}
-
-interface PropertyFilter {
-  searchTerm?: string;
-  status?: 'active' | 'sold' | 'archived' | 'all';
-}
 
 export function useProperties() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -39,7 +31,25 @@ export function useProperties() {
           setError(error);
           console.error("Failed to fetch properties:", error);
         } else {
-          setProperties(data as Property[]);
+          // Transform database format to match our Property type
+          const transformedData = data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            address: item.address,
+            status: item.status,
+            highlights: item.highlights || [],
+            images: item.images || [],
+            floorPlans: item.floor_plans || [],
+            details: item.details || {},
+            energy: item.energy || {},
+            description: item.description || '',
+            amenities: item.amenities || '',
+            location: item.location || '',
+            agent_id: item.agent_id,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at
+          }));
+          setProperties(transformedData);
         }
       } catch (err) {
         setError(err instanceof Error ? err : new Error('An unexpected error occurred'));
@@ -52,7 +62,7 @@ export function useProperties() {
     fetchProperties();
   }, [user?.company_id]);
   
-  const addProperty = async (property: Omit<Property, 'id' | 'created_at' | 'updated_at' | 'image_urls'>, images: File[]): Promise<Property | null> => {
+  const addProperty = async (property: Omit<Property, 'id' | 'createdAt' | 'updatedAt'>, images: File[]): Promise<Property | null> => {
     try {
       if (!user?.company_id) {
         throw new Error("User must be associated with a company to add properties.");
@@ -65,9 +75,27 @@ export function useProperties() {
         imageUrls.push(url);
       }
       
+      // Transform our Property type to match database schema
+      const dbProperty = {
+        title: property.title,
+        address: property.address,
+        status: property.status,
+        highlights: property.highlights,
+        images: property.images,
+        floor_plans: property.floorPlans,
+        details: property.details,
+        energy: property.energy,
+        description: property.description,
+        amenities: property.amenities,
+        location: property.location,
+        agent_id: property.agent_id,
+        company_id: user.company_id,
+        image_urls: imageUrls
+      };
+      
       const { data, error } = await supabase
         .from('properties')
-        .insert([{ ...property, company_id: user.company_id, image_urls: imageUrls }])
+        .insert([dbProperty])
         .select()
         .single();
       
@@ -75,8 +103,27 @@ export function useProperties() {
         throw error;
       }
       
-      setProperties(prevProperties => [...prevProperties, data as Property]);
-      return data as Property;
+      // Transform response back to our Property type
+      const newProperty: Property = {
+        id: data.id,
+        title: data.title,
+        address: data.address,
+        status: data.status,
+        highlights: data.highlights || [],
+        images: data.images || [],
+        floorPlans: data.floor_plans || [],
+        details: data.details || {},
+        energy: data.energy || {},
+        description: data.description || '',
+        amenities: data.amenities || '',
+        location: data.location || '',
+        agent_id: data.agent_id,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+      
+      setProperties(prevProperties => [...prevProperties, newProperty]);
+      return newProperty;
     } catch (err) {
       console.error("Error adding property:", err);
       toast.error("Fehler beim Hinzufügen der Immobilie");
@@ -84,7 +131,7 @@ export function useProperties() {
     }
   };
   
-  const updateProperty = async (id: string, updates: Partial<Omit<Property, 'id' | 'created_at' | 'updated_at'>>, newImages?: File[]): Promise<Property | null> => {
+  const updateProperty = async (id: string, updates: Partial<Omit<Property, 'id' | 'createdAt' | 'updatedAt'>>, newImages?: File[]): Promise<Property | null> => {
     try {
       // Upload new images if provided
       let imageUrls: string[] | undefined = undefined;
@@ -96,9 +143,25 @@ export function useProperties() {
         }
       }
       
+      // Transform our Property type to match database schema
+      const dbUpdates: any = {};
+      if (updates.title) dbUpdates.title = updates.title;
+      if (updates.address) dbUpdates.address = updates.address;
+      if (updates.status) dbUpdates.status = updates.status;
+      if (updates.highlights) dbUpdates.highlights = updates.highlights;
+      if (updates.images) dbUpdates.images = updates.images;
+      if (updates.floorPlans) dbUpdates.floor_plans = updates.floorPlans;
+      if (updates.details) dbUpdates.details = updates.details;
+      if (updates.energy) dbUpdates.energy = updates.energy;
+      if (updates.description) dbUpdates.description = updates.description;
+      if (updates.amenities) dbUpdates.amenities = updates.amenities;
+      if (updates.location) dbUpdates.location = updates.location;
+      if (updates.agent_id) dbUpdates.agent_id = updates.agent_id;
+      if (imageUrls) dbUpdates.image_urls = imageUrls;
+      
       const { data, error } = await supabase
         .from('properties')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -107,11 +170,30 @@ export function useProperties() {
         throw error;
       }
       
+      // Transform response back to our Property type
+      const updatedProperty: Property = {
+        id: data.id,
+        title: data.title,
+        address: data.address,
+        status: data.status,
+        highlights: data.highlights || [],
+        images: data.images || [],
+        floorPlans: data.floor_plans || [],
+        details: data.details || {},
+        energy: data.energy || {},
+        description: data.description || '',
+        amenities: data.amenities || '',
+        location: data.location || '',
+        agent_id: data.agent_id,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+      
       setProperties(prevProperties =>
-        prevProperties.map(property => (property.id === id ? { ...property, ...data } : property))
+        prevProperties.map(property => (property.id === id ? updatedProperty : property))
       );
       
-      return data as Property;
+      return updatedProperty;
     } catch (err) {
       console.error("Error updating property:", err);
       toast.error("Fehler beim Aktualisieren der Immobilie");
@@ -166,14 +248,13 @@ export function useProperties() {
       const filePath = `properties/${fileName}`;
 
       // Compress the image before uploading
-      const compressedResult = await compressImage(file);
+      const compressedBlob = await compressImage(file);
       
-      // Here's the fixed part - make sure we're using the correct structure
-      // from the compression result
+      // Upload the compressed image to Supabase storage
       const { data, error } = await supabase.storage
         .from('images')
-        .upload(filePath, compressedResult, {
-          contentType: `image/${compressedResult.type.split('/')[1]}`,
+        .upload(filePath, compressedBlob, {
+          contentType: `image/${file.type.split('/')[1] || 'jpeg'}`,
         });
 
       if (error) {
@@ -201,4 +282,37 @@ export function useProperties() {
     deleteProperty,
     setPropertyStatus
   };
+}
+
+// Create a Provider component for useProperties
+import { createContext, useContext, ReactNode } from 'react';
+
+interface PropertiesContextType {
+  properties: Property[];
+  loading: boolean;
+  error: Error | null;
+  addProperty: (property: Omit<Property, 'id' | 'createdAt' | 'updatedAt'>, images: File[]) => Promise<Property | null>;
+  updateProperty: (id: string, updates: Partial<Omit<Property, 'id' | 'createdAt' | 'updatedAt'>>, newImages?: File[]) => Promise<Property | null>;
+  deleteProperty: (id: string) => Promise<void>;
+  setPropertyStatus: (id: string, status: 'active' | 'sold' | 'archived') => Promise<void>;
+}
+
+const PropertiesContext = createContext<PropertiesContextType | undefined>(undefined);
+
+export function PropertiesProvider({ children }: { children: ReactNode }) {
+  const propertiesData = useProperties();
+  
+  return (
+    <PropertiesContext.Provider value={propertiesData}>
+      {children}
+    </PropertiesContext.Provider>
+  );
+}
+
+export function usePropertiesContext() {
+  const context = useContext(PropertiesContext);
+  if (context === undefined) {
+    throw new Error('usePropertiesContext must be used within a PropertiesProvider');
+  }
+  return context;
 }

@@ -82,7 +82,7 @@ const AgentTab: React.FC = () => {
           <AgentList 
             agents={agents}
             onEdit={handleEditClick}
-            onDelete={handleDelete}
+            onDelete={(id: string) => handleDelete(id)}
           />
         </>
       )}
