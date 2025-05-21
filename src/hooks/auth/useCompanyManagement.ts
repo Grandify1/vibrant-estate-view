@@ -197,8 +197,8 @@ export const useCompanyManagement = (
   };
   
   // Update company
-  const updateCompany = async (companyData: Partial<Omit<Company, 'id' | 'created_at' | 'updated_at'>>) => {
-    if (!user || !company) {
+  const updateCompany = async (companyData: Partial<Omit<Company, 'id' | 'created_at' | 'updated_at'>>, currentCompany: Company | null) => {
+    if (!user || !currentCompany) {
       toast.error("Sie müssen angemeldet sein und ein Unternehmen haben, um Änderungen vorzunehmen");
       return false;
     }
@@ -207,7 +207,7 @@ export const useCompanyManagement = (
       const { error } = await supabase
         .from('companies')
         .update(companyData)
-        .eq('id', company.id);
+        .eq('id', currentCompany.id);
       
       if (error) {
         toast.error("Fehler beim Aktualisieren des Unternehmens: " + error.message);
