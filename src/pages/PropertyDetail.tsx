@@ -1,20 +1,21 @@
+
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useProperties } from "@/hooks/useProperties";
 import { Property } from "@/types/property";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Bath, Bed, Calendar, ChevronLeft, Home, Ruler, MapPin, Info, ArrowRight } from "lucide-react";
+import { Bath, Bed, Calendar, ChevronLeft, Home, Ruler, MapPin, Info } from "lucide-react";
 import PropertyContactForm from "@/components/embed/ContactForm";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Lightbox } from "@/components/ui/lightbox";
 
 export default function PropertyDetailPage() {
   const { propertyId } = useParams<{ propertyId: string }>();
   const { properties, loading, lastError, retryOperation } = useProperties();
   const [property, setProperty] = useState<Property | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   
   // Find property when properties load
   useEffect(() => {
@@ -85,9 +86,7 @@ export default function PropertyDetailPage() {
       <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4">
         <p className="text-xl mb-4">Immobilie nicht gefunden</p>
         <p className="mb-4">Die gesuchte Immobilie konnte nicht gefunden werden.</p>
-        <Button asChild>
-          <Link to="/embed">Zurück zur Übersicht</Link>
-        </Button>
+        <Button onClick={() => window.close()}>Schließen</Button>
       </div>
     );
   }
@@ -120,12 +119,12 @@ export default function PropertyDetailPage() {
   const images = getImages();
   
   // Image component with proper error handling
-  const PropertyImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
+  const PropertyImage = ({ src, alt, className, onClick }: { src: string; alt: string; className?: string; onClick?: () => void }) => {
     const [error, setError] = useState(false);
     const [loaded, setLoaded] = useState(false);
 
     return (
-      <div className={`relative ${className}`}>
+      <div className={`relative ${className} ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
         {!loaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
         {error ? (
           <div className={`flex items-center justify-center bg-gray-200 ${className} h-full`}>
@@ -135,9 +134,10 @@ export default function PropertyDetailPage() {
           <img
             src={src}
             alt={alt}
-            className={`w-full h-full object-cover ${loaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`w-full h-full object-cover ${loaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
             onError={() => setError(true)}
             onLoad={() => setLoaded(true)}
+            loading="eager"
           />
         )}
       </div>
@@ -160,6 +160,10 @@ export default function PropertyDetailPage() {
         <span className="font-medium">{value}</span>
       </div>
     );
+  };
+
+  const openLightbox = () => {
+    setLightboxOpen(true);
   };
 
   return (
@@ -188,6 +192,7 @@ export default function PropertyDetailPage() {
               src={getValidImageUrl(images[activeImageIndex]?.url)}
               alt={property.title}
               className="w-full h-full"
+              onClick={openLightbox}
             />
             
             {/* Navigation buttons */}
@@ -205,7 +210,7 @@ export default function PropertyDetailPage() {
                   className="absolute top-1/2 right-4 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-3 shadow-lg z-10"
                   aria-label="Nächstes Bild"
                 >
-                  <ArrowRight className="h-6 w-6" />
+                  <ChevronRight className="h-6 w-6" />
                 </button>
               </>
             )}
@@ -239,6 +244,14 @@ export default function PropertyDetailPage() {
           )}
         </div>
       </section>
+      
+      {/* Lightbox */}
+      <Lightbox 
+        images={images.map(image => ({ id: image.id, url: getValidImageUrl(image.url) }))} 
+        open={lightboxOpen} 
+        initialIndex={activeImageIndex}
+        onClose={() => setLightboxOpen(false)} 
+      />
       
       {/* Property highlights/features */}
       {property.highlights && property.highlights.length > 0 && (
@@ -363,6 +376,10 @@ export default function PropertyDetailPage() {
                     src={getValidImageUrl(plan.url)}
                     alt={plan.name}
                     className="w-full h-full object-contain"
+                    onClick={() => {
+                      setLightboxOpen(true);
+                      setActiveImageIndex(images.findIndex(img => img.id === plan.id));
+                    }}
                   />
                 </div>
               </div>
