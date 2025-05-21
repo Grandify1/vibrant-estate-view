@@ -26,7 +26,7 @@
   iframe.src = baseUrl + '/embed';
   iframe.style.width = widgetWidth;
   iframe.style.border = 'none';
-  iframe.style.minHeight = '500px';
+  iframe.style.minHeight = '600px'; // Erhöhte Mindesthöhe für bessere Darstellung
   iframe.style.maxWidth = '100%';
   iframe.style.overflow = 'hidden';
   iframe.id = 'immo-widget-iframe';
@@ -61,7 +61,8 @@
         const iframe = document.getElementById('immo-widget-iframe');
         if (iframe) {
           // Puffer hinzufügen, um Scrollbars zu vermeiden
-          const newHeight = Math.max(e.data.height + 20, 500);
+          // Größerer Puffer für Detail-Ansichten
+          const newHeight = Math.max(e.data.height + 40, 600);
           iframe.style.height = newHeight + 'px';
           
           // Event auslösen, damit die Website auf die Größenänderung reagieren kann
@@ -69,6 +70,8 @@
             detail: { height: newHeight }
           });
           document.dispatchEvent(event);
+          
+          console.log('ImmoUpload Widget: Höhe angepasst auf ' + newHeight + 'px');
         }
       }, 50);
     }
@@ -92,5 +95,10 @@
     // Event auslösen, damit die Website weiß, dass das Widget geladen wurde
     const event = new CustomEvent('immo-widget-loaded');
     document.dispatchEvent(event);
+    
+    // Nach dem Laden eine erste Höhenanpassung vornehmen
+    setTimeout(() => {
+      iframe.contentWindow.postMessage({ type: 'parent-resize' }, '*');
+    }, 500);
   });
 })();
