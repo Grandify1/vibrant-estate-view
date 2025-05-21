@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CompanySetupPage: React.FC = () => {
@@ -54,6 +54,25 @@ const CompanySetupPage: React.FC = () => {
     );
   }
   
+  // Überprüfe, ob Benutzer authentifiziert ist
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-screen flex-col">
+        <div className="text-center p-6 bg-red-50 border border-red-200 rounded-lg">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Nicht authentifiziert</h2>
+          <p className="mb-4">Sie müssen angemeldet sein, um ein Unternehmen zu erstellen.</p>
+          <Button 
+            onClick={() => navigate('/auth')}
+            className="w-full"
+          >
+            Zur Anmeldeseite
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -83,6 +102,7 @@ const CompanySetupPage: React.FC = () => {
         logo: null
       };
       
+      console.log("Erstelle Unternehmen mit Daten:", companyData);
       console.log("User ID:", user.id);
       const success = await createCompany(companyData);
       
@@ -93,11 +113,12 @@ const CompanySetupPage: React.FC = () => {
           navigate('/admin');
         }, 1000);
       } else {
-        setErrorMessage('Fehler beim Erstellen des Unternehmens. Bitte versuchen Sie es später erneut.');
+        setErrorMessage('Es gibt ein Problem mit der Berechtigung zum Erstellen eines Unternehmens. Bitte kontaktieren Sie den Administrator.');
+        toast.error('Fehler beim Erstellen des Unternehmens');
       }
     } catch (error) {
       console.error('Unerwarteter Fehler beim Erstellen des Unternehmens:', error);
-      setErrorMessage('Ein unerwarteter Fehler ist aufgetreten');
+      setErrorMessage('Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.');
       toast.error('Ein unerwarteter Fehler ist aufgetreten');
     } finally {
       setIsLoading(false);

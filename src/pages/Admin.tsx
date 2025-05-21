@@ -37,7 +37,6 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("properties");
   const navigate = useNavigate();
   const [showError, setShowError] = useState(false);
-  const [authStatus, setAuthStatus] = useState<string>("Authentifizierung wird geprüft...");
   
   // Verbesserte Authentifizierungs-Überprüfung mit Logs
   useEffect(() => {
@@ -46,16 +45,15 @@ export default function Admin() {
     if (!loadingAuth) {
       if (!isAuthenticated) {
         console.log("Admin: Nicht authentifiziert, leite zur Auth-Seite weiter");
-        setAuthStatus("Nicht authentifiziert");
+        navigate('/auth');
       } else if (isAuthenticated && user && !user.company_id) {
         console.log("Admin: Authentifiziert aber kein Unternehmen, leite zur Unternehmenseinrichtung weiter");
-        setAuthStatus("Kein Unternehmen");
+        navigate('/company-setup');
       } else {
         console.log("Admin: Authentifiziert mit Unternehmen", user?.company_id);
-        setAuthStatus("Authentifiziert");
       }
     }
-  }, [isAuthenticated, loadingAuth, user]);
+  }, [isAuthenticated, loadingAuth, user, navigate]);
   
   // Verbesserte Fehlerbehandlung mit Timeout
   useEffect(() => {
@@ -76,7 +74,6 @@ export default function Admin() {
         <div className="text-center">
           <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" />
           <p className="mt-4 text-lg font-medium text-gray-700">Authentifizierung...</p>
-          <p className="mt-2 text-sm text-gray-500">{authStatus}</p>
           
           {showError && (
             <div className="mt-6 p-4 border border-red-300 rounded bg-red-50 text-red-800">

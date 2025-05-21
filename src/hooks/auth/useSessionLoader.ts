@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "./types";
+import { toast } from "sonner";
 
 export const useSessionLoader = (
   setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>,
@@ -41,7 +42,7 @@ export const useSessionLoader = (
           console.log("Benutzer hat kein Unternehmen");
         }
       } else {
-        console.error("Kein Profil gefunden oder Fehler:", error);
+        console.log("Kein Profil gefunden oder Fehler:", error);
         
         // Create profile if none exists
         if (error && error.code === 'PGRST116') {
@@ -87,7 +88,7 @@ export const useSessionLoader = (
         console.log("Checking session...");
         setLoadingAuth(true);
         
-        // Set up auth state listener FIRST
+        // Set up auth state listener FIRST - to avoid deadlocks and prevent missing auth events
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             console.log("Auth state changed:", event, session?.user?.id);
@@ -95,7 +96,7 @@ export const useSessionLoader = (
             if (session) {
               setIsAuthenticated(true);
               
-              // Set user data
+              // Set user data - use setTimeout to prevent deadlocks
               setTimeout(async () => {
                 await handleProfileData(session.user.id);
               }, 0);

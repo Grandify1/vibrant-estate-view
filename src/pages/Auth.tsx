@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AuthPage: React.FC = () => {
@@ -28,22 +28,13 @@ const AuthPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
   
-  // Auth-Status für Debugging
-  const [authStatus, setAuthStatus] = useState<string>("Prüfe Authentifizierung...");
-  
   // Verbesserte Weiterleitung mit Logs
   useEffect(() => {
     console.log("Auth: Auth Status:", { isAuthenticated, loadingAuth, user });
     
-    if (!loadingAuth) {
-      if (isAuthenticated) {
-        console.log("Auth: Authentifiziert, leite zur Admin-Seite weiter");
-        setAuthStatus("Authentifiziert, leite weiter...");
-        navigate('/admin');
-      } else {
-        console.log("Auth: Nicht authentifiziert");
-        setAuthStatus("Nicht authentifiziert");
-      }
+    if (!loadingAuth && isAuthenticated) {
+      console.log("Auth: Authentifiziert, leite zur Admin-Seite weiter");
+      navigate('/admin');
     }
   }, [isAuthenticated, loadingAuth, navigate, user]);
   
@@ -52,10 +43,20 @@ const AuthPage: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen flex-col">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
         <div className="text-sm text-gray-500">
-          {authStatus}
+          Authentifizierung wird geprüft...
         </div>
       </div>
     );
+  }
+  
+  // Wenn der Benutzer bereits authentifiziert ist und kein Unternehmen hat, zur Unternehmenseinrichtung weiterleiten
+  if (isAuthenticated && user && !user.company_id) {
+    return <Navigate to="/company-setup" />;
+  }
+  
+  // Wenn der Benutzer authentifiziert ist und ein Unternehmen hat, zur Admin-Seite weiterleiten
+  if (isAuthenticated && user && user.company_id) {
+    return <Navigate to="/admin" />;
   }
   
   const handleLogin = async (e: React.FormEvent) => {
@@ -69,7 +70,7 @@ const AuthPage: React.FC = () => {
       
       if (success) {
         toast.success("Erfolgreich angemeldet!");
-        navigate('/admin');
+        // Weiterleitung erfolgt automatisch durch die useEffect-Hook
       }
     } catch (error) {
       console.error("Auth: Login Fehler:", error);
@@ -133,6 +134,7 @@ const AuthPage: React.FC = () => {
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     required
+                    autoComplete="email"
                   />
                 </div>
                 
@@ -145,6 +147,7 @@ const AuthPage: React.FC = () => {
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
+                    autoComplete="current-password"
                   />
                 </div>
                 
@@ -171,6 +174,7 @@ const AuthPage: React.FC = () => {
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       required
+                      autoComplete="given-name"
                     />
                   </div>
                   
@@ -181,6 +185,7 @@ const AuthPage: React.FC = () => {
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
+                      autoComplete="family-name"
                     />
                   </div>
                 </div>
@@ -194,6 +199,7 @@ const AuthPage: React.FC = () => {
                     value={registerEmail}
                     onChange={(e) => setRegisterEmail(e.target.value)}
                     required
+                    autoComplete="email"
                   />
                 </div>
                 
@@ -206,6 +212,7 @@ const AuthPage: React.FC = () => {
                     value={registerPassword}
                     onChange={(e) => setRegisterPassword(e.target.value)}
                     required
+                    autoComplete="new-password"
                   />
                 </div>
                 
@@ -218,6 +225,7 @@ const AuthPage: React.FC = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
+                    autoComplete="new-password"
                   />
                 </div>
                 
