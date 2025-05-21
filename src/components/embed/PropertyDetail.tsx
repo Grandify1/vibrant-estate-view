@@ -1,12 +1,13 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogTitle, DialogContent, DialogDescription } from "@/components/ui/dialog";
 import { Property } from "@/types/property";
 import { Separator } from "@/components/ui/separator";
 import { Bath, Bed, Calendar, Home, MapPin, Ruler } from "lucide-react";
 import PropertyContactForm from "./ContactForm";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface PropertyDetailProps {
   property: Property | null;
@@ -16,7 +17,6 @@ interface PropertyDetailProps {
 
 export default function PropertyDetail({ property, isOpen, onClose }: PropertyDetailProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState("details");
   
   if (!property) return null;
   
@@ -44,6 +44,15 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   const images = getImages();
   const currentImage = images[activeImageIndex]?.url || getFeaturedImage();
   
+  // Fixed image URL handling function
+  const getImageUrl = (imageUrl: string) => {
+    // If it's a blob URL, replace it with placeholder
+    if (imageUrl.startsWith('blob:')) {
+      return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
+    }
+    return imageUrl;
+  };
+  
   const renderDetailItem = (label: string, value: string | undefined) => {
     if (!value) return null;
     return (
@@ -57,12 +66,15 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-auto p-0">
+        <DialogTitle className="sr-only">Immobiliendetails</DialogTitle>
+        <DialogDescription className="sr-only">Detaillierte Informationen zur Immobilie</DialogDescription>
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
           {/* Left column - Image gallery */}
           <div className="md:col-span-2 relative">
             <div className="aspect-[4/3] bg-gray-100">
               <img 
-                src={currentImage} 
+                src={getImageUrl(currentImage)} 
                 alt={property.title} 
                 className="w-full h-full object-cover"
               />
@@ -82,7 +94,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                       }`}
                     >
                       <img 
-                        src={image.url} 
+                        src={getImageUrl(image.url)} 
                         alt={`Bild ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
@@ -157,16 +169,11 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
         </div>
         
         <div className="p-4 md:p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-5 mb-6">
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="description">Beschreibung</TabsTrigger>
-              <TabsTrigger value="amenities">Ausstattung</TabsTrigger>
-              <TabsTrigger value="location">Lage</TabsTrigger>
-              <TabsTrigger value="contact">Kontakt</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="details" className="space-y-6">
+          {/* Replace tabs with accordion sections */}
+          <div className="space-y-6">
+            {/* Details section */}
+            <div className="bg-gray-50 rounded-lg p-4 md:p-6">
+              <h3 className="text-xl font-semibold mb-4">Details</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 {renderDetailItem("Objekttyp", property.details.propertyType)}
                 {renderDetailItem("Grundstücksfläche", property.details.plotArea ? `${property.details.plotArea} m²` : undefined)}
@@ -184,9 +191,9 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
               
               {property.energy.certificateAvailable && (
                 <>
-                  <Separator />
+                  <Separator className="my-6" />
                   <div>
-                    <h3 className="font-medium mb-4">Energieausweis</h3>
+                    <h4 className="font-medium mb-4">Energieausweis</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                       {renderDetailItem("Energieausweis Typ", property.energy.certificateType)}
                       {renderDetailItem("Endenergieverbrauch", property.energy.energyConsumption ? `${property.energy.energyConsumption} kWh/(m²·a)` : undefined)}
@@ -201,9 +208,9 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
               
               {property.floorPlans.length > 0 && (
                 <>
-                  <Separator />
+                  <Separator className="my-6" />
                   <div>
-                    <h3 className="font-medium mb-4">Grundrisse</h3>
+                    <h4 className="font-medium mb-4">Grundrisse</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {property.floorPlans.map(plan => (
                         <div key={plan.id} className="border rounded-lg overflow-hidden">
@@ -212,7 +219,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                           </div>
                           <div className="aspect-property bg-gray-100">
                             <img 
-                              src={plan.url} 
+                              src={getImageUrl(plan.url)} 
                               alt={plan.name} 
                               className="w-full h-full object-contain"
                             />
@@ -223,48 +230,50 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                   </div>
                 </>
               )}
-            </TabsContent>
+            </div>
             
-            <TabsContent value="description">
-              {property.description ? (
+            {/* Description section */}
+            {property.description && (
+              <div className="bg-gray-50 rounded-lg p-4 md:p-6">
+                <h3 className="text-xl font-semibold mb-4">Beschreibung</h3>
                 <div className="prose max-w-none">
                   {property.description.split("\n").map((paragraph, i) => (
                     <p key={i}>{paragraph}</p>
                   ))}
                 </div>
-              ) : (
-                <p className="text-gray-500">Keine Beschreibung verfügbar.</p>
-              )}
-            </TabsContent>
+              </div>
+            )}
             
-            <TabsContent value="amenities">
-              {property.amenities ? (
+            {/* Amenities section */}
+            {property.amenities && (
+              <div className="bg-gray-50 rounded-lg p-4 md:p-6">
+                <h3 className="text-xl font-semibold mb-4">Ausstattung</h3>
                 <div className="prose max-w-none">
                   {property.amenities.split("\n").map((paragraph, i) => (
                     <p key={i}>{paragraph}</p>
                   ))}
                 </div>
-              ) : (
-                <p className="text-gray-500">Keine Ausstattungsinformationen verfügbar.</p>
-              )}
-            </TabsContent>
+              </div>
+            )}
             
-            <TabsContent value="location">
-              {property.location ? (
+            {/* Location section */}
+            {property.location && (
+              <div className="bg-gray-50 rounded-lg p-4 md:p-6">
+                <h3 className="text-xl font-semibold mb-4">Lage</h3>
                 <div className="prose max-w-none">
                   {property.location.split("\n").map((paragraph, i) => (
                     <p key={i}>{paragraph}</p>
                   ))}
                 </div>
-              ) : (
-                <p className="text-gray-500">Keine Lageinformationen verfügbar.</p>
-              )}
-            </TabsContent>
+              </div>
+            )}
             
-            <TabsContent value="contact">
+            {/* Contact section */}
+            <div className="bg-gray-50 rounded-lg p-4 md:p-6">
+              <h3 className="text-xl font-semibold mb-4">Kontakt</h3>
               <PropertyContactForm propertyTitle={property.title} />
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
