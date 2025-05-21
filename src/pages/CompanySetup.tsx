@@ -8,11 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 const CompanySetupPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, company, loadingAuth, isAuthenticated } = useAuth();
+  const { user, company, loadingAuth, isAuthenticated, createCompany } = useAuth();
   
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -100,120 +99,16 @@ const CompanySetupPage: React.FC = () => {
         logo: null
       };
       
-      console.log('Erstelle Unternehmen mit Daten:', companyData);
-      console.log('User ID:', user.id);
+      // Direkter Aufruf der createCompany-Funktion aus useAuth
+      const success = await createCompany(companyData);
       
-      // Überprüfen der Authentifizierung vor dem Erstellen des Unternehmens
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !sessionData.session) {
-        console.error("Keine aktive Sitzung:", sessionError);
-        toast.error('Sie sind nicht angemeldet. Bitte melden Sie sich erneut an.');
-        navigate('/auth');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Sicherstellen, dass wir eine aktive Session haben
-      console.log("Session beim Erstellen des Unternehmens:", sessionData.session?.user.id);
-      
-      // Direkter Supabase-Aufruf mit explizitem Authentifizierungs-Header
-      const { data: newCompany, error: insertError } = await supabase
-        .from('companies')
-        .insert(companyData)
-        .select()
-        .single();
-      
-      if (insertError) {
-        console.error("Fehler beim Erstellen des Unternehmens:", insertError);
-        
-        // Verbesserte Fehlerbehandlung mit spezifischen Fehlermeldungen
-        if (insertError.code === '23505') {
-          toast.error(`Ein Unternehmen mit diesem Namen existiert bereits.`);
-        } else if (insertError.code === '42501' || insertError.message.includes('row-level security policy')) {
-          toast.error(`Berechtigungsfehler: Die Sicherheitsrichtlinie verhindert das Erstellen des Unternehmens.`);
-          console.log("Wir versuchen einen alternativen Ansatz...");
-          
-          // Alternativer Ansatz: RPC Funktion oder direkte Profilaktualisierung versuchen
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ 
-              first_name: user.first_name || "",
-              last_name: user.last_name || "",
-              // company_id wird erst nach der Erstellung des Unternehmens gesetzt
-            })
-            .eq('id', user.id);
-          
-          if (profileError) {
-            console.error("Fehler beim Aktualisieren des Profils:", profileError);
-          } else {
-            // Nochmals versuchen, das Unternehmen zu erstellen
-            const { data: retryCompany, error: retryError } = await supabase
-              .from('companies')
-              .insert(companyData)
-              .select()
-              .single();
-            
-            if (retryError) {
-              console.error("Wiederholter Fehler beim Erstellen des Unternehmens:", retryError);
-              toast.error(`Fehler beim Erstellen des Unternehmens: ${retryError.message}`);
-              setErrorMessage(`Fehler beim Erstellen des Unternehmens: ${retryError.message}`);
-              setIsLoading(false);
-              return;
-            } else if (retryCompany) {
-              // Erfolgreiche Erstellung im zweiten Versuch
-              console.log("Unternehmen erfolgreich erstellt (2. Versuch):", retryCompany);
-              
-              // Benutzerprofil mit der Unternehmens-ID aktualisieren
-              const { error: linkError } = await supabase
-                .from('profiles')
-                .update({ company_id: retryCompany.id })
-                .eq('id', user.id);
-              
-              if (linkError) {
-                console.error("Fehler beim Verknüpfen des Profils:", linkError);
-                toast.warning(`Unternehmen erstellt, aber Profilaktualisierung fehlgeschlagen.`);
-              } else {
-                toast.success('Unternehmen erfolgreich erstellt!');
-              }
-              
-              // Kurze Pause vor Weiterleitung
-              setTimeout(() => {
-                navigate('/admin');
-              }, 1500);
-              
-              return;
-            }
-          }
-        } else {
-          toast.error(`Fehler beim Erstellen des Unternehmens: ${insertError.message}`);
-        }
-        
-        setErrorMessage(`Fehler beim Erstellen des Unternehmens: ${insertError.message}`);
-        setIsLoading(false);
-        return;
-      }
-      
-      if (newCompany) {
-        console.log("Unternehmen erfolgreich erstellt:", newCompany);
-        
-        // Benutzerprofil mit der Unternehmens-ID aktualisieren
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ company_id: newCompany.id })
-          .eq('id', user.id);
-        
-        if (profileError) {
-          console.error("Fehler beim Aktualisieren des Profils:", profileError);
-          toast.warning(`Unternehmen erstellt, aber Profilaktualisierung fehlgeschlagen. Bitte kontaktieren Sie den Support.`);
-        } else {
-          toast.success('Unternehmen erfolgreich erstellt!');
-        }
-        
+      if (success) {
         // Kurze Pause vor Weiterleitung, damit der Toast sichtbar ist
         setTimeout(() => {
           navigate('/admin');
         }, 1500);
+      } else {
+        setErrorMessage('Fehler beim Erstellen des Unternehmens. Bitte versuchen Sie es später erneut.');
       }
     } catch (error) {
       console.error('Unerwarteter Fehler beim Erstellen des Unternehmens:', error);

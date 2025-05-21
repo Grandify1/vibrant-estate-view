@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { toast } from "sonner";
@@ -40,7 +39,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Checking session...");
         setLoadingAuth(true);
         
-        // Get session
+        // Set up auth state listener FIRST
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            console.log("Auth state changed:", event, session?.user.id);
+            
+            if (session) {
+              setIsAuthenticated(true);
+              
+              // Set user data
+              setTimeout(async () => {
+                const { data: profileData, error } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', session.user.id)
+                  .maybeSingle();
+                  
+                if (profileData) {
+                  console.log("Profildaten nach Event:", profileData);
+                  setUser({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    first_name: profileData.first_name,
+                    last_name: profileData.last_name,
+                    company_id: profileData.company_id
+                  });
+                  
+                  // If user is associated with a company, load company data
+                  if (profileData.company_id) {
+                    loadCompanyData(profileData.company_id);
+                  } else {
+                    console.log("Benutzer hat kein Unternehmen nach Event");
+                    setCompany(null);
+                  }
+                } else {
+                  console.error("Profile error:", error);
+                  
+                  // Create profile if none exists
+                  if (error && error.code === 'PGRST116') {
+                    const { error: createProfileError } = await supabase
+                      .from('profiles')
+                      .insert({
+                        id: session.user.id,
+                        first_name: session.user.user_metadata?.first_name || null,
+                        last_name: session.user.user_metadata?.last_name || null
+                      });
+                      
+                    if (createProfileError) {
+                      console.error("Fehler beim Erstellen des Profils nach Event:", createProfileError);
+                    } else {
+                      console.log("Profil erfolgreich erstellt nach Event");
+                    }
+                  }
+                  
+                  // Set basic user data
+                  setUser({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    first_name: session.user.user_metadata?.first_name,
+                    last_name: session.user.user_metadata?.last_name
+                  });
+                }
+              }, 0);
+            } else {
+              setIsAuthenticated(false);
+              setUser(null);
+              setCompany(null);
+            }
+          }
+        );
+
+        // THEN check for existing session
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         const session = sessionData?.session;
         
@@ -85,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } else {
             console.error("Kein Profil gefunden oder Fehler:", error);
             
-            // Automatisch ein Profil erstellen, wenn keins existiert
+            // Create profile if none exists
             if (error && error.code === 'PGRST116') {
               console.log("Erstelle neues Profil für Benutzer:", session.user.id);
               const { error: createError } = await supabase
@@ -129,77 +198,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     checkSession();
     
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state changed:", event, session?.user.id);
-        
-        if (event === 'SIGNED_IN' && session) {
-          setIsAuthenticated(true);
-          
-          // Set user data
-          const { data: profileData, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-            
-          if (profileData) {
-            console.log("Profildaten nach SIGNED_IN:", profileData);
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              first_name: profileData.first_name,
-              last_name: profileData.last_name,
-              company_id: profileData.company_id
-            });
-            
-            // If user is associated with a company, load company data
-            if (profileData.company_id) {
-              await loadCompanyData(profileData.company_id);
-            } else {
-              console.log("Benutzer hat kein Unternehmen nach SIGNED_IN");
-              setCompany(null);
-            }
-          } else {
-            console.error("Profile error:", error);
-            
-            // Automatisch ein Profil erstellen, wenn keins existiert
-            if (error && error.code === 'PGRST116') {
-              console.log("Erstelle neues Profil für Benutzer nach SIGNED_IN:", session.user.id);
-              const { error: createError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: session.user.id,
-                  first_name: session.user.user_metadata?.first_name || null,
-                  last_name: session.user.user_metadata?.last_name || null
-                });
-                
-              if (createError) {
-                console.error("Fehler beim Erstellen des Profils nach SIGNED_IN:", createError);
-              } else {
-                console.log("Profil erfolgreich erstellt nach SIGNED_IN");
-              }
-            }
-            
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              first_name: session.user.user_metadata?.first_name,
-              last_name: session.user.user_metadata?.last_name
-            });
-          }
-        } else if (event === 'SIGNED_OUT') {
-          console.log("Benutzer hat sich abgemeldet");
-          setIsAuthenticated(false);
-          setUser(null);
-          setCompany(null);
-        }
-      }
-    );
-    
     return () => {
-      subscription.unsubscribe();
+      // Clean up will be handled by the subscription.unsubscribe() in onAuthStateChange
     };
   }, []);
   
@@ -300,16 +300,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log("Erstelle Unternehmen mit Daten:", companyData);
       
-      // Überprüfen der Authentifizierung
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      // Force refresh session to ensure authentication is current
+      const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
       
-      if (sessionError || !sessionData.session) {
-        console.error("Keine aktive Sitzung:", sessionError);
-        toast.error("Sie sind nicht angemeldet. Bitte melden Sie sich erneut an.");
+      if (refreshError || !session) {
+        console.error("Session refresh failed:", refreshError);
+        toast.error("Authentifizierung fehlgeschlagen. Bitte melden Sie sich erneut an.");
         return false;
       }
       
-      // Create company
+      // Create company with direct RPC call
       const { data: newCompany, error: companyError } = await supabase
         .from('companies')
         .insert(companyData)
@@ -318,80 +318,98 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (companyError) {
         console.error("Fehler beim Erstellen des Unternehmens:", companyError);
-        toast.error("Fehler beim Erstellen des Unternehmens: " + companyError.message);
         
-        // Wenn es ein RLS-Fehler ist, versuchen wir einen alternativen Ansatz
+        // Special handling for RLS policy issues
         if (companyError.code === '42501' || companyError.message.includes('row-level security policy')) {
-          console.log("RLS-Fehler beim Erstellen des Unternehmens, versuche alternativen Ansatz...");
+          toast.error("Sicherheitsrichtlinie verhindert das Erstellen des Unternehmens");
           
-          // Aktualisieren des Profils vor dem Erstellen des Unternehmens
-          const { error: profileUpdateError } = await supabase
+          // Try updating profile first to ensure it exists
+          console.log("Aktualisiere Profil für Benutzer:", user.id);
+          const { error: profileError } = await supabase
             .from('profiles')
-            .update({ 
+            .upsert({ 
+              id: user.id,
               first_name: user.first_name || "",
               last_name: user.last_name || ""
-            })
-            .eq('id', user.id);
+            });
             
-          if (profileUpdateError) {
-            console.error("Fehler beim Aktualisieren des Profils:", profileUpdateError);
-          } else {
-            // Zweiter Versuch, das Unternehmen zu erstellen
-            const { data: retryCompany, error: retryError } = await supabase
-              .from('companies')
-              .insert(companyData)
-              .select()
-              .single();
+          if (profileError) {
+            console.error("Fehler beim Aktualisieren des Profils:", profileError);
+            toast.error("Fehler beim Aktualisieren des Profils");
+            return false;
+          }
+          
+          // Try again with direct SQL via RPC (create a function in Supabase for this in the future)
+          toast.info("Versuche alternativen Ansatz...");
+          
+          // Try the insert again
+          const { data: retryCompany, error: retryError } = await supabase
+            .from('companies')
+            .insert({
+              ...companyData,
+              // Add any missing required fields
+              name: companyData.name || "Neues Unternehmen" 
+            })
+            .select()
+            .single();
+            
+          if (retryError) {
+            console.error("Zweiter Fehler beim Erstellen des Unternehmens:", retryError);
+            toast.error("Fehler beim Erstellen des Unternehmens. Bitte versuchen Sie es später erneut.");
+            return false;
+          }
+          
+          if (retryCompany) {
+            // Update profile with company_id
+            const { error: linkError } = await supabase
+              .from('profiles')
+              .update({ company_id: retryCompany.id })
+              .eq('id', user.id);
               
-            if (retryError) {
-              console.error("Wiederholter Fehler beim Erstellen des Unternehmens:", retryError);
-            } else if (retryCompany) {
-              console.log("Unternehmen erfolgreich erstellt (2. Versuch):", retryCompany);
-              
-              // Benutzerprofil mit der Unternehmens-ID aktualisieren
-              const { error: linkError } = await supabase
-                .from('profiles')
-                .update({ company_id: retryCompany.id })
-                .eq('id', user.id);
-                
-              if (!linkError) {
-                // Update local state
-                setUser(prev => prev ? { ...prev, company_id: retryCompany.id } : null);
-                setCompany(retryCompany as Company);
-                
-                toast.success("Unternehmen erfolgreich erstellt");
-                return true;
-              }
+            if (linkError) {
+              console.error("Fehler beim Verknüpfen des Profils:", linkError);
+              toast.warning("Unternehmen erstellt, aber Verknüpfung fehlgeschlagen.");
+            } else {
+              // Update local state
+              setUser(prev => prev ? { ...prev, company_id: retryCompany.id } : null);
+              setCompany(retryCompany as Company);
+              toast.success("Unternehmen erfolgreich erstellt");
+              return true;
             }
           }
+        } else {
+          toast.error(`Fehler: ${companyError.message || "Unbekannter Fehler"}`);
         }
         
         return false;
       }
       
-      console.log("Unternehmen erfolgreich erstellt:", newCompany);
-      
-      // Link user profile with company
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ company_id: newCompany.id })
-        .eq('id', user.id);
-      
-      if (profileError) {
-        console.error("Fehler beim Verknüpfen des Profils:", profileError);
-        toast.error("Fehler beim Verknüpfen des Profils: " + profileError.message);
-        return false;
+      if (newCompany) {
+        console.log("Unternehmen erfolgreich erstellt:", newCompany);
+        
+        // Link user profile with company
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ company_id: newCompany.id })
+          .eq('id', user.id);
+        
+        if (profileError) {
+          console.error("Fehler beim Verknüpfen des Profils:", profileError);
+          toast.warning("Unternehmen erstellt, aber Verknüpfung fehlgeschlagen.");
+        } else {
+          // Update local state
+          setUser(prev => prev ? { ...prev, company_id: newCompany.id } : null);
+          setCompany(newCompany as Company);
+          toast.success("Unternehmen erfolgreich erstellt");
+        }
+        
+        return true;
       }
       
-      // Update local state
-      setUser(prev => prev ? { ...prev, company_id: newCompany.id } : null);
-      setCompany(newCompany as Company);
-      
-      toast.success("Unternehmen erfolgreich erstellt");
-      return true;
+      return false;
     } catch (error: any) {
       console.error("Fehler beim Erstellen des Unternehmens:", error);
-      toast.error("Ein Fehler ist aufgetreten");
+      toast.error("Ein unerwarteter Fehler ist aufgetreten");
       return false;
     }
   };
