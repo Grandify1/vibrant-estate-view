@@ -10,7 +10,7 @@ export const useCompanyCreator = (
   setCompany: React.Dispatch<React.SetStateAction<Company | null>>
 ) => {
   const createCompany = async (
-    companyData: Omit<Company, 'id' | 'created_at' | 'updated_at'>
+    companyFormData: Omit<Company, 'id' | 'created_at' | 'updated_at'>
   ): Promise<boolean> => {
     try {
       if (!user || !user.id) {
@@ -19,7 +19,7 @@ export const useCompanyCreator = (
         return false;
       }
 
-      console.log("Erstelle Unternehmen mit Daten:", companyData);
+      console.log("Erstelle Unternehmen mit Daten:", companyFormData);
       console.log("User ID:", user.id);
       
       // Get session to verify authentication
@@ -34,9 +34,9 @@ export const useCompanyCreator = (
       console.log("Session beim Erstellen des Unternehmens:", session.user.id);
 
       // First attempt to insert company data
-      let { data: companyData, error } = await supabase
+      let { data: createdCompany, error } = await supabase
         .from('companies')
-        .insert(companyData)
+        .insert(companyFormData)
         .select()
         .single();
 
@@ -49,7 +49,7 @@ export const useCompanyCreator = (
         
         const { data: altCompany, error: altError } = await supabase
           .from('companies')
-          .insert(companyData)
+          .insert(companyFormData)
           .select()
           .single();
           
@@ -59,20 +59,20 @@ export const useCompanyCreator = (
         }
         
         // Use the alternative company data if the first attempt failed
-        companyData = altCompany;
+        createdCompany = altCompany;
       }
 
-      if (!companyData) {
+      if (!createdCompany) {
         toast.error("Unternehmen konnte nicht erstellt werden");
         return false;
       }
 
-      console.log("Unternehmen erfolgreich erstellt:", companyData);
+      console.log("Unternehmen erfolgreich erstellt:", createdCompany);
 
       // Update user profile with company_id
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ company_id: companyData.id })
+        .update({ company_id: createdCompany.id })
         .eq('id', user.id);
 
       if (updateError) {
@@ -83,11 +83,11 @@ export const useCompanyCreator = (
         if (user) {
           setUser({
             ...user,
-            company_id: companyData.id
+            company_id: createdCompany.id
           });
         }
         
-        setCompany(companyData);
+        setCompany(createdCompany);
         toast.success("Unternehmen erfolgreich erstellt!");
       }
 
