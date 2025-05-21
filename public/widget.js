@@ -2,7 +2,7 @@
 /**
  * ImmoUpload Widget
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 2.1 - Two-Part Embed System mit DOM-Ready Prüfung
+ * Version 2.2 - Two-Part Embed System mit verbesserten Portal-Handling
  */
 (function() {
   // Globales Objekt für das Widget erstellen
@@ -43,16 +43,56 @@
       portalContainer = document.createElement('div');
       portalContainer.id = portalId;
       portalContainer.style.position = 'fixed';
-      portalContainer.style.zIndex = '999999';
+      portalContainer.style.zIndex = '9999999'; // Extrem hoher z-index
       portalContainer.style.top = '0';
       portalContainer.style.left = '0';
-      portalContainer.style.width = '100%';
-      portalContainer.style.height = '100%';
+      portalContainer.style.width = '100vw'; // Wichtig: verwende viewport width
+      portalContainer.style.height = '100vh'; // Wichtig: verwende viewport height
       portalContainer.style.overflow = 'visible';
       portalContainer.style.pointerEvents = 'none';
       portalContainer.style.display = 'none';
-      document.body.appendChild(portalContainer);
+      
+      // Container erst nach DOM-Ready einfügen
+      if (document.body) {
+        document.body.appendChild(portalContainer);
+      } else {
+        // Falls body noch nicht verfügbar ist (unwahrscheinlich nach domReady)
+        document.addEventListener('DOMContentLoaded', function() {
+          document.body.appendChild(portalContainer);
+        });
+      }
     }
+    
+    // Globale Styles hinzufügen, die für Modals benötigt werden
+    const styleTag = document.createElement('style');
+    styleTag.textContent = `
+      /* ImmoWidget Portal Styles */
+      #${portalId} {
+        --immo-modal-z-index: 9999999;
+      }
+      
+      #${portalId}[data-modal-open="true"] {
+        pointer-events: auto;
+      }
+      
+      .immo-widget-iframe {
+        width: 100%;
+        border: none;
+        transition: height 0.3s ease;
+      }
+      
+      /* Verhindert Konflikte mit Website-Modals */
+      body[data-immo-modal-open="true"] .immo-widget-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: var(--immo-modal-z-index);
+      }
+    `;
+    document.head.appendChild(styleTag);
   });
   
   // Flag für Dialog-Status
@@ -89,11 +129,21 @@
       if (portalContainer) {
         portalContainer.style.display = 'block';
         portalContainer.style.pointerEvents = 'auto';
+        portalContainer.setAttribute('data-modal-open', 'true');
       }
       
       // Body Scroll Lock anwenden
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'relative';
+      document.body.setAttribute('data-immo-modal-open', 'true');
+      
+      // Backdrop für Mobile hinzufügen (falls noch nicht vorhanden)
+      let backdrop = document.querySelector('.immo-widget-modal-backdrop');
+      if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.className = 'immo-widget-modal-backdrop';
+        document.body.appendChild(backdrop);
+      }
       
       // Alle scroll locks aufheben in der Übersicht
       document.querySelectorAll('html, body, #root, [id^="__"], [class*="container"]').forEach(el => {
@@ -115,6 +165,7 @@
       const portalContainer = document.getElementById(portalId);
       if (portalContainer) {
         portalContainer.style.pointerEvents = 'none';
+        portalContainer.removeAttribute('data-modal-open');
         setTimeout(() => {
           if (!isDialogOpen && portalContainer) {
             portalContainer.style.display = 'none';
@@ -125,6 +176,13 @@
       // Body Scroll wiederherstellen
       document.body.style.overflow = '';
       document.body.style.position = '';
+      document.body.removeAttribute('data-immo-modal-open');
+      
+      // Backdrop entfernen wenn vorhanden
+      const backdrop = document.querySelector('.immo-widget-modal-backdrop');
+      if (backdrop) {
+        backdrop.parentNode.removeChild(backdrop);
+      }
       
       // Styles zurücksetzen mit Verzögerung
       setTimeout(() => {
@@ -184,8 +242,10 @@
       iframe.style.minHeight = '500px';
       iframe.style.maxWidth = '100%';
       iframe.id = 'immo-widget-iframe';
+      iframe.className = 'immo-widget-iframe';
       iframe.setAttribute('scrolling', 'no');
       iframe.setAttribute('title', 'Immobilien Übersicht');
+      iframe.setAttribute('loading', 'lazy');
       
       // Iframe zum Container hinzufügen
       container.appendChild(iframe);

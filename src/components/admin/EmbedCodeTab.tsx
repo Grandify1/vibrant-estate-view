@@ -91,7 +91,7 @@ ${bodyEmbedCode}`;
                 <p className="text-sm text-blue-600">
                   Bitte verwenden Sie unbedingt das <strong>zwei-teilige Einbindungssystem</strong>: Das Script im Head-Bereich
                   lädt den Widget-Code, der Container im Body-Bereich zeigt die Immobilien an. Dies ist entscheidend für eine korrekte
-                  Darstellung in allen Umgebungen.
+                  Darstellung und Funktionsfähigkeit der Dialoge.
                 </p>
               </div>
             </div>
@@ -146,8 +146,10 @@ ${bodyEmbedCode}`;
             <li>Optimiert für Mobilgeräte und Desktop</li>
             <li>Modals werden direkt am Body-Element angehängt für maximale Kompatibilität</li>
             <li>Verwendet ein zwei-teiliges Einbindungssystem für optimale Kompatibilität mit Baukastensystemen</li>
+            <li>Dialogfenster werden mit höchster Z-Index-Priorität angezeigt, um Überlappungsprobleme zu vermeiden</li>
           </ul>
         </div>
+        
         <div className="mt-4">
           <p className="text-sm font-medium mb-2">Widget-Anpassungen:</p>
           <div className="bg-gray-50 p-4 rounded-md">
