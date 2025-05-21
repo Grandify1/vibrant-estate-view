@@ -36,7 +36,7 @@ export function useProperties() {
             id: item.id,
             title: item.title,
             address: item.address,
-            status: item.status,
+            status: item.status as 'active' | 'sold' | 'archived',
             highlights: item.highlights || [],
             images: item.images || [],
             floorPlans: item.floor_plans || [],
@@ -95,7 +95,7 @@ export function useProperties() {
       
       const { data, error } = await supabase
         .from('properties')
-        .insert([dbProperty])
+        .insert(dbProperty)
         .select()
         .single();
       
@@ -108,7 +108,7 @@ export function useProperties() {
         id: data.id,
         title: data.title,
         address: data.address,
-        status: data.status,
+        status: data.status as 'active' | 'sold' | 'archived',
         highlights: data.highlights || [],
         images: data.images || [],
         floorPlans: data.floor_plans || [],
@@ -175,7 +175,7 @@ export function useProperties() {
         id: data.id,
         title: data.title,
         address: data.address,
-        status: data.status,
+        status: data.status as 'active' | 'sold' | 'archived',
         highlights: data.highlights || [],
         images: data.images || [],
         floorPlans: data.floor_plans || [],

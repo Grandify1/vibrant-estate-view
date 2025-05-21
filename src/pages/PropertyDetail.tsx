@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useProperties } from "@/hooks/useProperties";
@@ -12,7 +11,7 @@ import { Lightbox } from "@/components/ui/lightbox";
 
 export default function PropertyDetailPage() {
   const { propertyId } = useParams<{ propertyId: string }>();
-  const { properties, loading, lastError, retryOperation } = useProperties();
+  const { properties, loading, error } = useProperties();
   const [property, setProperty] = useState<Property | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -71,12 +70,12 @@ export default function PropertyDetailPage() {
     );
   }
   
-  if (lastError) {
+  if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4">
         <p className="text-xl mb-4">Fehler beim Laden der Immobilie</p>
-        <p className="mb-4">{lastError}</p>
-        <Button onClick={retryOperation}>Erneut versuchen</Button>
+        <p className="mb-4">{error.message}</p>
+        <Button onClick={() => window.location.reload()}>Erneut versuchen</Button>
       </div>
     );
   }

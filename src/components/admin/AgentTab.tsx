@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Agent } from '@/types/agent';
@@ -53,7 +52,7 @@ const AgentTab: React.FC = () => {
     }
   };
   
-  // Fix the type mismatch by adapting the deletion function
+  // Fix the type mismatch by extracting id from the agent
   const handleDelete = async (agentId: string) => {
     if (window.confirm("Sind Sie sicher, dass Sie diesen Makler löschen möchten?")) {
       await deleteAgent(agentId);
