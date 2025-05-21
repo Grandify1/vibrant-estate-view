@@ -26,16 +26,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, MoreHorizontal, Archive, Home } from "lucide-react";
+import { Edit, Trash2, MoreHorizontal, Archive, Home, Loader2 } from "lucide-react";
 
 interface PropertyListProps {
   properties: Property[];
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onChangeStatus: (id: string, status: 'active' | 'sold' | 'archived') => void;
+  loading?: boolean;
+  error?: string | null;
 }
 
-export default function PropertyList({ properties, onEdit, onDelete, onChangeStatus }: PropertyListProps) {
+export default function PropertyList({ properties, onEdit, onDelete, onChangeStatus, loading, error }: PropertyListProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [filter, setFilter] = useState<string | null>(null);
   
@@ -54,6 +56,34 @@ export default function PropertyList({ properties, onEdit, onDelete, onChangeSta
   const getStatusColor = (status: string) => {
     return propertyStatuses.find(s => s.value === status)?.color || "";
   };
+  
+  // If there's an error, display it
+  if (error) {
+    return (
+      <Card className="border-destructive">
+        <CardContent className="p-6">
+          <div className="text-center text-destructive">
+            <p className="text-lg font-medium">Fehler beim Laden der Immobilien</p>
+            <p className="mt-1">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // If loading, display a loading state
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex justify-center items-center p-12">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="mt-4 text-muted-foreground">Immobilien werden geladen...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <>
