@@ -4,6 +4,7 @@ import { useLocalStorage } from "./useLocalStorage";
 import { Property, initialProperty } from "../types/property";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
 interface PropertiesContextType {
   properties: Property[];
@@ -20,15 +21,16 @@ const PropertiesContext = createContext<PropertiesContextType | undefined>(undef
 
 // Helper functions to convert between our frontend model and Supabase model
 const toSupabaseProperty = (property: Omit<Property, "id" | "createdAt" | "updatedAt">) => {
+  // Convert specific properties to the expected Json type for Supabase
   return {
     title: property.title,
     address: property.address,
     status: property.status || 'active',
-    highlights: property.highlights || [],
-    images: property.images || [],
-    floor_plans: property.floorPlans || [], // Convert floorPlans to floor_plans
-    details: property.details || {},
-    energy: property.energy || {},
+    highlights: property.highlights as unknown as Json,
+    images: property.images as unknown as Json,
+    floor_plans: property.floorPlans as unknown as Json,
+    details: property.details as unknown as Json,
+    energy: property.energy as unknown as Json,
     description: property.description || '',
     amenities: property.amenities || '',
     location: property.location || ''
@@ -149,11 +151,11 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       if (propertyUpdate.title !== undefined) supabaseUpdate.title = propertyUpdate.title;
       if (propertyUpdate.address !== undefined) supabaseUpdate.address = propertyUpdate.address;
       if (propertyUpdate.status !== undefined) supabaseUpdate.status = propertyUpdate.status;
-      if (propertyUpdate.highlights !== undefined) supabaseUpdate.highlights = propertyUpdate.highlights;
-      if (propertyUpdate.images !== undefined) supabaseUpdate.images = propertyUpdate.images;
-      if (propertyUpdate.floorPlans !== undefined) supabaseUpdate.floor_plans = propertyUpdate.floorPlans;
-      if (propertyUpdate.details !== undefined) supabaseUpdate.details = propertyUpdate.details;
-      if (propertyUpdate.energy !== undefined) supabaseUpdate.energy = propertyUpdate.energy;
+      if (propertyUpdate.highlights !== undefined) supabaseUpdate.highlights = propertyUpdate.highlights as unknown as Json;
+      if (propertyUpdate.images !== undefined) supabaseUpdate.images = propertyUpdate.images as unknown as Json;
+      if (propertyUpdate.floorPlans !== undefined) supabaseUpdate.floor_plans = propertyUpdate.floorPlans as unknown as Json;
+      if (propertyUpdate.details !== undefined) supabaseUpdate.details = propertyUpdate.details as unknown as Json;
+      if (propertyUpdate.energy !== undefined) supabaseUpdate.energy = propertyUpdate.energy as unknown as Json;
       if (propertyUpdate.description !== undefined) supabaseUpdate.description = propertyUpdate.description;
       if (propertyUpdate.amenities !== undefined) supabaseUpdate.amenities = propertyUpdate.amenities;
       if (propertyUpdate.location !== undefined) supabaseUpdate.location = propertyUpdate.location;
