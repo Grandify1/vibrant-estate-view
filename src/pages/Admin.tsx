@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import LoginForm from "@/components/admin/LoginForm";
 import SetPasswordForm from "@/components/admin/SetPasswordForm";
 import AdminContent from "@/components/admin/AdminContent";
+import { Property } from "@/types/property";
 
 const AdminPage = () => {
   const { isAuthenticated, login, logout, setAdminPassword, hasSetPassword } = useAuth();
