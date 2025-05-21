@@ -20,9 +20,13 @@ const AgentTab: React.FC = () => {
     setEditingAgent(undefined);
   };
   
-  const handleEditClick = (agent: Agent) => {
-    setIsCreating(false);
-    setEditingAgent(agent);
+  // Fix: Update this function to receive the agent ID
+  const handleEditClick = (agentId: string) => {
+    const agent = agents.find(a => a.id === agentId);
+    if (agent) {
+      setIsCreating(false);
+      setEditingAgent(agent);
+    }
   };
   
   const handleFormCancel = () => {
@@ -53,7 +57,6 @@ const AgentTab: React.FC = () => {
     }
   };
   
-  // Fix the type mismatch by extracting id from the agent
   const handleDelete = async (agentId: string) => {
     if (window.confirm("Sind Sie sicher, dass Sie diesen Makler löschen möchten?")) {
       await deleteAgent(agentId);
@@ -79,7 +82,6 @@ const AgentTab: React.FC = () => {
             </Button>
           </div>
           
-          {/* Fix the type mismatch - the AgentList component expects 'agents' prop */}
           <AgentList 
             agents={agents} 
             onEdit={handleEditClick}

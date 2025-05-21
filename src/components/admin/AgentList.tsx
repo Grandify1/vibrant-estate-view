@@ -8,12 +8,14 @@ import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface AgentListProps {
+  agents: Agent[];
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-const AgentList: React.FC<AgentListProps> = ({ onEdit, onDelete }) => {
-  const { agents, loading } = useAgents();
+const AgentList: React.FC<AgentListProps> = ({ agents, onEdit, onDelete }) => {
+  // Remove the unused agents from useAgents as we're getting them from props now
+  const { loading } = useAgents();
 
   const handleDelete = async (id: string) => {
     if (confirm("Möchten Sie diesen Makler wirklich löschen?")) {

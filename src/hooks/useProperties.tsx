@@ -38,11 +38,11 @@ export function useProperties() {
             title: item.title,
             address: item.address,
             status: item.status as 'active' | 'sold' | 'archived',
-            highlights: (item.highlights || []) as PropertyHighlight[],
-            images: (item.images || []) as PropertyImage[],
-            floorPlans: (item.floor_plans || []) as FloorPlan[],
-            details: (item.details || {}) as PropertyDetails,
-            energy: (item.energy || { certificateAvailable: false }) as EnergyDetails,
+            highlights: (item.highlights || []) as unknown as PropertyHighlight[],
+            images: (item.images || []) as unknown as PropertyImage[],
+            floorPlans: (item.floor_plans || []) as unknown as FloorPlan[],
+            details: (item.details || {}) as unknown as PropertyDetails,
+            energy: (item.energy || { certificateAvailable: false }) as unknown as EnergyDetails,
             description: item.description || '',
             amenities: item.amenities || '',
             location: item.location || '',
@@ -77,16 +77,15 @@ export function useProperties() {
       }
       
       // Transform our Property type to match database schema
-      // Convert complex types to JSON-compatible objects for Supabase
       const dbProperty = {
         title: property.title,
         address: property.address,
         status: property.status,
-        highlights: JSON.parse(JSON.stringify(property.highlights)),
-        images: JSON.parse(JSON.stringify(property.images)),
-        floor_plans: JSON.parse(JSON.stringify(property.floorPlans)),
-        details: JSON.parse(JSON.stringify(property.details)),
-        energy: JSON.parse(JSON.stringify(property.energy)),
+        highlights: property.highlights as unknown as Json,
+        images: property.images as unknown as Json,
+        floor_plans: property.floorPlans as unknown as Json,
+        details: property.details as unknown as Json,
+        energy: property.energy as unknown as Json,
         description: property.description,
         amenities: property.amenities,
         location: property.location,
@@ -111,11 +110,25 @@ export function useProperties() {
         title: data.title,
         address: data.address,
         status: data.status as 'active' | 'sold' | 'archived',
-        highlights: (data.highlights || []) as PropertyHighlight[],
-        images: (data.images || []) as PropertyImage[],
-        floorPlans: (data.floor_plans || []) as FloorPlan[],
-        details: (data.details || {}) as PropertyDetails,
-        energy: (data.energy || { certificateAvailable: false }) as EnergyDetails,
+        highlights: (data.highlights || []) as unknown as PropertyHighlight[],
+        images: (data.images || []) as unknown as PropertyImage[],
+        floorPlans: (data.floor_plans || []) as unknown as FloorPlan[],
+        details: (data.details || {
+          price: '',
+          livingArea: '',
+          plotArea: '',
+          rooms: '',
+          bathrooms: '',
+          bedrooms: '',
+          propertyType: '',
+          availableFrom: '',
+          maintenanceFee: '',
+          constructionYear: '',
+          condition: '',
+          heatingType: '',
+          energySource: ''
+        }) as unknown as PropertyDetails,
+        energy: (data.energy || { certificateAvailable: false }) as unknown as EnergyDetails,
         description: data.description || '',
         amenities: data.amenities || '',
         location: data.location || '',
@@ -150,11 +163,11 @@ export function useProperties() {
       if (updates.title) dbUpdates.title = updates.title;
       if (updates.address) dbUpdates.address = updates.address;
       if (updates.status) dbUpdates.status = updates.status;
-      if (updates.highlights) dbUpdates.highlights = JSON.parse(JSON.stringify(updates.highlights));
-      if (updates.images) dbUpdates.images = JSON.parse(JSON.stringify(updates.images));
-      if (updates.floorPlans) dbUpdates.floor_plans = JSON.parse(JSON.stringify(updates.floorPlans));
-      if (updates.details) dbUpdates.details = JSON.parse(JSON.stringify(updates.details));
-      if (updates.energy) dbUpdates.energy = JSON.parse(JSON.stringify(updates.energy));
+      if (updates.highlights) dbUpdates.highlights = updates.highlights as unknown as Json;
+      if (updates.images) dbUpdates.images = updates.images as unknown as Json;
+      if (updates.floorPlans) dbUpdates.floor_plans = updates.floorPlans as unknown as Json;
+      if (updates.details) dbUpdates.details = updates.details as unknown as Json;
+      if (updates.energy) dbUpdates.energy = updates.energy as unknown as Json;
       if (updates.description) dbUpdates.description = updates.description;
       if (updates.amenities) dbUpdates.amenities = updates.amenities;
       if (updates.location) dbUpdates.location = updates.location;
@@ -178,11 +191,25 @@ export function useProperties() {
         title: data.title,
         address: data.address,
         status: data.status as 'active' | 'sold' | 'archived',
-        highlights: (data.highlights || []) as PropertyHighlight[],
-        images: (data.images || []) as PropertyImage[],
-        floorPlans: (data.floor_plans || []) as FloorPlan[],
-        details: (data.details || {}) as PropertyDetails,
-        energy: (data.energy || { certificateAvailable: false }) as EnergyDetails,
+        highlights: (data.highlights || []) as unknown as PropertyHighlight[],
+        images: (data.images || []) as unknown as PropertyImage[],
+        floorPlans: (data.floor_plans || []) as unknown as FloorPlan[],
+        details: (data.details || {
+          price: '',
+          livingArea: '',
+          plotArea: '',
+          rooms: '',
+          bathrooms: '',
+          bedrooms: '',
+          propertyType: '',
+          availableFrom: '',
+          maintenanceFee: '',
+          constructionYear: '',
+          condition: '',
+          heatingType: '',
+          energySource: ''
+        }) as unknown as PropertyDetails,
+        energy: (data.energy || { certificateAvailable: false }) as unknown as EnergyDetails,
         description: data.description || '',
         amenities: data.amenities || '',
         location: data.location || '',
