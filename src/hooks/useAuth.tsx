@@ -164,12 +164,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
   
-  // Registrierung mit Supabase
+  // Registrierung mit Supabase - ohne E-Mail-Bestätigung
   const signup = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
-      // Die aktuelle URL als Redirect-URL verwenden
-      const redirectTo = `${getCurrentUrl()}/auth`;
-      
+      // Registrierung ohne E-Mail-Bestätigung
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -178,7 +176,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             first_name: firstName,
             last_name: lastName
           },
-          emailRedirectTo: redirectTo
+          // Keine E-Mail-Bestätigung mehr erforderlich
+          emailRedirectTo: undefined
         }
       });
       
@@ -187,7 +186,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
       
-      toast.success("Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mails für die Bestätigung.");
+      // Automatisch einloggen
+      await login(email, password);
+      
+      toast.success("Registrierung erfolgreich! Sie sind jetzt angemeldet.");
       return true;
     } catch (error) {
       console.error("Fehler bei der Registrierung:", error);

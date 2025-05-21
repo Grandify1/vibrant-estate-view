@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -68,7 +67,8 @@ const AuthPage: React.FC = () => {
     try {
       const success = await signup(registerEmail, registerPassword, firstName, lastName);
       if (success) {
-        setActiveTab('login');
+        // Die Weiterleitung erfolgt automatisch durch die useEffect-Hook,
+        // da der Benutzer nach erfolgreicher Registrierung eingeloggt ist
       }
     } finally {
       setRegisterLoading(false);
