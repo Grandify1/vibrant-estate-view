@@ -90,8 +90,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.webp`;
           const filePath = `images/${fileName}`;
           
+          // Variable to store upload result
+          let uploadData = null;
+          let uploadError = null;
+          
           // Zu Supabase hochladen
-          const { data, error } = await supabase.storage
+          const uploadResult = await supabase.storage
             .from('properties')
             .upload(filePath, compressedBlob, {
               contentType: 'image/webp',
@@ -99,11 +103,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               upsert: false
             });
             
-          if (error) {
-            console.error(`Fehler beim Hochladen von ${file.name}:`, error);
+          uploadData = uploadResult.data;
+          uploadError = uploadResult.error;
+            
+          if (uploadError) {
+            console.error(`Fehler beim Hochladen von ${file.name}:`, uploadError);
             
             // Special handling for bucket not found
-            if (error.message.includes("bucket not found") || error.message.includes("bucket_not_found")) {
+            if (uploadError.message.includes("bucket not found") || uploadError.message.includes("bucket_not_found")) {
               try {
                 // Try to create the bucket
                 await supabase.storage.createBucket('properties', {
@@ -124,7 +131,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 if (retryUpload.error) {
                   throw retryUpload.error;
                 } else {
-                  data = retryUpload.data;
+                  // Use the data from retry upload instead
+                  uploadData = retryUpload.data;
+                  uploadError = null;
                 }
               } catch (bucketError) {
                 toast.error("Bucket nicht gefunden. Bitte kontaktieren Sie den Administrator.");
@@ -132,18 +141,21 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 continue;
               }
             } else {
-              toast.error(`Fehler beim Hochladen von ${file.name}: ${error.message}`);
+              toast.error(`Fehler beim Hochladen von ${file.name}: ${uploadError.message}`);
               continue;
             }
           }
           
-          // URL der hochgeladenen Datei abrufen
-          const { data: { publicUrl } } = supabase.storage
-            .from('properties')
-            .getPublicUrl(filePath);
-            
-          uploadedUrls.push(publicUrl);
-          console.log(`Successfully uploaded: ${publicUrl}`);
+          // If we have valid upload data, get the public URL
+          if (uploadData) {
+            // URL der hochgeladenen Datei abrufen
+            const { data: { publicUrl } } = supabase.storage
+              .from('properties')
+              .getPublicUrl(filePath);
+              
+            uploadedUrls.push(publicUrl);
+            console.log(`Successfully uploaded: ${publicUrl}`);
+          }
         } catch (uploadError) {
           console.error(`Exception beim Hochladen von ${file.name}:`, uploadError);
           toast.error(`Unerwarteter Fehler beim Hochladen von ${file.name}`);
