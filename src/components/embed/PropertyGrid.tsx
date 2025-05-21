@@ -125,11 +125,11 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
           {properties.map((property) => (
             <Card key={property.id} className="property-card overflow-hidden">
               <div onClick={() => onPropertyClick(property)} className="cursor-pointer">
-                <div className="aspect-property relative h-48">
+                <div className="h-48 w-full relative">
                   <ImageWithFallback
                     src={getMainImage(property)}
                     alt={property.title}
-                    className="object-cover w-full h-full"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                   <div className="absolute top-4 right-4 bg-white bg-opacity-90 px-3 py-1 rounded font-medium text-estate">
                     {property.details.price ? `${formatNumber(property.details.price)} €` : "Auf Anfrage"}
@@ -170,14 +170,12 @@ export default function PropertyGrid({ properties, onPropertyClick }: PropertyGr
                 onClick={() => onPropertyClick(property)} 
                 className="cursor-pointer flex flex-col sm:flex-row"
               >
-                <div className="sm:w-1/3">
-                  <AspectRatio ratio={4/3} className="sm:h-full">
-                    <ImageWithFallback
-                      src={getMainImage(property)}
-                      alt={property.title}
-                      className="object-cover w-full h-full"
-                    />
-                  </AspectRatio>
+                <div className="sm:w-1/3 h-48 sm:h-auto relative">
+                  <ImageWithFallback
+                    src={getMainImage(property)}
+                    alt={property.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
                 </div>
                 <CardContent className="p-4 sm:w-2/3 flex flex-col">
                   <div className="flex-grow">

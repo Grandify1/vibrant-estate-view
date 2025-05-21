@@ -1,11 +1,18 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTitle, DialogContent, DialogDescription } from "@/components/ui/dialog";
 import { Property } from "@/types/property";
 import { Separator } from "@/components/ui/separator";
 import { Bath, Bed, Calendar, Home, MapPin, Ruler } from "lucide-react";
 import PropertyContactForm from "./ContactForm";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface PropertyDetailProps {
   property: Property | null;
@@ -16,6 +23,12 @@ interface PropertyDetailProps {
 export default function PropertyDetail({ property, isOpen, onClose }: PropertyDetailProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
+  
+  useEffect(() => {
+    // Reset active image index when property changes
+    setActiveImageIndex(0);
+    setImagesLoaded({});
+  }, [property?.id]);
   
   if (!property) return null;
   
@@ -41,17 +54,9 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
     }
   };
   
-  const getFeaturedImage = () => {
-    const featuredImg = property.images.find(img => img.isFeatured);
-    const imageUrl = featuredImg ? featuredImg.url : (property.images[0]?.url || '');
-    return getImageUrl(imageUrl);
-  };
-  
+  // Get all images, ensuring we have at least one
   const getImages = () => {
-    // Put featured image first, then the rest
-    const featured = property.images.find(img => img.isFeatured);
-    if (!featured && property.images.length === 0) {
-      // Create a dummy image if there are no images
+    if (!property.images || property.images.length === 0) {
       return [{
         id: "placeholder",
         url: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop",
@@ -59,12 +64,12 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
       }];
     }
     
-    if (!featured) return property.images;
-    
-    return [
-      featured,
-      ...property.images.filter(img => !img.isFeatured)
-    ];
+    // Sort images to put featured one first
+    return [...property.images].sort((a, b) => {
+      if (a.isFeatured) return -1;
+      if (b.isFeatured) return 1;
+      return 0;
+    });
   };
   
   // Progressive image component with loading state
@@ -104,7 +109,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   
   const images = getImages();
   console.log("Detail view images:", images);
-  const currentImage = images[activeImageIndex]?.url || getFeaturedImage();
+  const currentImage = images[activeImageIndex]?.url;
   
   const handleImageLoaded = (imgId: string) => {
     setImagesLoaded(prev => ({
@@ -133,35 +138,48 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
           {/* Left column - Image gallery */}
           <div className="md:col-span-2 relative">
             <div className="aspect-[4/3] bg-gray-100">
-              <ImageWithFallback 
-                src={getImageUrl(currentImage)}
-                alt={property.title}
-                className="w-full h-full object-cover"
-              />
+              {currentImage && (
+                <ImageWithFallback 
+                  src={getImageUrl(currentImage)}
+                  alt={property.title}
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
             
             {images.length > 1 && (
-              <div className="p-2 overflow-x-auto whitespace-nowrap">
-                <div className="flex space-x-2">
-                  {images.map((image, index) => (
-                    <button
-                      key={image.id}
-                      onClick={() => setActiveImageIndex(index)}
-                      className={`w-16 h-16 flex-shrink-0 rounded border-2 overflow-hidden ${
-                        index === activeImageIndex 
-                          ? 'border-estate' 
-                          : 'border-transparent'
-                      }`}
-                    >
-                      <ImageWithFallback
-                        src={getImageUrl(image.url)}
-                        alt={`Bild ${index + 1}`}
-                        className="w-full h-full object-cover"
-                        onLoad={() => handleImageLoaded(image.id)}
-                      />
-                    </button>
-                  ))}
-                </div>
+              <div className="p-4 overflow-x-auto">
+                <Carousel 
+                  className="w-full"
+                  opts={{
+                    align: 'start',
+                    loop: false,
+                  }}
+                >
+                  <CarouselContent>
+                    {images.map((image, index) => (
+                      <CarouselItem key={image.id} className="basis-1/4 sm:basis-1/5 md:basis-1/6 lg:basis-1/7">
+                        <button
+                          onClick={() => setActiveImageIndex(index)}
+                          className={`w-full h-16 flex-shrink-0 rounded border-2 overflow-hidden ${
+                            index === activeImageIndex 
+                              ? 'border-estate' 
+                              : 'border-transparent'
+                          }`}
+                        >
+                          <ImageWithFallback
+                            src={getImageUrl(image.url)}
+                            alt={`Bild ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            onLoad={() => handleImageLoaded(image.id)}
+                          />
+                        </button>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="left-2" />
+                  <CarouselNext className="right-2" />
+                </Carousel>
               </div>
             )}
           </div>
@@ -277,11 +295,11 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                         <div className="p-2 bg-gray-50 border-b">
                           <h4 className="font-medium">{plan.name}</h4>
                         </div>
-                        <div className="aspect-property bg-gray-100">
+                        <div className="aspect-property bg-gray-100 relative h-48">
                           <ImageWithFallback
                             src={getImageUrl(plan.url)}
                             alt={plan.name}
-                            className="w-full h-full object-contain"
+                            className="absolute inset-0 w-full h-full object-contain"
                           />
                         </div>
                       </div>

@@ -17,6 +17,8 @@ export async function compressImage(
   maxWidth = 1200,
   quality = 0.8
 ): Promise<{ compressedBlob: Blob; format: string }> {
+  console.log(`Compressing image, original size: ${Math.round(blob.size / 1024)}KB`);
+  
   // Create an image element to load the blob
   const img = document.createElement('img');
   const url = URL.createObjectURL(blob);
@@ -37,6 +39,8 @@ export async function compressImage(
     height = Math.round(width * aspectRatio);
   }
   
+  console.log(`Resizing image from ${img.width}x${img.height} to ${width}x${height}`);
+  
   // Create canvas for resizing
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -46,16 +50,20 @@ export async function compressImage(
   if (!ctx) {
     // If we can't get context, return original blob
     URL.revokeObjectURL(url);
+    console.log("Could not get canvas context, returning original image");
     return { compressedBlob: blob, format: blob.type.split('/')[1] || 'jpeg' };
   }
   
   // Draw image on canvas (resizing it)
+  ctx.fillStyle = '#FFFFFF'; // White background
+  ctx.fillRect(0, 0, width, height);
   ctx.drawImage(img, 0, 0, width, height);
   URL.revokeObjectURL(url);
   
   // Try AVIF first (check browser support)
   try {
     if ('toBlob' in canvas && supportsAvif()) {
+      console.log("Browser supports AVIF, trying AVIF conversion");
       const avifBlob = await new Promise<Blob | null>((resolve) => {
         canvas.toBlob(resolve, 'image/avif', quality);
       });
@@ -71,6 +79,7 @@ export async function compressImage(
   
   // Try WebP as fallback
   try {
+    console.log("Trying WebP conversion");
     const webpBlob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(resolve, 'image/webp', quality);
     });
@@ -84,6 +93,7 @@ export async function compressImage(
   }
   
   // Final fallback to JPEG
+  console.log("Trying JPEG conversion as final fallback");
   const jpegBlob = await new Promise<Blob | null>((resolve) => {
     canvas.toBlob(resolve, 'image/jpeg', quality);
   });
