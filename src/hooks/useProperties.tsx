@@ -1,4 +1,3 @@
-
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { Property, initialProperty } from "../types/property";
@@ -66,7 +65,8 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastError, setLastError] = useState<string | null>(null);
-  const [pendingOperation, setPendingOperation] = useState<(() => Promise<void>) | null>(null);
+  // Update the type to accept any Promise-returning function
+  const [pendingOperation, setPendingOperation] = useState<(() => Promise<any>) | null>(null);
   
   // Check network status
   const [isOnline, setIsOnline] = useState(true);
@@ -149,7 +149,11 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
     try {
       if (!isOnline) {
         toast.error("Keine Internetverbindung. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.");
-        setPendingOperation(() => () => addProperty(propertyData));
+        // Fix: Wrap in a void function to match the expected type
+        setPendingOperation(() => async () => {
+          const result = await addProperty(propertyData);
+          return result;
+        });
         throw new Error("Keine Internetverbindung");
       }
       
@@ -237,9 +241,12 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       setLastError(`Fehler beim Erstellen der Immobilie: ${errorMessage}`);
       toast.error("Fehler beim Erstellen der Immobilie");
       
-      // Save the operation for later retry
+      // Fix: Wrap in a void function to match the expected type
       if (!isOnline) {
-        setPendingOperation(() => () => addProperty(propertyData));
+        setPendingOperation(() => async () => {
+          const result = await addProperty(propertyData);
+          return result;
+        });
       }
       
       throw error;

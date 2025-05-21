@@ -4,6 +4,7 @@ import PropertyGrid from "@/components/embed/PropertyGrid";
 import PropertyDetail from "@/components/embed/PropertyDetail";
 import { useProperties } from "@/hooks/useProperties";
 import { Property } from "@/types/property";
+import { PropertiesProvider } from "@/hooks/useProperties"; 
 
 // Demo-Eigenschaften für den Fall, dass keine Immobilien gefunden werden
 const demoProperties: Property[] = [
@@ -121,7 +122,7 @@ const demoProperties: Property[] = [
   }
 ];
 
-const EmbedPage = () => {
+const EmbedPageContent = () => {
   const { properties, loading, lastError, retryOperation } = useProperties();
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -230,6 +231,15 @@ const EmbedPage = () => {
         onClose={() => setDetailOpen(false)}
       />
     </div>
+  );
+};
+
+// Wrap the component with the PropertiesProvider
+const EmbedPage = () => {
+  return (
+    <PropertiesProvider>
+      <EmbedPageContent />
+    </PropertiesProvider>
   );
 };
 
