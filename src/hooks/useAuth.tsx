@@ -21,6 +21,7 @@ interface AuthContextType {
   signup: (email: string, password: string, firstName: string, lastName: string) => Promise<boolean>;
   logout: () => void;
   createCompany: (companyData: Omit<Company, 'id' | 'created_at' | 'updated_at'>) => Promise<boolean>;
+  updateCompany: (companyData: Partial<Omit<Company, 'id' | 'created_at' | 'updated_at'>>) => Promise<boolean>;
   loadingAuth: boolean;
 }
 
@@ -69,15 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             // Wenn der Nutzer einem Unternehmen zugeordnet ist, lade die Unternehmensdaten
             if (profileData.company_id) {
-              const { data: companyData } = await supabase
-                .from('companies')
-                .select('*')
-                .eq('id', profileData.company_id)
-                .single();
-                
-              if (companyData) {
-                setCompany(companyData as Company);
-              }
+              await loadCompanyData(profileData.company_id);
             }
           }
         } else {
@@ -118,15 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             // Wenn der Nutzer einem Unternehmen zugeordnet ist, lade die Unternehmensdaten
             if (profileData.company_id) {
-              const { data: companyData } = await supabase
-                .from('companies')
-                .select('*')
-                .eq('id', profileData.company_id)
-                .single();
-                
-              if (companyData) {
-                setCompany(companyData as Company);
-              }
+              await loadCompanyData(profileData.company_id);
             }
           }
         } else if (event === 'SIGNED_OUT') {
@@ -141,6 +126,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+  
+  // Unternehmensdaten laden
+  const loadCompanyData = async (companyId: string) => {
+    try {
+      const { data: companyData, error } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', companyId)
+        .single();
+      
+      if (error) {
+        console.error("Fehler beim Laden der Unternehmensdaten:", error);
+        return;
+      }
+      
+      if (companyData) {
+        setCompany(companyData as Company);
+      }
+    } catch (error) {
+      console.error("Fehler beim Laden der Unternehmensdaten:", error);
+    }
+  };
   
   // Login mit Supabase
   const login = async (email: string, password: string) => {
@@ -241,6 +248,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     }
   };
+
+  // Unternehmen aktualisieren
+  const updateCompany = async (companyData: Partial<Omit<Company, 'id' | 'created_at' | 'updated_at'>>) => {
+    if (!user || !company) {
+      toast.error("Sie müssen angemeldet sein und ein Unternehmen haben, um Änderungen vorzunehmen");
+      return false;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('companies')
+        .update(companyData)
+        .eq('id', company.id);
+      
+      if (error) {
+        toast.error("Fehler beim Aktualisieren des Unternehmens: " + error.message);
+        return false;
+      }
+      
+      // Lokalen Zustand aktualisieren
+      setCompany(prev => prev ? { ...prev, ...companyData } as Company : null);
+      
+      return true;
+    } catch (error) {
+      console.error("Fehler beim Aktualisieren des Unternehmens:", error);
+      toast.error("Ein Fehler ist aufgetreten");
+      return false;
+    }
+  };
   
   // Abmelden
   const logout = () => {
@@ -264,6 +300,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         company,
         createCompany,
+        updateCompany,
         loadingAuth
       }}
     >

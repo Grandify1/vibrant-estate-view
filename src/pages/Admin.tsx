@@ -11,6 +11,7 @@ import PropertyListWrapper from "@/components/admin/PropertyListWrapper";
 import AgentTab from "@/components/admin/AgentTab";
 import EmbedCodeTab from "@/components/admin/EmbedCodeTab";
 import AdminContent from "@/components/admin/AdminContent";
+import SettingsTab from "@/components/admin/SettingsTab";
 
 // Property Tab Komponente hier erstellen
 const PropertyTab = () => {
@@ -70,6 +71,7 @@ export default function Admin() {
               <TabsTrigger value="properties">Immobilien</TabsTrigger>
               <TabsTrigger value="agents">Makler</TabsTrigger>
               <TabsTrigger value="embedcode">Embed-Code</TabsTrigger>
+              <TabsTrigger value="settings">Einstellungen</TabsTrigger>
             </TabsList>
             
             <TabsContent value="properties">
@@ -82,6 +84,10 @@ export default function Admin() {
             
             <TabsContent value="embedcode">
               <EmbedCodeTab />
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <SettingsTab />
             </TabsContent>
           </Tabs>
         </div>
