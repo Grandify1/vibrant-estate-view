@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogOverlay } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogOverlay } from "@/components/ui/dialog";
 import { Property } from "@/types/property";
 import { Separator } from "@/components/ui/separator";
 import { Bath, Bed, Calendar, Home, MapPin, Ruler } from "lucide-react";
@@ -102,6 +103,12 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[900px] min-h-[600px] max-h-[90vh] overflow-y-auto p-0 border bg-white">
+        {/* Add DialogTitle for accessibility - can be visually hidden if needed */}
+        <DialogHeader className="sr-only">
+          <DialogTitle>{property.title}</DialogTitle>
+          <DialogDescription>Immobilien Details</DialogDescription>
+        </DialogHeader>
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
           {/* Left column - Image gallery */}
           <div className="md:col-span-2 relative">
