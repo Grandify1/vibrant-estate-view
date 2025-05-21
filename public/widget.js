@@ -21,24 +21,27 @@
     return;
   }
   
+  // Container-Style direkt setzen für Modals
+  container.style.overflow = 'visible';
+  container.style.position = 'relative';
+  
   // Iframe erstellen
   const iframe = document.createElement('iframe');
   iframe.src = baseUrl + '/embed';
   iframe.style.width = widgetWidth;
   iframe.style.border = 'none';
-  iframe.style.minHeight = '700px'; // Höhere Mindesthöhe für bessere Darstellung
+  iframe.style.minHeight = '500px'; // Optimale Anfangshöhe
   iframe.style.maxWidth = '100%';
-  iframe.style.overflow = 'visible'; // Erlaubt Inhalte, die über die Grenzen hinausgehen
+  iframe.style.overflow = 'visible'; // Erlaubt Overflow für den Dialog
   iframe.id = 'immo-widget-iframe';
   iframe.setAttribute('scrolling', 'no');
   iframe.setAttribute('title', 'Immobilien Übersicht');
   
-  // CSS für das Container-Element hinzufügen um Überlauf zu erlauben
-  container.style.overflow = 'visible';
-  container.style.position = 'relative';
-  
   // Iframe zum Container hinzufügen
   container.appendChild(iframe);
+  
+  // Flag für Dialog-Status
+  let isDialogOpen = false;
   
   // Höhenanpassung durch Nachrichtenaustausch
   let resizeTimeout;
@@ -55,6 +58,9 @@
     }
     
     if (e.data && e.data.type === 'resize-iframe') {
+      // Keine Höhenanpassung wenn Dialog geöffnet ist, um Springen zu vermeiden
+      if (isDialogOpen) return;
+      
       // Doppelte Höhenaktualisierungen vermeiden
       if (lastHeight === e.data.height) return;
       lastHeight = e.data.height;
@@ -64,37 +70,58 @@
       resizeTimeout = setTimeout(() => {
         const iframe = document.getElementById('immo-widget-iframe');
         if (iframe) {
-          // Setze eine vernünftige Mindesthöhe um sicherzustellen, dass genug Platz ist
-          const newHeight = Math.max(e.data.height + 50, 700);
-          iframe.style.height = newHeight + 'px';
-          
-          // Event auslösen, damit die Website auf die Größenänderung reagieren kann
-          const event = new CustomEvent('immo-widget-resize', { 
-            detail: { height: newHeight }
-          });
-          document.dispatchEvent(event);
+          // Minimale Höhe setzen ohne großen Buffer
+          iframe.style.height = (e.data.height + 20) + 'px';
         }
       }, 50);
     }
     
-    // Spezieller Event-Typ für Dialog-Öffnung/Schließung
+    // Spezieller Event-Typ für Dialog-Öffnung
     if (e.data && e.data.type === 'dialog-opened') {
+      isDialogOpen = true;
+      
+      // Eltern-Container und alle übergeordneten Elemente anpassen
       const iframe = document.getElementById('immo-widget-iframe');
       if (iframe) {
-        // CSS-Modifikation damit Modals richtig angezeigt werden können
         iframe.style.overflow = 'visible';
-        container.style.overflow = 'visible'; 
+        container.style.overflow = 'visible';
+        
+        // Parent-Elemente finden und anpassen
+        let currentElement = container.parentElement;
+        while (currentElement && currentElement !== document.body) {
+          // Overflow-Eigenschaften speichern
+          if (!currentElement.dataset.originalOverflow) {
+            currentElement.dataset.originalOverflow = currentElement.style.overflow;
+          }
+          
+          // Overflow auf visible setzen
+          currentElement.style.overflow = 'visible';
+          currentElement = currentElement.parentElement;
+        }
       }
     }
     
     if (e.data && e.data.type === 'dialog-closed') {
-      const iframe = document.getElementById('immo-widget-iframe');
-      if (iframe) {
-        // Nach dem Schließen des Dialogs Zustand zurücksetzen
-        setTimeout(() => {
-          iframe.style.overflow = 'hidden';
-        }, 500); // Verzögerung für eine glatte Animation
-      }
+      isDialogOpen = false;
+      
+      // Styles zurücksetzen mit Verzögerung
+      setTimeout(() => {
+        const iframe = document.getElementById('immo-widget-iframe');
+        if (iframe) {
+          // Übergeordnete Elemente zurücksetzen
+          let currentElement = container.parentElement;
+          while (currentElement && currentElement !== document.body) {
+            if (currentElement.dataset.originalOverflow !== undefined) {
+              currentElement.style.overflow = currentElement.dataset.originalOverflow || '';
+              delete currentElement.dataset.originalOverflow;
+            }
+            currentElement = currentElement.parentElement;
+          }
+          
+          // Nach Dialog-Schließung Größe neu berechnen
+          iframe.contentWindow.postMessage({ type: 'parent-resize' }, '*');
+        }
+      }, 500);
     }
   });
   

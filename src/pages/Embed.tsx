@@ -50,10 +50,10 @@ const EmbedPageContent = () => {
     }
   }, [properties, loading]);
 
-  // Send dialog state to parent window
+  // Send dialog state to parent window for overflow handling
   useEffect(() => {
     if (window.parent !== window) {
-      // Sende Dialog-Status an das übergeordnete Fenster
+      // Send dialog state to parent window
       window.parent.postMessage({ 
         type: detailOpen ? 'dialog-opened' : 'dialog-closed' 
       }, '*');
@@ -65,8 +65,10 @@ const EmbedPageContent = () => {
     const updateFrameHeight = () => {
       if (containerRef.current && window.parent !== window) {
         const height = containerRef.current.offsetHeight;
-        // Senden der berechneten Höhe an den Parent
-        window.parent.postMessage({ type: 'resize-iframe', height: height }, '*');
+        // Only send height updates when dialog is closed to prevent jumpy behavior
+        if (!detailOpen) {
+          window.parent.postMessage({ type: 'resize-iframe', height }, '*');
+        }
       }
     };
 
@@ -89,7 +91,10 @@ const EmbedPageContent = () => {
 
     // Create MutationObserver to watch for DOM changes
     const observer = new MutationObserver(() => {
-      updateFrameHeight();
+      // Only update height if dialog is closed
+      if (!detailOpen) {
+        updateFrameHeight();
+      }
     });
 
     if (containerRef.current) {
@@ -107,7 +112,7 @@ const EmbedPageContent = () => {
       window.removeEventListener('message', handleParentMessage);
       observer.disconnect();
     };
-  }, [activeProperties, loading, detailOpen, lastError, isOffline, selectedProperty]);
+  }, [activeProperties, loading, detailOpen, lastError, isOffline]);
   
   const handlePropertyClick = (property: Property) => {
     setSelectedProperty(property);
