@@ -113,7 +113,7 @@
       if (iframe.contentWindow && iframe.contentWindow.document && iframe.contentWindow.document.body) {
         const height = iframe.contentWindow.document.body.scrollHeight;
         if (height > 100) { // Nur sinnvolle Höhen verwenden
-          iframe.style.height = (height + 20) + 'px'; // Ein bisschen Extra-Platz
+          iframe.style.height = (height + 5) + 'px'; // Reduzierter Extra-Platz
         }
       }
     } catch (e) {

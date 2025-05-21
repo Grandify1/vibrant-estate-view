@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogOverlay } from "@/components/ui/dialog";
 import { Property } from "@/types/property";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { Bath, Bed, Calendar, Home, MapPin, Ruler, Phone, Mail } from "lucide-react";
+import { Bath, Bed, Calendar, Home, MapPin, Ruler, Phone, Mail, UserRound } from "lucide-react";
 import PropertyContactForm from "./ContactForm";
 import { Lightbox } from "@/components/ui/lightbox";
 import { Agent } from "@/types/agent";
@@ -418,6 +417,20 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
             {/* Kontaktabschnitt */}
             <div className="bg-gray-50 rounded-lg p-4 md:p-6">
               <h3 className="text-xl font-semibold mb-4">Kontakt</h3>
+              {agent && (
+                <div className="mb-6 flex items-center space-x-4">
+                  <Avatar className="h-16 w-16">
+                    {agent.image_url ? (
+                      <AvatarImage src={agent.image_url} alt={`${agent.first_name} ${agent.last_name}`} />
+                    ) : null}
+                    <AvatarFallback>{getAgentInitials()}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className="font-medium">{agent.first_name} {agent.last_name}</h4>
+                    {agent.position && <p className="text-sm text-gray-600">{agent.position}</p>}
+                  </div>
+                </div>
+              )}
               <PropertyContactForm 
                 propertyTitle={property.title} 
                 agentEmail={agent?.email}
