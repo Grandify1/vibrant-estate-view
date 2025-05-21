@@ -23,6 +23,7 @@ const PopoverContent = React.forwardRef<
       )}
       style={{
         position: 'fixed',
+        zIndex: 9999999,
       }}
       {...props}
     />

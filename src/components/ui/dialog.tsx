@@ -23,6 +23,14 @@ const DialogOverlay = React.forwardRef<
       "fixed inset-0 z-[999998] bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0, 0, 0, 0.5)',
+    }}
     {...props}
   />
 ))
@@ -42,8 +50,14 @@ const DialogContent = React.forwardRef<
       )}
       style={{
         position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
         margin: '0',
         padding: '1.5rem',
+        zIndex: 9999999,
+        maxHeight: '90vh',
+        overflowY: 'auto',
       }}
       {...props}
     >

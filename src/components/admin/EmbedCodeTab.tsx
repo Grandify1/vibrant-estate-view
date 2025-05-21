@@ -7,12 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const EmbedCodeTab: React.FC = () => {
   // Define the head script code that should be placed in the <head> of the website
-  const headScriptCode = `<!-- ImmoUpload Widget Initialisierungs-Script (In den <head>-Bereich einfügen) -->
+  const headScriptCode = `<!-- ImmoUpload Widget Initialisierungs-Script (WICHTIG: In den <head>-Bereich einfügen) -->
 <script src="${window.location.origin}/widget.js" id="immo-widget" defer></script>
 `;
 
   // Define the body embed code that should be placed where you want the widget to appear
-  const bodyEmbedCode = `<!-- ImmoUpload Widget Container (Dort einfügen, wo das Widget erscheinen soll) -->
+  const bodyEmbedCode = `<!-- ImmoUpload Widget Container (In den <body>-Bereich einfügen, wo das Widget erscheinen soll) -->
 <div id="immo-widget-container" class="immo-widget-container"></div>
 `;
 
@@ -38,7 +38,7 @@ ${bodyEmbedCode}`;
       <CardHeader>
         <CardTitle>Embed Code</CardTitle>
         <CardDescription>
-          Kopieren Sie diesen Code und fügen Sie ihn auf Ihrer Website ein, um die Immobilienübersicht anzuzeigen.
+          Fügen Sie diesen Code auf Ihrer Website ein, um die Immobilienübersicht anzuzeigen.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -50,6 +50,20 @@ ${bodyEmbedCode}`;
           
           <TabsContent value="standard">
             <div className="space-y-4">
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-sm font-bold mb-1 text-yellow-700">WICHTIG: Zwei-Teilige Einbindung ist erforderlich!</p>
+                <p className="text-sm text-yellow-600">
+                  Sie müssen unbedingt beide Code-Teile auf Ihrer Website einbinden:
+                </p>
+                <ol className="list-decimal ml-5 mt-2 text-sm text-yellow-600">
+                  <li>Das <strong>Script im &lt;head&gt;</strong> initialisiert das Portal-System für Dialoge.</li>
+                  <li>Der <strong>Container im &lt;body&gt;</strong> zeigt die eigentlichen Immobilien an.</li>
+                </ol>
+                <p className="text-sm text-yellow-600 mt-2">
+                  Ohne diese korrekte Einbindung werden die Dialog-Fenster nicht richtig angezeigt!
+                </p>
+              </div>
+            
               <div>
                 <p className="text-sm font-medium mb-2">Schritt 1: Fügen Sie diesen Code im &lt;head&gt; Ihrer Website ein</p>
                 <div className="bg-gray-50 p-4 rounded-md overflow-auto">
@@ -84,15 +98,6 @@ ${bodyEmbedCode}`;
                 >
                   Container-Code kopieren
                 </Button>
-              </div>
-              
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-md mt-4">
-                <p className="text-sm font-medium mb-1 text-blue-700">Wichtiger Hinweis zur Einbindung:</p>
-                <p className="text-sm text-blue-600">
-                  Bitte verwenden Sie unbedingt das <strong>zwei-teilige Einbindungssystem</strong>: Das Script im Head-Bereich
-                  lädt den Widget-Code, der Container im Body-Bereich zeigt die Immobilien an. Dies ist entscheidend für eine korrekte
-                  Darstellung und Funktionsfähigkeit der Dialoge.
-                </p>
               </div>
             </div>
           </TabsContent>
@@ -144,20 +149,11 @@ ${bodyEmbedCode}`;
             <li>Fügt ein responsives Widget ein, das sich automatisch an die Höhe des Inhalts anpasst</li>
             <li>Funktioniert auf allen Websites ohne Kompatibilitätsprobleme</li>
             <li>Optimiert für Mobilgeräte und Desktop</li>
-            <li>Modals werden direkt am Body-Element angehängt für maximale Kompatibilität</li>
-            <li>Verwendet ein zwei-teiliges Einbindungssystem für optimale Kompatibilität mit Baukastensystemen</li>
-            <li>Dialogfenster werden mit höchster Z-Index-Priorität angezeigt, um Überlappungsprobleme zu vermeiden</li>
+            <li>Dialoge werden direkt am Body-Element angehängt für maximale Kompatibilität</li>
+            <li>Verwendet ein erweitertes Portal-System für korrekte Dialog-Darstellung</li>
+            <li>Bietet eine hohe Z-Index-Priorität, um Überlappungsprobleme zu vermeiden</li>
+            <li>Automatisches Sperren des Hintergrund-Scrollings bei geöffneten Dialogen</li>
           </ul>
-        </div>
-        
-        <div className="mt-4">
-          <p className="text-sm font-medium mb-2">Widget-Anpassungen:</p>
-          <div className="bg-gray-50 p-4 rounded-md">
-            <code className="text-xs">
-              data-height="auto" {/* Standard: automatisch anpassen */}<br/>
-              data-width="100%" {/* Standard: volle Breite */}
-            </code>
-          </div>
         </div>
       </CardContent>
       <CardFooter>
@@ -165,7 +161,7 @@ ${bodyEmbedCode}`;
           navigator.clipboard.writeText(combinedCode);
           toast.success("Kompletten Code in die Zwischenablage kopiert!");
         }}>
-          In Zwischenablage kopieren
+          Kompletten Code kopieren
         </Button>
       </CardFooter>
     </Card>

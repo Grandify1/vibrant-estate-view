@@ -2,7 +2,7 @@
 /**
  * ImmoUpload Widget
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 2.2 - Two-Part Embed System mit verbesserten Portal-Handling
+ * Version 2.3 - Enhanced Portal System mit verbessertem Modal-Handling
  */
 (function() {
   // Globales Objekt für das Widget erstellen
@@ -36,34 +36,34 @@
   const portalId = 'immo-widget-portal-container';
   
   // Initialisierung des Portals und der Event-Handler
-  domReady(function() {
-    // Portal Container erstellen - für Modals und Dialoge
+  document.addEventListener('DOMContentLoaded', function() {
+    createPortalContainer();
+    addGlobalStyles();
+  });
+  
+  function createPortalContainer() {
     let portalContainer = document.getElementById(portalId);
     if (!portalContainer) {
       portalContainer = document.createElement('div');
       portalContainer.id = portalId;
       portalContainer.style.position = 'fixed';
-      portalContainer.style.zIndex = '9999999'; // Extrem hoher z-index
+      portalContainer.style.zIndex = '9999999';
       portalContainer.style.top = '0';
       portalContainer.style.left = '0';
-      portalContainer.style.width = '100vw'; // Wichtig: verwende viewport width
-      portalContainer.style.height = '100vh'; // Wichtig: verwende viewport height
+      portalContainer.style.width = '100vw';
+      portalContainer.style.height = '100vh';
       portalContainer.style.overflow = 'visible';
       portalContainer.style.pointerEvents = 'none';
       portalContainer.style.display = 'none';
       
-      // Container erst nach DOM-Ready einfügen
       if (document.body) {
         document.body.appendChild(portalContainer);
-      } else {
-        // Falls body noch nicht verfügbar ist (unwahrscheinlich nach domReady)
-        document.addEventListener('DOMContentLoaded', function() {
-          document.body.appendChild(portalContainer);
-        });
       }
     }
-    
-    // Globale Styles hinzufügen, die für Modals benötigt werden
+    return portalContainer;
+  }
+  
+  function addGlobalStyles() {
     const styleTag = document.createElement('style');
     styleTag.textContent = `
       /* ImmoWidget Portal Styles */
@@ -91,22 +91,51 @@
         background: rgba(0, 0, 0, 0.5);
         z-index: var(--immo-modal-z-index);
       }
+      
+      /* Fix für Modal-Dialoge */
+      .radix-dialog-portal,
+      .radix-popover-portal,
+      .radix-alert-dialog-portal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 9999999;
+        width: 100vw;
+        height: 100vh;
+      }
+      
+      /* Overlay Fixierung für vollständige Anzeige */
+      [data-radix-dialog-overlay],
+      [data-radix-alert-dialog-overlay] {
+        position: fixed !important;
+        inset: 0 !important;
+      }
+      
+      /* Modal Content Fixierung */
+      [data-radix-dialog-content],
+      [data-radix-alert-dialog-content],
+      [data-radix-popover-content] {
+        position: fixed !important;
+        max-height: 90vh !important;
+        max-width: 95vw !important;
+        overflow-y: auto !important;
+        margin: 0 !important;
+      }
     `;
     document.head.appendChild(styleTag);
-  });
+  }
   
   // Flag für Dialog-Status
   let isDialogOpen = false;
   
   // Globale Event-Handler für Nachrichtenaustausch
   window.addEventListener('message', function(e) {
-    // Sicherheits-Check: Origin für lokale Entwicklung toleranter behandeln
-    if (e.origin !== baseUrl && baseUrl !== '') {
-      if (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1')) {
-        // Nur im Produktionsmodus strikt prüfen
-        console.warn('ImmoWidget: Nachricht von nicht vertrauenswürdiger Quelle ignoriert.');
-        return;
-      }
+    // Sicherheits-Check
+    const allowedOrigins = [baseUrl, 'https://kmzlkfwxeghvlgtilzjh.supabase.co'];
+    if (!allowedOrigins.some(origin => e.origin.includes(origin)) && 
+        !e.origin.includes('localhost') && 
+        !e.origin.includes('127.0.0.1')) {
+      return;
     }
     
     // Behandlung von Resize-Events für das iframe
@@ -125,19 +154,17 @@
       isDialogOpen = true;
       
       // Portal-Container aktivieren
-      const portalContainer = document.getElementById(portalId);
-      if (portalContainer) {
-        portalContainer.style.display = 'block';
-        portalContainer.style.pointerEvents = 'auto';
-        portalContainer.setAttribute('data-modal-open', 'true');
-      }
+      const portalContainer = createPortalContainer();
+      portalContainer.style.display = 'block';
+      portalContainer.style.pointerEvents = 'auto';
+      portalContainer.setAttribute('data-modal-open', 'true');
       
       // Body Scroll Lock anwenden
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'relative';
       document.body.setAttribute('data-immo-modal-open', 'true');
       
-      // Backdrop für Mobile hinzufügen (falls noch nicht vorhanden)
+      // Backdrop für Mobile hinzufügen
       let backdrop = document.querySelector('.immo-widget-modal-backdrop');
       if (!backdrop) {
         backdrop = document.createElement('div');
@@ -145,7 +172,7 @@
         document.body.appendChild(backdrop);
       }
       
-      // Alle scroll locks aufheben in der Übersicht
+      // Scroll locks aufheben
       document.querySelectorAll('html, body, #root, [id^="__"], [class*="container"]').forEach(el => {
         if (el) {
           if (!el.dataset.originalOverflow) {
@@ -276,5 +303,8 @@
       }
       window.ImmoWidget.initialize(containerId);
     });
+    
+    // Stelle sicher, dass das Portal-Container erstellt wird
+    createPortalContainer();
   });
 })();

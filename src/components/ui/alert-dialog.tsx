@@ -20,6 +20,15 @@ const AlertDialogOverlay = React.forwardRef<
       "fixed inset-0 z-[999997] bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0, 0, 0, 0.5)',
+      zIndex: 9999997,
+    }}
     {...props}
     ref={ref}
   />
@@ -40,7 +49,11 @@ const AlertDialogContent = React.forwardRef<
       )}
       style={{
         position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
         margin: '0',
+        zIndex: 9999998,
       }}
       {...props}
     />
