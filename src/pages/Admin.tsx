@@ -132,6 +132,19 @@ const AdminPage = () => {
     retryOperation();
   };
 
+  // Define the embed code with dynamic height adjustment
+  const embedCode = `<iframe src="${window.location.origin}/embed" width="100%" style="border: none; min-height: 500px;" id="real-estate-iframe"></iframe>
+<script>
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'resize-iframe') {
+      const iframe = document.getElementById('real-estate-iframe');
+      if (iframe) {
+        iframe.style.height = e.data.height + 'px';
+      }
+    }
+  });
+</script>`;
+
   const renderSetPassword = () => (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md">
@@ -289,32 +302,12 @@ const AdminPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="bg-gray-50 p-4 rounded-md overflow-auto">
-                  <pre className="text-sm"><code>{`<iframe src="${window.location.origin}/embed" width="100%" style="border: none; min-height: 500px;" id="real-estate-iframe"></iframe>
-<script>
-  window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'resize-iframe') {
-      const iframe = document.getElementById('real-estate-iframe');
-      if (iframe) {
-        iframe.style.height = e.data.height + 'px';
-      }
-    }
-  });
-</script>`}</code></pre>
+                  <pre className="text-sm"><code>{embedCode}</code></pre>
                 </div>
               </CardContent>
               <CardFooter>
                 <Button onClick={() => {
-                  navigator.clipboard.writeText(`<iframe src="${window.location.origin}/embed" width="100%" style="border: none; min-height: 500px;" id="real-estate-iframe"></iframe>
-<script>
-  window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'resize-iframe') {
-      const iframe = document.getElementById('real-estate-iframe');
-      if (iframe) {
-        iframe.style.height = e.data.height + 'px';
-      }
-    }
-  });
-</script>`);
+                  navigator.clipboard.writeText(embedCode);
                   toast.success("Code in die Zwischenablage kopiert!");
                 }}>
                   In Zwischenablage kopieren

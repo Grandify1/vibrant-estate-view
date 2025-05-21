@@ -55,7 +55,7 @@ const EmbedPageContent = () => {
     const updateFrameHeight = () => {
       if (containerRef.current && window.parent !== window) {
         const height = containerRef.current.offsetHeight;
-        window.parent.postMessage({ type: 'resize-frame', height: height + 16 }, '*');
+        window.parent.postMessage({ type: 'resize-iframe', height: height + 16 }, '*');
       }
     };
 
