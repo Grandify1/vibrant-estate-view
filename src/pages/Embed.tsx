@@ -34,6 +34,27 @@ export default function Embed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Send height to parent window
+  useEffect(() => {
+    const sendHeightToParent = () => {
+      const height = document.body.scrollHeight;
+      window.parent.postMessage({ type: 'resize-iframe', height }, '*');
+    };
+
+    // Send initial height
+    sendHeightToParent();
+    
+    // Send height after properties load
+    if (!loading) {
+      setTimeout(sendHeightToParent, 100);
+      setTimeout(sendHeightToParent, 500); // For images that might load later
+    }
+
+    // Listen for resize events
+    window.addEventListener('resize', sendHeightToParent);
+    return () => window.removeEventListener('resize', sendHeightToParent);
+  }, [loading, properties.length]);
+
   // Load properties for the grid
   useEffect(() => {
     const fetchProperties = async () => {

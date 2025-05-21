@@ -65,7 +65,7 @@
     iframe.src = baseUrl + '/embed';
     iframe.style.width = widgetWidth;
     iframe.style.border = 'none';
-    iframe.style.minHeight = '500px';
+    iframe.style.minHeight = '350px'; // Reduzierte Anfangshöhe
     iframe.style.height = 'auto';
     iframe.style.maxWidth = '100%';
     iframe.id = 'immo-widget-iframe';
@@ -113,7 +113,7 @@
       if (iframe.contentWindow && iframe.contentWindow.document && iframe.contentWindow.document.body) {
         const height = iframe.contentWindow.document.body.scrollHeight;
         if (height > 100) { // Nur sinnvolle Höhen verwenden
-          iframe.style.height = (height + 5) + 'px'; // Reduzierter Extra-Platz
+          iframe.style.height = height + 'px'; // Exakte Höhe ohne Extra-Platz
         }
       }
     } catch (e) {
@@ -152,7 +152,7 @@
     if (e.data && e.data.type === 'resize-iframe') {
       const iframe = document.getElementById('immo-widget-iframe');
       if (iframe) {
-        iframe.style.height = (e.data.height + 5) + 'px';
+        iframe.style.height = e.data.height + 'px';
       }
     }
     
