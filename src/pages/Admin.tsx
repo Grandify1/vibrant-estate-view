@@ -9,7 +9,13 @@ import AdminContent from "@/components/admin/AdminContent";
 
 const AdminPage = () => {
   const { isAuthenticated, login, logout, setAdminPassword, hasSetPassword } = useAuth();
-  const { properties, addProperty, updateProperty, deleteProperty, getProperty, setPropertyStatus, loading, lastError, retryOperation } = useProperties();
+  const { properties, addProperty: originalAddProperty, updateProperty, deleteProperty, getProperty, setPropertyStatus, loading, lastError, retryOperation } = useProperties();
+  
+  // Wrap addProperty to convert its return type from Promise<Property> to Promise<void>
+  const addProperty = async (propertyData: Omit<Property, "id" | "createdAt" | "updatedAt">) => {
+    await originalAddProperty(propertyData);
+    // No return value needed, converting Promise<Property> to Promise<void>
+  };
   
   const [isOffline, setIsOffline] = useState(false);
   
