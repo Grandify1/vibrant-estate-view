@@ -3,8 +3,29 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import PropertyGrid from '@/components/embed/PropertyGrid';
 import PropertyDetail from '@/components/embed/PropertyDetail';
-import { Property } from '@/types/property';
+import { Property, PropertyHighlight, PropertyImage, PropertyDetails, EnergyDetails, FloorPlan } from '@/types/property';
 import { useSearchParams, useLocation, useParams } from 'react-router-dom';
+import { Json } from '@/integrations/supabase/types';
+
+// Helper function to safely parse JSON data
+const safelyParseJson = <T extends unknown>(jsonValue: Json | null, fallback: T): T => {
+  if (!jsonValue) return fallback;
+  
+  if (typeof jsonValue === 'object') {
+    return jsonValue as unknown as T;
+  }
+  
+  if (typeof jsonValue === 'string') {
+    try {
+      return JSON.parse(jsonValue) as T;
+    } catch (e) {
+      console.error('Error parsing JSON:', e);
+      return fallback;
+    }
+  }
+  
+  return fallback;
+};
 
 export default function Embed() {
   const [searchParams] = useSearchParams();
@@ -48,6 +69,32 @@ export default function Embed() {
         
         // Format the data
         const formattedData: Property[] = data.map((item: any) => {
+          const emptyHighlights: PropertyHighlight[] = [];
+          const emptyImages: PropertyImage[] = [];
+          const emptyFloorPlans: FloorPlan[] = [];
+          const emptyDetails: PropertyDetails = {
+            price: '',
+            livingArea: '',
+            plotArea: '',
+            rooms: '',
+            bathrooms: '',
+            bedrooms: '',
+            propertyType: '',
+            availableFrom: '',
+            maintenanceFee: '',
+            constructionYear: '',
+            condition: '',
+            heatingType: '',
+            energySource: '',
+            floor: '',
+            totalFloors: '',
+            parkingSpaces: ''
+          };
+          const emptyEnergy: EnergyDetails = {
+            certificateAvailable: false,
+            includesWarmWater: false
+          };
+          
           return {
             id: item.id,
             title: item.title || '',
@@ -58,13 +105,11 @@ export default function Embed() {
             status: item.status as 'active' | 'sold' | 'archived',
             company_id: item.company_id,
             agent_id: item.agent_id,
-            highlights: item.highlights || [],
-            images: item.images || [],
-            floorPlans: item.floorPlans || [],
-            details: item.details || {},
-            energy: item.energy || {
-              certificateAvailable: false
-            },
+            highlights: safelyParseJson<PropertyHighlight[]>(item.highlights, emptyHighlights),
+            images: safelyParseJson<PropertyImage[]>(item.images, emptyImages),
+            floorPlans: safelyParseJson<FloorPlan[]>(item.floor_plans, emptyFloorPlans),
+            details: safelyParseJson<PropertyDetails>(item.details, emptyDetails),
+            energy: safelyParseJson<EnergyDetails>(item.energy, emptyEnergy),
             createdAt: item.created_at,
             updatedAt: item.updated_at
           };
@@ -111,6 +156,33 @@ export default function Embed() {
           return;
         }
         
+        // Default empty values for safe parsing
+        const emptyHighlights: PropertyHighlight[] = [];
+        const emptyImages: PropertyImage[] = [];
+        const emptyFloorPlans: FloorPlan[] = [];
+        const emptyDetails: PropertyDetails = {
+          price: '',
+          livingArea: '',
+          plotArea: '',
+          rooms: '',
+          bathrooms: '',
+          bedrooms: '',
+          propertyType: '',
+          availableFrom: '',
+          maintenanceFee: '',
+          constructionYear: '',
+          condition: '',
+          heatingType: '',
+          energySource: '',
+          floor: '',
+          totalFloors: '',
+          parkingSpaces: ''
+        };
+        const emptyEnergy: EnergyDetails = {
+          certificateAvailable: false,
+          includesWarmWater: false
+        };
+        
         // Format the property data
         const formattedProperty: Property = {
           id: data.id,
@@ -122,13 +194,11 @@ export default function Embed() {
           status: data.status as 'active' | 'sold' | 'archived',
           company_id: data.company_id,
           agent_id: data.agent_id,
-          highlights: data.highlights || [],
-          images: data.images || [],
-          floorPlans: data.floorPlans || [],
-          details: data.details || {},
-          energy: data.energy || {
-            certificateAvailable: false
-          },
+          highlights: safelyParseJson<PropertyHighlight[]>(data.highlights, emptyHighlights),
+          images: safelyParseJson<PropertyImage[]>(data.images, emptyImages),
+          floorPlans: safelyParseJson<FloorPlan[]>(data.floor_plans, emptyFloorPlans),
+          details: safelyParseJson<PropertyDetails>(data.details, emptyDetails),
+          energy: safelyParseJson<EnergyDetails>(data.energy, emptyEnergy),
           createdAt: data.created_at,
           updatedAt: data.updated_at
         };
