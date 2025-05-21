@@ -6,15 +6,17 @@ import { useProperties } from "@/hooks/useProperties";
 import { Property } from "@/types/property";
 
 const EmbedPage = () => {
-  const { getActiveProperties, properties } = useProperties();
+  const { properties } = useProperties();
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [activeProperties, setActiveProperties] = useState<Property[]>([]);
   
   // Update active properties whenever the properties list changes
   useEffect(() => {
+    // Explicitly filter active properties
     const active = properties.filter(property => property.status === 'active');
     console.log("Active properties:", active);
+    console.log("All properties:", properties);
     setActiveProperties(active);
   }, [properties]);
   

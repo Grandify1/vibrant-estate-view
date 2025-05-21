@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PropertyImage, FloorPlan } from "@/types/property";
@@ -20,6 +19,10 @@ export function ImageUpload({
 }: ImageUploadProps) {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
+    
+    // Prevent event bubbling which could be causing form submission
+    e.preventDefault();
+    e.stopPropagation();
     
     const newFiles = Array.from(e.target.files);
     
@@ -73,7 +76,11 @@ export function ImageUpload({
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => document.getElementById("image-upload")?.click()}
+            type="button" // Explicitly set type to button to prevent form submission
+            onClick={(e) => {
+              e.preventDefault(); // Prevent any form submission
+              document.getElementById("image-upload")?.click();
+            }}
             disabled={images.length >= maxImages}
           >
             Bilder hochladen
@@ -85,6 +92,7 @@ export function ImageUpload({
             multiple
             className="hidden"
             onChange={handleImageUpload}
+            onClick={(e) => e.stopPropagation()} // Prevent click propagation
           />
         </div>
       </div>
@@ -158,6 +166,10 @@ export function FloorPlanUpload({
   const handleFloorPlanUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
+    // Prevent event bubbling which could be causing form submission
+    e.preventDefault();
+    e.stopPropagation();
+    
     const newFiles = Array.from(e.target.files);
     
     if (floorPlans.length + newFiles.length > maxFloorPlans) {
@@ -200,11 +212,16 @@ export function FloorPlanUpload({
             className="px-3 py-1 border rounded text-sm"
             value={newPlanName}
             onChange={(e) => setNewPlanName(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
           />
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => document.getElementById("floorplan-upload")?.click()}
+            type="button" // Explicitly set type to button to prevent form submission
+            onClick={(e) => {
+              e.preventDefault(); // Prevent any form submission
+              document.getElementById("floorplan-upload")?.click();
+            }}
             disabled={floorPlans.length >= maxFloorPlans}
           >
             Grundriss hochladen
@@ -216,6 +233,7 @@ export function FloorPlanUpload({
             multiple
             className="hidden"
             onChange={handleFloorPlanUpload}
+            onClick={(e) => e.stopPropagation()} // Prevent click propagation
           />
         </div>
       </div>

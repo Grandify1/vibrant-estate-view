@@ -23,6 +23,11 @@ function generateId() {
 export function PropertiesProvider({ children }: { children: ReactNode }) {
   const [properties, setProperties] = useLocalStorage<Property[]>("properties", []);
   
+  // Logging the properties for debugging
+  useEffect(() => {
+    console.log("Properties in PropertiesProvider:", properties);
+  }, [properties]);
+  
   const addProperty = (propertyData: Omit<Property, "id" | "createdAt" | "updatedAt">) => {
     // Ensure at least one image is marked as featured
     const images = [...propertyData.images];
@@ -30,8 +35,12 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       images[0].isFeatured = true;
     }
     
+    // Set default status to 'active' if not provided
+    const status = propertyData.status || 'active';
+    
     const newProperty: Property = {
       ...propertyData,
+      status,
       images: images,
       id: generateId(),
       createdAt: new Date().toISOString(),
@@ -71,7 +80,9 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
   };
   
   const getActiveProperties = () => {
-    return properties.filter(property => property.status === 'active');
+    const active = properties.filter(property => property.status === 'active');
+    console.log("Active properties from getActiveProperties:", active);
+    return active;
   };
   
   const setPropertyStatus = (id: string, status: 'active' | 'sold' | 'archived') => {

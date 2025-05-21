@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,13 +41,26 @@ const AdminPage = () => {
   };
   
   const handlePropertySubmit = (propertyData: Omit<Property, "id" | "createdAt" | "updatedAt">) => {
-    if (adminView === AdminView.CREATE) {
-      addProperty(propertyData);
-    } else if (adminView === AdminView.EDIT && editPropertyId) {
-      updateProperty(editPropertyId, propertyData);
+    try {
+      // Ensure propertyData contains the status field
+      const dataWithStatus = {
+        ...propertyData,
+        status: propertyData.status || 'active'
+      };
+      
+      if (adminView === AdminView.CREATE) {
+        console.log("Adding new property:", dataWithStatus);
+        addProperty(dataWithStatus);
+      } else if (adminView === AdminView.EDIT && editPropertyId) {
+        console.log("Updating property:", editPropertyId, dataWithStatus);
+        updateProperty(editPropertyId, dataWithStatus);
+      }
+      setAdminView(AdminView.LIST);
+      setEditPropertyId(null);
+    } catch (error) {
+      console.error("Error submitting property:", error);
+      toast.error("Ein Fehler ist aufgetreten");
     }
-    setAdminView(AdminView.LIST);
-    setEditPropertyId(null);
   };
   
   const handleEditProperty = (id: string) => {
