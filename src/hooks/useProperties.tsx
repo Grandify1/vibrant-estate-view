@@ -100,7 +100,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
             id: item.id,
             title: item.title || '',
             address: item.address || '',
-            status: item.status || 'active',
+            status: item.status || 'active' as 'active' | 'sold' | 'archived',
             company_id: item.company_id,
             agent_id: item.agent_id,
             description: item.description || '',
@@ -139,15 +139,16 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
     }
     
     try {
+      // Convert our Property type to the database schema expected format
       const dbRecord = {
         title: propertyData.title,
         address: propertyData.address,
         status: propertyData.status,
-        highlights: propertyData.highlights || [],
-        images: propertyData.images || [],
-        floor_plans: propertyData.floorPlans || [],
-        details: propertyData.details || {},
-        energy: propertyData.energy || {},
+        highlights: propertyData.highlights as unknown as Json,
+        images: propertyData.images as unknown as Json,
+        floor_plans: propertyData.floorPlans as unknown as Json,
+        details: propertyData.details as unknown as Json,
+        energy: propertyData.energy as unknown as Json,
         description: propertyData.description,
         amenities: propertyData.amenities,
         location: propertyData.location,
@@ -208,11 +209,11 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       if (updates.title) dbUpdates.title = updates.title;
       if (updates.address) dbUpdates.address = updates.address;
       if (updates.status) dbUpdates.status = updates.status;
-      if (updates.highlights) dbUpdates.highlights = updates.highlights;
-      if (updates.images) dbUpdates.images = updates.images;
-      if (updates.floorPlans) dbUpdates.floor_plans = updates.floorPlans;
-      if (updates.details) dbUpdates.details = updates.details;
-      if (updates.energy) dbUpdates.energy = updates.energy;
+      if (updates.highlights) dbUpdates.highlights = updates.highlights as unknown as Json;
+      if (updates.images) dbUpdates.images = updates.images as unknown as Json;
+      if (updates.floorPlans) dbUpdates.floor_plans = updates.floorPlans as unknown as Json;
+      if (updates.details) dbUpdates.details = updates.details as unknown as Json;
+      if (updates.energy) dbUpdates.energy = updates.energy as unknown as Json;
       if (updates.description) dbUpdates.description = updates.description;
       if (updates.amenities) dbUpdates.amenities = updates.amenities;
       if (updates.location) dbUpdates.location = updates.location;
@@ -233,7 +234,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       // Update local state
       setProperties(prev => 
         prev.map(property => 
-          property.id === id ? { ...property, ...updates } : property
+          property.id === id ? { ...property, ...updates, updatedAt: new Date().toISOString() } : property
         )
       );
       
@@ -264,7 +265,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       // Update local state
       setProperties(prev => 
         prev.map(property => 
-          property.id === id ? { ...property, status } : property
+          property.id === id ? { ...property, status, updatedAt: new Date().toISOString() } : property
         )
       );
       

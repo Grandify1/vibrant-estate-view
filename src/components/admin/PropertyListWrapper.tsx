@@ -13,7 +13,9 @@ const PropertyListWrapper: React.FC<PropertyListWrapperProps> = ({ companyId }) 
   const { 
     properties, 
     setPropertyStatus, 
-    deleteProperty 
+    deleteProperty,
+    loading,
+    lastError
   } = useProperties();
   const navigate = useNavigate();
   
@@ -52,6 +54,8 @@ const PropertyListWrapper: React.FC<PropertyListWrapperProps> = ({ companyId }) 
       onEdit={handleEdit}
       onDelete={handleDelete}
       onChangeStatus={handleChangeStatus}
+      loading={loading}
+      error={lastError}
     />
   );
 };
