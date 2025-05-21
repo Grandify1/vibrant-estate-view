@@ -26,6 +26,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Dynamisch die aktuelle URL für Supabase verwenden
+const getCurrentUrl = () => {
+  return window.location.origin;
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
@@ -162,6 +167,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Registrierung mit Supabase
   const signup = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
+      // Die aktuelle URL als Redirect-URL verwenden
+      const redirectTo = `${getCurrentUrl()}/auth`;
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -169,7 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           data: {
             first_name: firstName,
             last_name: lastName
-          }
+          },
+          emailRedirectTo: redirectTo
         }
       });
       
@@ -178,7 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
       
-      toast.success("Registrierung erfolgreich! Sie können sich jetzt anmelden.");
+      toast.success("Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mails für die Bestätigung.");
       return true;
     } catch (error) {
       console.error("Fehler bei der Registrierung:", error);

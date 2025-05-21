@@ -53,7 +53,7 @@ const AgentTab: React.FC = () => {
     }
   };
   
-  // Fix the type mismatch by using an adapter function
+  // Fix the type mismatch by adapting the deletion function
   const handleDelete = async (agentId: string) => {
     if (window.confirm("Sind Sie sicher, dass Sie diesen Makler löschen möchten?")) {
       await deleteAgent(agentId);
