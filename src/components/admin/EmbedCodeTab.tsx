@@ -7,12 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const EmbedCodeTab: React.FC = () => {
   // Define the head script code that should be placed in the <head> of the website
-  const headScriptCode = `<!-- ImmoUpload Widget Initialization Script (Place in <head>) -->
-<script src="${window.location.origin}/widget.js" id="immo-widget"></script>
+  const headScriptCode = `<!-- ImmoUpload Widget Initialisierungs-Script (In den <head>-Bereich einfügen) -->
+<script src="${window.location.origin}/widget.js" id="immo-widget" defer></script>
 `;
 
   // Define the body embed code that should be placed where you want the widget to appear
-  const bodyEmbedCode = `<!-- ImmoUpload Widget Container (Place where you want the widget to appear) -->
+  const bodyEmbedCode = `<!-- ImmoUpload Widget Container (Dort einfügen, wo das Widget erscheinen soll) -->
 <div id="immo-widget-container" class="immo-widget-container"></div>
 `;
 
@@ -22,12 +22,12 @@ const EmbedCodeTab: React.FC = () => {
 ${bodyEmbedCode}`;
 
   // Define the manual initialization for advanced users
-  const manualInitCode = `<!-- Manual Widget Initialization -->
+  const manualInitCode = `<!-- Manuelle Widget-Initialisierung (Für fortgeschrittene Nutzer) -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the widget with the container ID
+    // Widget mit der Container-ID initialisieren
     if (window.ImmoWidget && window.ImmoWidget.initialize) {
-      window.ImmoWidget.initialize('my-custom-container');
+      window.ImmoWidget.initialize('mein-eigener-container');
     }
   });
 </script>
@@ -85,6 +85,15 @@ ${bodyEmbedCode}`;
                   Container-Code kopieren
                 </Button>
               </div>
+              
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-md mt-4">
+                <p className="text-sm font-medium mb-1 text-blue-700">Wichtiger Hinweis zur Einbindung:</p>
+                <p className="text-sm text-blue-600">
+                  Bitte verwenden Sie unbedingt das <strong>zwei-teilige Einbindungssystem</strong>: Das Script im Head-Bereich
+                  lädt den Widget-Code, der Container im Body-Bereich zeigt die Immobilien an. Dies ist entscheidend für eine korrekte
+                  Darstellung in allen Umgebungen.
+                </p>
+              </div>
             </div>
           </TabsContent>
           
@@ -136,7 +145,7 @@ ${bodyEmbedCode}`;
             <li>Funktioniert auf allen Websites ohne Kompatibilitätsprobleme</li>
             <li>Optimiert für Mobilgeräte und Desktop</li>
             <li>Modals werden direkt am Body-Element angehängt für maximale Kompatibilität</li>
-            <li>Keine zusätzlichen Abhängigkeiten erforderlich</li>
+            <li>Verwendet ein zwei-teiliges Einbindungssystem für optimale Kompatibilität mit Baukastensystemen</li>
           </ul>
         </div>
         <div className="mt-4">

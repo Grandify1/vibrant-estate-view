@@ -2,7 +2,7 @@
 /**
  * ImmoUpload Widget
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 2.0 - Two-Part Embed System
+ * Version 2.1 - Two-Part Embed System mit DOM-Ready Prüfung
  */
 (function() {
   // Globales Objekt für das Widget erstellen
@@ -10,6 +10,15 @@
   
   // Widget bereits initialisiert?
   if (window.ImmoWidget.initialized) return;
+  
+  // Warten auf DOM Content Loaded
+  function domReady(callback) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', callback);
+    } else {
+      callback();
+    }
+  }
   
   // Basis-URL ermitteln (woher das Script geladen wurde)
   const script = document.currentScript || (function() {
@@ -26,22 +35,25 @@
   // Definitionen für Portal-Verwaltung
   const portalId = 'immo-widget-portal-container';
   
-  // Portal Container erstellen - für Modals und Dialoge
-  let portalContainer = document.getElementById(portalId);
-  if (!portalContainer) {
-    portalContainer = document.createElement('div');
-    portalContainer.id = portalId;
-    portalContainer.style.position = 'fixed';
-    portalContainer.style.zIndex = '999999';
-    portalContainer.style.top = '0';
-    portalContainer.style.left = '0';
-    portalContainer.style.width = '100%';
-    portalContainer.style.height = '100%';
-    portalContainer.style.overflow = 'visible';
-    portalContainer.style.pointerEvents = 'none';
-    portalContainer.style.display = 'none';
-    document.body.appendChild(portalContainer);
-  }
+  // Initialisierung des Portals und der Event-Handler
+  domReady(function() {
+    // Portal Container erstellen - für Modals und Dialoge
+    let portalContainer = document.getElementById(portalId);
+    if (!portalContainer) {
+      portalContainer = document.createElement('div');
+      portalContainer.id = portalId;
+      portalContainer.style.position = 'fixed';
+      portalContainer.style.zIndex = '999999';
+      portalContainer.style.top = '0';
+      portalContainer.style.left = '0';
+      portalContainer.style.width = '100%';
+      portalContainer.style.height = '100%';
+      portalContainer.style.overflow = 'visible';
+      portalContainer.style.pointerEvents = 'none';
+      portalContainer.style.display = 'none';
+      document.body.appendChild(portalContainer);
+    }
+  });
   
   // Flag für Dialog-Status
   let isDialogOpen = false;
@@ -73,14 +85,17 @@
       isDialogOpen = true;
       
       // Portal-Container aktivieren
-      portalContainer.style.display = 'block';
-      portalContainer.style.pointerEvents = 'auto';
+      const portalContainer = document.getElementById(portalId);
+      if (portalContainer) {
+        portalContainer.style.display = 'block';
+        portalContainer.style.pointerEvents = 'auto';
+      }
       
       // Body Scroll Lock anwenden
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'relative';
       
-      // Alle scroll locks aufheben in der Übersiecht
+      // Alle scroll locks aufheben in der Übersicht
       document.querySelectorAll('html, body, #root, [id^="__"], [class*="container"]').forEach(el => {
         if (el) {
           if (!el.dataset.originalOverflow) {
@@ -97,12 +112,15 @@
       isDialogOpen = false;
       
       // Portal-Container deaktivieren
-      portalContainer.style.pointerEvents = 'none';
-      setTimeout(() => {
-        if (!isDialogOpen) {
-          portalContainer.style.display = 'none';
-        }
-      }, 300);
+      const portalContainer = document.getElementById(portalId);
+      if (portalContainer) {
+        portalContainer.style.pointerEvents = 'none';
+        setTimeout(() => {
+          if (!isDialogOpen && portalContainer) {
+            portalContainer.style.display = 'none';
+          }
+        }, 300);
+      }
       
       // Body Scroll wiederherstellen
       document.body.style.overflow = '';
@@ -146,39 +164,42 @@
   
   // Initialisierungsfunktion für das Widget
   window.ImmoWidget.initialize = function(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) {
-      console.error('ImmoUpload Widget: Container mit ID "' + containerId + '" nicht gefunden.');
-      return;
-    }
-    
-    // Container-Style setzen
-    container.style.overflow = 'hidden';
-    container.style.position = 'relative';
-    
-    // Iframe erstellen
-    const iframe = document.createElement('iframe');
-    iframe.src = baseUrl + '/embed';
-    iframe.style.width = widgetWidth;
-    iframe.style.border = 'none';
-    iframe.style.minHeight = '500px';
-    iframe.style.maxWidth = '100%';
-    iframe.id = 'immo-widget-iframe';
-    iframe.setAttribute('scrolling', 'no');
-    iframe.setAttribute('title', 'Immobilien Übersicht');
-    
-    // Iframe zum Container hinzufügen
-    container.appendChild(iframe);
-    
-    // Nach dem Laden eine erste Höhenanpassung vornehmen
-    iframe.addEventListener('load', function() {
-      // Event auslösen, damit die Website weiß, dass das Widget geladen wurde
-      const event = new CustomEvent('immo-widget-loaded');
-      document.dispatchEvent(event);
+    // Sicherstellen dass DOM geladen ist
+    domReady(function() {
+      const container = document.getElementById(containerId);
+      if (!container) {
+        console.error('ImmoUpload Widget: Container mit ID "' + containerId + '" nicht gefunden.');
+        return;
+      }
       
-      setTimeout(() => {
-        iframe.contentWindow.postMessage({ type: 'parent-resize' }, '*');
-      }, 300);
+      // Container-Style setzen
+      container.style.overflow = 'hidden';
+      container.style.position = 'relative';
+      
+      // Iframe erstellen
+      const iframe = document.createElement('iframe');
+      iframe.src = baseUrl + '/embed';
+      iframe.style.width = widgetWidth;
+      iframe.style.border = 'none';
+      iframe.style.minHeight = '500px';
+      iframe.style.maxWidth = '100%';
+      iframe.id = 'immo-widget-iframe';
+      iframe.setAttribute('scrolling', 'no');
+      iframe.setAttribute('title', 'Immobilien Übersicht');
+      
+      // Iframe zum Container hinzufügen
+      container.appendChild(iframe);
+      
+      // Nach dem Laden eine erste Höhenanpassung vornehmen
+      iframe.addEventListener('load', function() {
+        // Event auslösen, damit die Website weiß, dass das Widget geladen wurde
+        const event = new CustomEvent('immo-widget-loaded');
+        document.dispatchEvent(event);
+        
+        setTimeout(() => {
+          iframe.contentWindow.postMessage({ type: 'parent-resize' }, '*');
+        }, 300);
+      });
     });
   };
   
@@ -186,7 +207,7 @@
   window.ImmoWidget.initialized = true;
   
   // Automatisch alle Container mit der Klasse "immo-widget-container" initialisieren
-  document.addEventListener('DOMContentLoaded', function() {
+  domReady(function() {
     const autoContainers = document.querySelectorAll('.immo-widget-container');
     autoContainers.forEach(function(container, index) {
       const containerId = container.id || 'immo-widget-container-' + index;
