@@ -2,52 +2,79 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
-interface LoginFormProps {
-  onLogin: (password: string) => boolean;
-}
-
-const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
+const LoginForm = () => {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin(password);
-    setPassword("");
+    setLoading(true);
+    
+    try {
+      const success = await login(email, password);
+      if (success) {
+        navigate('/admin');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Admin-Portal</CardTitle>
-          <CardDescription>
-            Bitte geben Sie Ihr Admin-Passwort ein, um fortzufahren.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleLogin}>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Passwort"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Admin-Portal</CardTitle>
+        <CardDescription>
+          Bitte melden Sie sich mit Ihren Zugangsdaten an.
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={handleLogin}>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">E-Mail</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full">
-              Anmelden
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Passwort</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                Anmelden...
+              </span>
+            ) : (
+              "Anmelden"
+            )}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
   );
 };
 

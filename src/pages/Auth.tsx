@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ const AuthPage: React.FC = () => {
   const [registerLoading, setRegisterLoading] = useState(false);
   
   // Weiterleitung, wenn bereits authentifiziert
-  React.useEffect(() => {
+  useEffect(() => {
     if (isAuthenticated && !loadingAuth) {
       navigate('/admin');
     }

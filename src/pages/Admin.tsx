@@ -1,20 +1,34 @@
 
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
-import { AdminHeader } from "@/components/admin/AdminHeader";
-import { AdminContent } from "@/components/admin/AdminContent";
+import AdminHeader from "@/components/admin/AdminHeader";
+import AdminContent from "@/components/admin/AdminContent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LoginForm from "@/components/admin/LoginForm";
 import SetPasswordForm from "@/components/admin/SetPasswordForm";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
-import { PropertyList } from "@/components/admin/PropertyList";
-import PropertyTab from "@/components/admin/PropertyTab";
+import PropertyList from "@/components/admin/PropertyList";
 import AgentTab from "@/components/admin/AgentTab";
-import { EmbedCodeTab } from "@/components/admin/EmbedCodeTab";
+import EmbedCodeTab from "@/components/admin/EmbedCodeTab";
+
+// Property Tab Komponente hier erstellen
+const PropertyTab = () => {
+  const { company } = useAuth();
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Immobilien verwalten</h2>
+      </div>
+      
+      <PropertyList companyId={company?.id} />
+    </div>
+  );
+};
 
 export default function Admin() {
-  const { isAuthenticated, hasSetPassword, loadingAuth, user } = useAuth();
+  const { isAuthenticated, loadingAuth, user } = useAuth();
   const [activeTab, setActiveTab] = useState("properties");
   
   // Wenn die Authentifizierung noch lädt, zeige einen Ladebildschirm
@@ -29,37 +43,14 @@ export default function Admin() {
     );
   }
   
+  // Wenn der Nutzer nicht eingeloggt ist, zur Auth-Seite weiterleiten
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" />;
+  }
+  
   // Wenn der Nutzer noch keine kein Unternehmen hat, zur Unternehmenseinrichtung weiterleiten
   if (isAuthenticated && user && !user.company_id) {
     return <Navigate to="/company-setup" />;
-  }
-  
-  // Wenn der Benutzer nicht eingeloggt ist, zeige den Login-Bildschirm
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-4 md:p-8 flex flex-col">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Immobilienportal Admin</h1>
-        </div>
-        
-        <div className="max-w-md mx-auto w-full">
-          {!hasSetPassword ? (
-            <SetPasswordForm
-              onSetPassword={(password) => {
-                const { setAdminPassword } = useAuth();
-                if (setAdminPassword) {
-                  setAdminPassword(password);
-                  return true;
-                }
-                return false;
-              }}
-            />
-          ) : (
-            <LoginForm />
-          )}
-        </div>
-      </div>
-    );
   }
   
   return (

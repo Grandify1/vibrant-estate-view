@@ -1,7 +1,7 @@
 
-import React from "react";
-import { Property } from "@/types/property";
-import { Bath, Bed, Ruler } from "lucide-react";
+import React from 'react';
+import { Property } from '@/types/property';
+import { formatPrice } from '@/utils/formatUtils';
 
 interface PropertyCardProps {
   property: Property;
@@ -9,85 +9,53 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, onClick }) => {
-  // Format price with dots as thousand separators
-  const formatNumber = (value: string | undefined) => {
-    if (!value) return '';
-    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  };
+  // Finde das Hauptbild für die Karte
+  const mainImage = property.images?.find(img => img.isFeatured) || property.images?.[0];
   
-  // Get valid image URL or fallback
-  const getValidImageUrl = (url: string | undefined): string => {
-    if (!url) return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
-    if (url.startsWith('http')) return url;
-    return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
-  };
-
-  // Get featured image or first image
-  const getFeaturedImage = () => {
-    if (!property.images || property.images.length === 0) {
-      return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
-    }
-    
-    const featuredImage = property.images.find(img => img.isFeatured);
-    return getValidImageUrl(featuredImage?.url || property.images[0].url);
-  };
-
   return (
     <div 
-      className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col"
+      className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
       onClick={onClick}
     >
-      <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
-        <img 
-          src={getFeaturedImage()} 
-          alt={property.title} 
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            e.currentTarget.src = "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
-          }}
-        />
-        <div className="absolute top-2 right-2">
-          {property.status === "sold" && (
-            <span className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full uppercase">
-              Verkauft
-            </span>
-          )}
-          {property.status === "archived" && (
-            <span className="px-2 py-1 bg-gray-700 text-white text-xs font-bold rounded-full uppercase">
-              Archiviert
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="p-4 flex flex-col flex-grow">
-        <h3 className="text-lg font-semibold text-gray-800 line-clamp-2">{property.title}</h3>
-        <p className="text-gray-600 text-sm mt-1 line-clamp-1">{property.address}</p>
-        
-        <div className="flex items-center justify-between mt-4 mb-2">
-          <div className="text-estate text-lg font-bold">
-            {property.details.price ? `${formatNumber(property.details.price)} €` : "Auf Anfrage"}
+      <div className="aspect-video relative overflow-hidden">
+        {mainImage ? (
+          <img 
+            src={mainImage.url} 
+            alt={property.title} 
+            className="object-cover w-full h-full" 
+          />
+        ) : (
+          <div className="bg-gray-200 w-full h-full flex items-center justify-center">
+            <span className="text-gray-400">Kein Bild</span>
           </div>
-        </div>
+        )}
         
-        <div className="mt-auto pt-3 flex justify-between text-gray-600 text-sm border-t">
-          {property.details.livingArea && (
-            <div className="flex items-center">
-              <Ruler className="h-4 w-4 mr-1" />
-              <span>{property.details.livingArea} m²</span>
+        {property.status === 'sold' && (
+          <div className="absolute top-0 right-0 bg-red-500 text-white px-2 py-1 text-xs">
+            Verkauft
+          </div>
+        )}
+      </div>
+      
+      <div className="p-4">
+        <h3 className="font-semibold text-lg mb-1 truncate">{property.title}</h3>
+        
+        <p className="text-gray-600 text-sm mb-2 truncate">{property.address}</p>
+        
+        {property.details?.price && (
+          <p className="font-bold text-primary">{formatPrice(property.details.price)} €</p>
+        )}
+        
+        <div className="flex mt-2 text-sm text-gray-600">
+          {property.details?.size && (
+            <div className="mr-3">
+              <span className="font-medium">{property.details.size}</span> m²
             </div>
           )}
           
-          {property.details.rooms && (
-            <div className="flex items-center">
-              <Bed className="h-4 w-4 mr-1" />
-              <span>{property.details.rooms} Zimmer</span>
-            </div>
-          )}
-          
-          {property.details.bathrooms && (
-            <div className="flex items-center">
-              <Bath className="h-4 w-4 mr-1" />
-              <span>{property.details.bathrooms}</span>
+          {property.details?.rooms && (
+            <div>
+              <span className="font-medium">{property.details.rooms}</span> {property.details.rooms === 1 ? "Zimmer" : "Zimmer"}
             </div>
           )}
         </div>

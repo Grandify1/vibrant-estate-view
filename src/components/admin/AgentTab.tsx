@@ -54,7 +54,7 @@ const AgentTab: React.FC = () => {
   };
   
   const handleDelete = async (id: string) => {
-    if (confirm("Sind Sie sicher, dass Sie diesen Makler löschen möchten?")) {
+    if (window.confirm("Sind Sie sicher, dass Sie diesen Makler löschen möchten?")) {
       await deleteAgent(id);
     }
   };

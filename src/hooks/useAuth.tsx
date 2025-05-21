@@ -22,23 +22,15 @@ interface AuthContextType {
   logout: () => void;
   createCompany: (companyData: Omit<Company, 'id' | 'created_at' | 'updated_at'>) => Promise<boolean>;
   loadingAuth: boolean;
-  hasSetPassword: boolean;
-  setAdminPassword: (password: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [adminPassword, setAdminPassword] = useLocalStorage<string>("admin-password", "");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [hasSetPassword, setHasSetPassword] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
-  
-  useEffect(() => {
-    setHasSetPassword(!!adminPassword);
-  }, [adminPassword]);
   
   // Supabase-Sitzung beim Laden prüfen
   useEffect(() => {
@@ -84,9 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
         } else {
-          // Lokale Sitzung für Admin
-          const sessionExists = localStorage.getItem("admin-session") === "active";
-          setIsAuthenticated(sessionExists);
+          setIsAuthenticated(false);
+          setUser(null);
+          setCompany(null);
         }
       } catch (error) {
         console.error("Fehler beim Laden der Sitzung:", error);
@@ -136,7 +128,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAuthenticated(false);
           setUser(null);
           setCompany(null);
-          localStorage.removeItem("admin-session");
         }
       }
     );
@@ -146,23 +137,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
   
-  // Admin-Login mit lokalem Passwort
+  // Login mit Supabase
   const login = async (email: string, password: string) => {
     try {
-      // Erst versuchen, mit Supabase anzumelden
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
       if (error) {
-        if (adminPassword && password === adminPassword) {
-          // Fallback auf lokale Admin-Authentifizierung
-          setIsAuthenticated(true);
-          localStorage.setItem("admin-session", "active");
-          toast.success("Erfolgreich angemeldet!");
-          return true;
-        }
         toast.error("Anmeldefehler: " + error.message);
         return false;
       }
@@ -254,17 +237,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAuthenticated(false);
       setUser(null);
       setCompany(null);
-      localStorage.removeItem("admin-session");
       toast.info("Abgemeldet");
     }).catch(error => {
       console.error("Fehler beim Abmelden:", error);
     });
-  };
-  
-  // Admin-Passwort setzen (Legacy-Funktion)
-  const setPassword = (newPassword: string) => {
-    setAdminPassword(newPassword);
-    toast.success("Admin-Passwort erfolgreich gespeichert.");
   };
   
   return (
@@ -277,9 +253,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         company,
         createCompany,
-        loadingAuth,
-        setAdminPassword: setPassword,
-        hasSetPassword 
+        loadingAuth
       }}
     >
       {children}

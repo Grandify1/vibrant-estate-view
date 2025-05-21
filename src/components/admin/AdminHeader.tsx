@@ -1,86 +1,35 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { AlertCircle } from "lucide-react";
 
-interface AdminHeaderProps {
-  onCreateNew: () => void;
-  onLogout: () => void;
-  isListView: boolean;
-  isOffline: boolean;
-  lastError: string | null;
-  onRetry: () => void;
-}
-
-const AdminHeader: React.FC<AdminHeaderProps> = ({ 
-  onCreateNew, 
-  onLogout, 
-  isListView, 
-  isOffline, 
-  lastError, 
-  onRetry 
-}) => {
+const AdminHeader = () => {
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+  };
+  
   return (
-    <>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Immobilien Admin-Portal</h1>
-        <div className="flex space-x-4">
-          {isListView && (
-            <Button 
-              onClick={onCreateNew}
-              disabled={isOffline}
-            >
-              Neue Immobilie
-            </Button>
+    <div className="bg-white border-b p-4 md:p-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Immobilien Admin-Portal</h1>
+          {user && (
+            <p className="text-sm text-gray-500">
+              Angemeldet als {user.email}
+            </p>
           )}
-          <Button variant="outline" onClick={onLogout}>
-            Abmelden
-          </Button>
         </div>
+        <Button variant="outline" onClick={handleLogout}>
+          Abmelden
+        </Button>
       </div>
-      
-      {isOffline && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <AlertCircle className="h-5 w-5 text-yellow-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-700">
-                Sie sind offline. Einige Funktionen sind möglicherweise nicht verfügbar. 
-                <button 
-                  onClick={onRetry}
-                  className="ml-2 font-medium text-yellow-700 underline"
-                >
-                  Erneut versuchen
-                </button>
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {lastError && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <AlertCircle className="h-5 w-5 text-red-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">
-                {lastError}
-                <button 
-                  onClick={onRetry}
-                  className="ml-2 font-medium text-red-700 underline"
-                >
-                  Erneut versuchen
-                </button>
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 };
 
