@@ -13,10 +13,23 @@ const EmbedPage = () => {
   
   // Update active properties whenever the properties list changes
   useEffect(() => {
-    // Explicitly filter active properties
-    const active = properties.filter(property => property.status === 'active');
+    // Enhanced debugging
+    console.log("Raw properties array:", properties);
+    console.log("Properties length:", properties.length);
+    
+    // Check localStorage directly for debugging
+    const storedProps = localStorage.getItem("properties");
+    console.log("Properties in localStorage:", storedProps ? JSON.parse(storedProps) : "none");
+    
+    // Filter active properties with additional logging
+    const active = properties.filter(property => {
+      console.log(`Property ${property.id} status: ${property.status}`);
+      return property.status === 'active';
+    });
+    
     console.log("Active properties:", active);
     console.log("All properties:", properties);
+    
     setActiveProperties(active);
   }, [properties]);
   
@@ -25,8 +38,19 @@ const EmbedPage = () => {
     setDetailOpen(true);
   };
   
+  // Add a debugging UI element if needed
+  const debugInfo = (
+    <div className="hidden">
+      <p>Total properties: {properties.length}</p>
+      <p>Active properties: {activeProperties.length}</p>
+      <p>Properties data: {JSON.stringify(properties)}</p>
+    </div>
+  );
+  
   return (
     <div className="container mx-auto py-8 px-4">
+      {debugInfo}
+      
       <PropertyGrid 
         properties={activeProperties} 
         onPropertyClick={handlePropertyClick}

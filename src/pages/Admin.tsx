@@ -34,7 +34,7 @@ const AdminPage = () => {
   const handlePasswordSet = (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 4) {
-      alert("Das Passwort sollte mindestens 4 Zeichen lang sein.");
+      toast.error("Das Passwort sollte mindestens 4 Zeichen lang sein.");
       return;
     }
     setAdminPassword(newPassword);
@@ -48,6 +48,8 @@ const AdminPage = () => {
         ...propertyData,
         status: propertyData.status || 'active'
       };
+      
+      console.log("Property data before saving:", dataWithStatus);
       
       if (adminView === AdminView.CREATE) {
         console.log("Adding new property:", dataWithStatus);

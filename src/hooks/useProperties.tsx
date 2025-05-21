@@ -21,16 +21,24 @@ function generateId() {
 }
 
 export function PropertiesProvider({ children }: { children: ReactNode }) {
+  // Initialize with an empty array but will be replaced by localStorage value
   const [properties, setProperties] = useLocalStorage<Property[]>("properties", []);
   
-  // Logging the properties for debugging
+  // Additional debugging logs
   useEffect(() => {
     console.log("Properties in PropertiesProvider:", properties);
+    
+    // Debug specific property attributes
+    if (properties.length > 0) {
+      properties.forEach((prop, index) => {
+        console.log(`Property ${index} status:`, prop.status);
+      });
+    }
   }, [properties]);
   
   const addProperty = (propertyData: Omit<Property, "id" | "createdAt" | "updatedAt">) => {
     // Ensure at least one image is marked as featured
-    const images = [...propertyData.images];
+    const images = [...(propertyData.images || [])];
     if (images.length > 0 && !images.some(img => img.isFeatured)) {
       images[0].isFeatured = true;
     }
@@ -47,6 +55,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       updatedAt: new Date().toISOString()
     };
     
+    console.log("Adding new property with status:", newProperty.status);
     setProperties(prev => [newProperty, ...prev]);
     toast.success("Immobilie erfolgreich erstellt");
     return newProperty;
@@ -60,6 +69,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       }
     }
     
+    console.log("Updating property:", id, "with update:", propertyUpdate);
     setProperties(prev => 
       prev.map(property => 
         property.id === id 
@@ -86,6 +96,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
   };
   
   const setPropertyStatus = (id: string, status: 'active' | 'sold' | 'archived') => {
+    console.log("Setting property status:", id, "to:", status);
     updateProperty(id, { status });
     
     const statusMessages = {
