@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const AuthPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, signup, isAuthenticated, loadingAuth } = useAuth();
+  const { login, signup, isAuthenticated, loadingAuth, user } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('login');
   
   // Login-Zustand
