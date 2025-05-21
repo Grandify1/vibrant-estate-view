@@ -81,11 +81,11 @@ export function useProperties() {
         title: property.title,
         address: property.address,
         status: property.status,
-        highlights: property.highlights as unknown as Json,
-        images: property.images as unknown as Json,
-        floor_plans: property.floorPlans as unknown as Json,
-        details: property.details as unknown as Json,
-        energy: property.energy as unknown as Json,
+        highlights: property.highlights as any,
+        images: property.images as any,
+        floor_plans: property.floorPlans as any,
+        details: property.details as any,
+        energy: property.energy as any,
         description: property.description,
         amenities: property.amenities,
         location: property.location,
@@ -163,11 +163,11 @@ export function useProperties() {
       if (updates.title) dbUpdates.title = updates.title;
       if (updates.address) dbUpdates.address = updates.address;
       if (updates.status) dbUpdates.status = updates.status;
-      if (updates.highlights) dbUpdates.highlights = updates.highlights as unknown as Json;
-      if (updates.images) dbUpdates.images = updates.images as unknown as Json;
-      if (updates.floorPlans) dbUpdates.floor_plans = updates.floorPlans as unknown as Json;
-      if (updates.details) dbUpdates.details = updates.details as unknown as Json;
-      if (updates.energy) dbUpdates.energy = updates.energy as unknown as Json;
+      if (updates.highlights) dbUpdates.highlights = updates.highlights as any;
+      if (updates.images) dbUpdates.images = updates.images as any;
+      if (updates.floorPlans) dbUpdates.floor_plans = updates.floorPlans as any;
+      if (updates.details) dbUpdates.details = updates.details as any;
+      if (updates.energy) dbUpdates.energy = updates.energy as any;
       if (updates.description) dbUpdates.description = updates.description;
       if (updates.amenities) dbUpdates.amenities = updates.amenities;
       if (updates.location) dbUpdates.location = updates.location;

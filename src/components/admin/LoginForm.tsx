@@ -31,9 +31,9 @@ const LoginForm = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Admin-Portal</CardTitle>
+        <CardTitle>Unternehmens-Portal</CardTitle>
         <CardDescription>
-          Bitte melden Sie sich mit Ihren Zugangsdaten an.
+          Melden Sie sich mit Ihren Unternehmenszugangsdaten an, um Immobilien und Makler zu verwalten.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleLogin}>
@@ -69,7 +69,7 @@ const LoginForm = () => {
                 Anmelden...
               </span>
             ) : (
-              "Anmelden"
+              "Als Unternehmen anmelden"
             )}
           </Button>
         </CardFooter>

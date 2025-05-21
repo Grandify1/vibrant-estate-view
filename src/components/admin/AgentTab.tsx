@@ -20,7 +20,6 @@ const AgentTab: React.FC = () => {
     setEditingAgent(undefined);
   };
   
-  // Fix: Update this function to receive the agent ID
   const handleEditClick = (agentId: string) => {
     const agent = agents.find(a => a.id === agentId);
     if (agent) {
