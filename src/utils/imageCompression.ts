@@ -63,29 +63,43 @@ export async function compressImage(
     ctx.drawImage(img, 0, 0, width, height);
     URL.revokeObjectURL(url);
     
-    // Try WebP format first
+    // Force WebP format with higher priority and better error handling
     try {
-      const webpBlob = await new Promise<Blob | null>(resolve => {
-        canvas.toBlob(resolve, 'image/webp', quality);
-      });
+      // Check if browser supports WebP
+      const supportsWebP = canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
       
-      if (webpBlob) {
-        return webpBlob;
+      if (supportsWebP) {
+        console.log("Using WebP compression");
+        const webpBlob = await new Promise<Blob | null>(resolve => {
+          canvas.toBlob(resolve, 'image/webp', quality);
+        });
+        
+        if (webpBlob) {
+          console.log("WebP compression successful, size:", Math.round(webpBlob.size / 1024), "KB");
+          return webpBlob;
+        } else {
+          console.warn("WebP compression returned null, falling back to JPEG");
+        }
+      } else {
+        console.warn("Browser doesn't support WebP, falling back to JPEG");
       }
     } catch (error) {
-      console.warn("WebP compression failed, falling back to JPEG");
+      console.warn("WebP compression failed, falling back to JPEG:", error);
     }
     
     // Fall back to JPEG
+    console.log("Using JPEG compression");
     const jpegBlob = await new Promise<Blob | null>(resolve => {
       canvas.toBlob(resolve, 'image/jpeg', quality);
     });
     
     if (jpegBlob) {
+      console.log("JPEG compression successful, size:", Math.round(jpegBlob.size / 1024), "KB");
       return jpegBlob;
     }
     
     // If all conversions fail, return original
+    console.warn("All compression attempts failed, returning original");
     return blob;
   } catch (error) {
     console.error("Error in image compression:", error);

@@ -34,8 +34,18 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         setBucketChecked(true);
         
         if (!bucketExists) {
-          // If bucket doesn't exist, we'll try to create it during upload
+          // If bucket doesn't exist, we'll create it during the first upload attempt
           console.log("Properties bucket doesn't exist yet.");
+          try {
+            // Try to create the bucket
+            await supabase.storage.createBucket('properties', {
+              public: true,
+              fileSizeLimit: 10485760, // 10MB
+            });
+            console.log("Created properties bucket");
+          } catch (bucketError) {
+            console.warn("Could not create bucket automatically:", bucketError);
+          }
         }
       } catch (error) {
         console.error("Error checking buckets:", error);
@@ -69,30 +79,62 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           continue;
         }
         
-        // Bild komprimieren
-        const compressedBlob = await compressImage(file, maxHeight);
-        
-        // Zufälligen Dateinamen generieren
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `images/${fileName}`;
+        console.log(`Compressing image: ${file.name} (${Math.round(file.size / 1024)} KB)`);
         
         try {
+          // Bild komprimieren
+          const compressedBlob = await compressImage(file, maxHeight);
+          console.log(`Compressed to ${Math.round(compressedBlob.size / 1024)} KB (${Math.round((compressedBlob.size / file.size) * 100)}%)`);
+          
+          // Zufälligen Dateinamen generieren
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.webp`;
+          const filePath = `images/${fileName}`;
+          
           // Zu Supabase hochladen
           const { data, error } = await supabase.storage
             .from('properties')
-            .upload(filePath, compressedBlob);
+            .upload(filePath, compressedBlob, {
+              contentType: 'image/webp',
+              cacheControl: '3600',
+              upsert: false
+            });
             
           if (error) {
             console.error(`Fehler beim Hochladen von ${file.name}:`, error);
             
             // Special handling for bucket not found
             if (error.message.includes("bucket not found") || error.message.includes("bucket_not_found")) {
-              toast.error("Bucket nicht gefunden. Bitte kontaktieren Sie den Administrator.");
+              try {
+                // Try to create the bucket
+                await supabase.storage.createBucket('properties', {
+                  public: true,
+                  fileSizeLimit: 10485760, // 10MB
+                });
+                console.log("Created properties bucket after error");
+                
+                // Try upload again
+                const retryUpload = await supabase.storage
+                  .from('properties')
+                  .upload(filePath, compressedBlob, {
+                    contentType: 'image/webp',
+                    cacheControl: '3600',
+                    upsert: false
+                  });
+                
+                if (retryUpload.error) {
+                  throw retryUpload.error;
+                } else {
+                  data = retryUpload.data;
+                }
+              } catch (bucketError) {
+                toast.error("Bucket nicht gefunden. Bitte kontaktieren Sie den Administrator.");
+                console.error("Could not create bucket:", bucketError);
+                continue;
+              }
             } else {
               toast.error(`Fehler beim Hochladen von ${file.name}: ${error.message}`);
+              continue;
             }
-            continue;
           }
           
           // URL der hochgeladenen Datei abrufen
@@ -101,6 +143,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
             .getPublicUrl(filePath);
             
           uploadedUrls.push(publicUrl);
+          console.log(`Successfully uploaded: ${publicUrl}`);
         } catch (uploadError) {
           console.error(`Exception beim Hochladen von ${file.name}:`, uploadError);
           toast.error(`Unerwarteter Fehler beim Hochladen von ${file.name}`);
@@ -143,7 +186,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       <Button
         type="button"
         variant="outline"
-        disabled={isLoading || !bucketChecked}
+        disabled={isLoading}
         onClick={() => document.getElementById('imageUpload')?.click()}
       >
         {isLoading ? (

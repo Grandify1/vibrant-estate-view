@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Property } from "@/types/property";
 import PropertyCard from "./PropertyCard";
 
@@ -10,6 +10,23 @@ interface PropertyGridProps {
 }
 
 const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error }) => {
+  // Pre-calculate external URLs to avoid recalculation on each render
+  const [externalUrls, setExternalUrls] = useState<Record<string, string>>({});
+  
+  // Calculate external URLs once when properties change
+  useEffect(() => {
+    if (properties && properties.length > 0) {
+      const urls: Record<string, string> = {};
+      const baseUrl = getBaseUrl();
+      
+      properties.forEach(property => {
+        urls[property.id] = `${baseUrl}/property/${property.id}`;
+      });
+      
+      setExternalUrls(urls);
+    }
+  }, [properties]);
+  
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -39,19 +56,19 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error 
   }
   
   // Function to get the base URL for external links
-  const getBaseUrl = () => {
+  function getBaseUrl(): string {
     // Get the current hostname but not localhost
     const hostname = window.location.hostname === 'localhost' ? 'as-immobilien.info' : window.location.hostname;
     const protocol = window.location.protocol;
     return `${protocol}//${hostname}`;
-  };
+  }
   
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
       {properties.map(property => (
         <a 
           key={property.id} 
-          href={`${getBaseUrl()}/property/${property.id}`} 
+          href={externalUrls[property.id] || `${getBaseUrl()}/property/${property.id}`} 
           className="no-underline text-inherit"
           target="_blank" 
           rel="noopener noreferrer"
