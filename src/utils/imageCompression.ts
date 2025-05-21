@@ -24,11 +24,17 @@ export async function compressImage(
   const url = URL.createObjectURL(blob);
   
   // Wait for image to load
-  await new Promise((resolve, reject) => {
-    img.onload = resolve;
-    img.onerror = reject;
-    img.src = url;
-  });
+  try {
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = url;
+    });
+  } catch (error) {
+    URL.revokeObjectURL(url);
+    console.log("Error loading image for compression:", error);
+    return { compressedBlob: blob, format: blob.type.split('/')[1] || 'jpeg' };
+  }
   
   // Calculate new dimensions maintaining aspect ratio
   let width = img.width;
@@ -63,7 +69,9 @@ export async function compressImage(
   
   // Try AVIF first (check browser support)
   try {
-    if ('toBlob' in canvas && supportsAvif()) {
+    const avifSupported = supportsAvif();
+    
+    if ('toBlob' in canvas && avifSupported) {
       console.log("Browser supports AVIF, trying AVIF conversion");
       const avifBlob = await new Promise<Blob | null>((resolve) => {
         canvas.toBlob(resolve, 'image/avif', quality);
@@ -117,6 +125,7 @@ function supportsAvif(): boolean {
     const canvas = document.createElement('canvas');
     return canvas.toDataURL('image/avif').indexOf('data:image/avif') === 0;
   } catch (error) {
+    console.log('AVIF support detection failed:', error);
     return false;
   }
 }

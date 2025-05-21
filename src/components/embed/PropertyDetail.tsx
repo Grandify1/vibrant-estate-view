@@ -40,7 +40,6 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   // Enhanced image handling
   const getImageUrl = (imageUrl: string) => {
     if (!imageUrl || imageUrl.startsWith('blob:')) {
-      console.log('Invalid detail image URL detected, using placeholder');
       return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
     }
     
@@ -49,7 +48,6 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
       new URL(imageUrl);
       return imageUrl;
     } catch (e) {
-      console.log('Invalid detail image URL format:', imageUrl);
       return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
     }
   };
@@ -96,7 +94,6 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
             if (onLoad) onLoad();
           }}
           onError={(e) => {
-            console.log('Image failed to load:', (e.target as HTMLImageElement).src);
             setError(true);
             setIsLoading(false);
             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
@@ -108,7 +105,6 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   };
   
   const images = getImages();
-  console.log("Detail view images:", images);
   const currentImage = images[activeImageIndex]?.url;
   
   const handleImageLoaded = (imgId: string) => {

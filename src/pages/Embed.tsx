@@ -39,9 +39,8 @@ const EmbedPageContent = () => {
   // Update active properties whenever the properties list changes
   useEffect(() => {
     if (!loading && properties && properties.length > 0) {
-      // Filter for only active properties with additional logging
+      // Filter for only active properties
       const active = properties.filter(property => property.status === 'active');
-      console.log("Active properties count:", active.length);
       
       // Set active properties from filtered list
       setActiveProperties(active);
@@ -51,11 +50,15 @@ const EmbedPageContent = () => {
   }, [properties, loading]);
   
   const handlePropertyClick = (property: Property) => {
-    console.log("Property clicked:", property.id, property.title);
     setSelectedProperty(property);
     setDetailOpen(true);
   };
 
+  const handleDetailClose = () => {
+    setDetailOpen(false);
+    setSelectedProperty(null);
+  };
+  
   const handleRetry = () => {
     retryOperation();
   };
@@ -105,7 +108,7 @@ const EmbedPageContent = () => {
         <PropertyDetail 
           property={selectedProperty}
           isOpen={detailOpen}
-          onClose={() => setDetailOpen(false)}
+          onClose={handleDetailClose}
         />
       )}
     </div>
