@@ -12,11 +12,13 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Create a single supabase client for the entire application
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    persistSession: true,
+    persistSession: true, 
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage: localStorage, // Direct reference, don't use typeof window check
-    storageKey: 'supabase-auth-token'
+    flowType: 'implicit',
+    storage: typeof window !== 'undefined' ? localStorage : undefined,
+    storageKey: 'supabase-auth-token',
+    debug: process.env.NODE_ENV === 'development'
   }
 });
 

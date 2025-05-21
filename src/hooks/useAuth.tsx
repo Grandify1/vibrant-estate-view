@@ -299,6 +299,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       console.log("Erstelle Unternehmen mit Daten:", companyData);
+      console.log("User ID:", user.id);
       
       // Force refresh session to ensure authentication is current
       const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
@@ -309,101 +310,126 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
       
-      // Create company with direct RPC call
-      const { data: newCompany, error: companyError } = await supabase
-        .from('companies')
-        .insert(companyData)
-        .select()
-        .single();
+      console.log("Session beim Erstellen des Unternehmens:", session?.user.id);
       
-      if (companyError) {
-        console.error("Fehler beim Erstellen des Unternehmens:", companyError);
+      // Try direct SQL approach with RPC call - safer with RLS
+      const { data: companyData: rpcResult, error: rpcError } = await supabase.rpc('create_company', {
+        name_param: companyData.name,
+        address_param: companyData.address || null,
+        phone_param: companyData.phone || null,
+        email_param: companyData.email || null,
+        logo_param: companyData.logo || null
+      });
+      
+      // If the RPC function doesn't exist yet, try the standard approach
+      if (rpcError && rpcError.message.includes('does not exist')) {
+        // Create company with insert
+        const { data: newCompany, error: companyError } = await supabase
+          .from('companies')
+          .insert(companyData)
+          .select()
+          .single();
         
-        // Special handling for RLS policy issues
-        if (companyError.code === '42501' || companyError.message.includes('row-level security policy')) {
-          toast.error("Sicherheitsrichtlinie verhindert das Erstellen des Unternehmens");
+        if (companyError) {
+          console.error("Fehler beim Erstellen des Unternehmens:", companyError);
           
-          // Try updating profile first to ensure it exists
-          console.log("Aktualisiere Profil für Benutzer:", user.id);
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .upsert({ 
-              id: user.id,
-              first_name: user.first_name || "",
-              last_name: user.last_name || ""
+          // Special handling for RLS policy issues
+          if (companyError.code === '42501' || companyError.message.includes('row-level security policy')) {
+            toast.error("Sicherheitsrichtlinie verhindert das Erstellen des Unternehmens");
+            
+            // Try updating profile first to ensure it exists
+            console.log("Aktualisiere Profil für Benutzer:", user.id);
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .upsert({ 
+                id: user.id,
+                first_name: user.first_name || "",
+                last_name: user.last_name || ""
+              });
+              
+            if (profileError) {
+              console.error("Fehler beim Aktualisieren des Profils:", profileError);
+              toast.error("Fehler beim Aktualisieren des Profils");
+              return false;
+            }
+            
+            // Try again with direct SQL via function call
+            toast.info("Versuche alternativen Ansatz...");
+            
+            // Use raw SQL through functions API 
+            const { data: result, error: rawError } = await supabase.functions.invoke('create-company', {
+              body: { companyData, userId: user.id }
             });
             
-          if (profileError) {
-            console.error("Fehler beim Aktualisieren des Profils:", profileError);
-            toast.error("Fehler beim Aktualisieren des Profils");
-            return false;
-          }
-          
-          // Try again with direct SQL via RPC (create a function in Supabase for this in the future)
-          toast.info("Versuche alternativen Ansatz...");
-          
-          // Try the insert again
-          const { data: retryCompany, error: retryError } = await supabase
-            .from('companies')
-            .insert({
-              ...companyData,
-              // Add any missing required fields
-              name: companyData.name || "Neues Unternehmen" 
-            })
-            .select()
-            .single();
-            
-          if (retryError) {
-            console.error("Zweiter Fehler beim Erstellen des Unternehmens:", retryError);
-            toast.error("Fehler beim Erstellen des Unternehmens. Bitte versuchen Sie es später erneut.");
-            return false;
-          }
-          
-          if (retryCompany) {
-            // Update profile with company_id
-            const { error: linkError } = await supabase
-              .from('profiles')
-              .update({ company_id: retryCompany.id })
-              .eq('id', user.id);
-              
-            if (linkError) {
-              console.error("Fehler beim Verknüpfen des Profils:", linkError);
-              toast.warning("Unternehmen erstellt, aber Verknüpfung fehlgeschlagen.");
-            } else {
-              // Update local state
-              setUser(prev => prev ? { ...prev, company_id: retryCompany.id } : null);
-              setCompany(retryCompany as Company);
-              toast.success("Unternehmen erfolgreich erstellt");
-              return true;
+            if (rawError) {
+              console.error("Edge Function Fehler:", rawError);
+              toast.error("Fehler beim Erstellen des Unternehmens via Edge Function");
+              return false;
             }
+            
+            if (result && result.company) {
+              // Update profile with company_id
+              const { error: linkError } = await supabase
+                .from('profiles')
+                .update({ company_id: result.company.id })
+                .eq('id', user.id);
+                
+              if (linkError) {
+                console.error("Fehler beim Verknüpfen des Profils:", linkError);
+                toast.warning("Unternehmen erstellt, aber Verknüpfung fehlgeschlagen.");
+              } else {
+                // Update local state
+                setUser(prev => prev ? { ...prev, company_id: result.company.id } : null);
+                setCompany(result.company as Company);
+                toast.success("Unternehmen erfolgreich erstellt");
+                return true;
+              }
+            }
+          } else {
+            toast.error(`Fehler: ${companyError.message || "Unbekannter Fehler"}`);
           }
-        } else {
-          toast.error(`Fehler: ${companyError.message || "Unbekannter Fehler"}`);
+          
+          return false;
         }
         
-        return false;
-      }
-      
-      if (newCompany) {
-        console.log("Unternehmen erfolgreich erstellt:", newCompany);
+        if (newCompany) {
+          console.log("Unternehmen erfolgreich erstellt:", newCompany);
+          
+          // Link user profile with company
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ company_id: newCompany.id })
+            .eq('id', user.id);
+          
+          if (profileError) {
+            console.error("Fehler beim Verknüpfen des Profils:", profileError);
+            toast.warning("Unternehmen erstellt, aber Verknüpfung fehlgeschlagen.");
+          } else {
+            // Update local state
+            setUser(prev => prev ? { ...prev, company_id: newCompany.id } : null);
+            setCompany(newCompany as Company);
+            toast.success("Unternehmen erfolgreich erstellt");
+          }
+          
+          return true;
+        }
+      } else if (!rpcError && rpcResult) {
+        console.log("Unternehmen via RPC erfolgreich erstellt:", rpcResult);
         
-        // Link user profile with company
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ company_id: newCompany.id })
-          .eq('id', user.id);
-        
-        if (profileError) {
-          console.error("Fehler beim Verknüpfen des Profils:", profileError);
-          toast.warning("Unternehmen erstellt, aber Verknüpfung fehlgeschlagen.");
-        } else {
+        // If the RPC was successful, assume it also linked the profile
+        if (rpcResult.company_id) {
           // Update local state
-          setUser(prev => prev ? { ...prev, company_id: newCompany.id } : null);
-          setCompany(newCompany as Company);
+          setUser(prev => prev ? { ...prev, company_id: rpcResult.company_id } : null);
+          
+          // Load company data
+          await loadCompanyData(rpcResult.company_id);
+          
           toast.success("Unternehmen erfolgreich erstellt");
+          return true;
         }
-        
-        return true;
+      } else {
+        console.error("RPC Fehler:", rpcError);
+        toast.error(`Fehler bei der RPC-Funktion: ${rpcError?.message || "Unbekannter Fehler"}`);
       }
       
       return false;
@@ -413,7 +439,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     }
   };
-
+  
   // Update company
   const updateCompany = async (companyData: Partial<Omit<Company, 'id' | 'created_at' | 'updated_at'>>) => {
     if (!user || !company) {

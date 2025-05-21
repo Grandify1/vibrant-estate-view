@@ -20,34 +20,18 @@ const CompanySetupPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Für Debugging
-  const [authStatus, setAuthStatus] = useState<string>("Prüfe Authentifizierung...");
-  
-  // Verbesserte Authentifizierungs-Überprüfung mit Timeout
+  // Verbesserte Authentifizierungs-Überprüfung
   useEffect(() => {
     console.log("CompanySetup: Auth Status:", { isAuthenticated, loadingAuth, user });
     
     if (!loadingAuth) {
       if (!isAuthenticated) {
         console.log("CompanySetup: Nicht authentifiziert, leite zur Auth-Seite weiter");
-        setAuthStatus("Nicht authentifiziert, leite weiter...");
         navigate('/auth');
       } else {
         console.log("CompanySetup: Authentifiziert als", user?.id);
-        setAuthStatus("Authentifiziert");
       }
     }
-    
-    // Timeout falls die Auth-Prüfung zu lange dauert
-    const timeout = setTimeout(() => {
-      if (loadingAuth) {
-        console.log("CompanySetup: Auth-Prüfung Timeout, leite zur Auth-Seite weiter");
-        setAuthStatus("Timeout, leite weiter...");
-        navigate('/auth');
-      }
-    }, 5000);
-    
-    return () => clearTimeout(timeout);
   }, [isAuthenticated, loadingAuth, navigate, user]);
   
   // Weiterleitungslogik, falls Unternehmen bereits existiert
@@ -64,7 +48,7 @@ const CompanySetupPage: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen flex-col">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
         <div className="text-sm text-gray-500">
-          {authStatus}
+          Authentifizierung wird geprüft...
         </div>
       </div>
     );
@@ -99,14 +83,15 @@ const CompanySetupPage: React.FC = () => {
         logo: null
       };
       
-      // Direkter Aufruf der createCompany-Funktion aus useAuth
+      console.log("User ID:", user.id);
       const success = await createCompany(companyData);
       
       if (success) {
-        // Kurze Pause vor Weiterleitung, damit der Toast sichtbar ist
+        toast.success("Unternehmen erfolgreich erstellt!");
+        // Kurze Pause vor Weiterleitung
         setTimeout(() => {
           navigate('/admin');
-        }, 1500);
+        }, 1000);
       } else {
         setErrorMessage('Fehler beim Erstellen des Unternehmens. Bitte versuchen Sie es später erneut.');
       }
