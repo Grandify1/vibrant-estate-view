@@ -1,5 +1,4 @@
 
-import { useAuth } from "./auth/useAuth";
-import { AuthProvider } from "./auth/AuthProvider";
-
-export { useAuth, AuthProvider };
+// This file serves as the entry point for auth-related exports
+export { useAuth } from "./auth/useAuth";
+export { AuthProvider } from "./auth/AuthProvider";

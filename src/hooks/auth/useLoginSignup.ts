@@ -39,9 +39,7 @@ export const useLoginSignup = () => {
           data: {
             first_name: firstName,
             last_name: lastName
-          },
-          // No email confirmation required
-          emailRedirectTo: undefined
+          }
         }
       });
       
@@ -51,10 +49,15 @@ export const useLoginSignup = () => {
       }
       
       // Automatically login
-      await login(email, password);
+      const loginResult = await login(email, password);
       
-      toast.success("Registrierung erfolgreich! Sie sind jetzt angemeldet.");
-      return true;
+      if (loginResult) {
+        toast.success("Registrierung erfolgreich! Sie sind jetzt angemeldet.");
+        return true;
+      } else {
+        toast.info("Registrierung erfolgreich, aber automatischer Login fehlgeschlagen.");
+        return true;
+      }
     } catch (error) {
       console.error("Fehler bei der Registrierung:", error);
       toast.error("Ein Fehler ist aufgetreten");
@@ -62,14 +65,16 @@ export const useLoginSignup = () => {
     }
   };
 
-  const logout = () => {
-    return supabase.auth.signOut().then(() => {
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
       toast.info("Abgemeldet");
       return true;
-    }).catch(error => {
+    } catch (error) {
       console.error("Fehler beim Abmelden:", error);
+      toast.error("Fehler beim Abmelden");
       return false;
-    });
+    }
   };
 
   return {

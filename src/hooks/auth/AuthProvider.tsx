@@ -6,6 +6,7 @@ import { useCompanyManagement } from "./useCompanyManagement";
 import { AuthContextType } from "./types";
 import { Company } from "@/types/company";
 
+// Create the Auth context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {

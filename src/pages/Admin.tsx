@@ -38,76 +38,26 @@ export default function Admin() {
   const navigate = useNavigate();
   const [showError, setShowError] = useState(false);
   
-  // Verbesserte Authentifizierungs-Überprüfung mit Logs
-  useEffect(() => {
-    console.log("Admin: Auth Status:", { isAuthenticated, loadingAuth, user });
-    
-    if (!loadingAuth) {
-      if (!isAuthenticated) {
-        console.log("Admin: Nicht authentifiziert, leite zur Auth-Seite weiter");
-        navigate('/auth');
-      } else if (isAuthenticated && user && !user.company_id) {
-        console.log("Admin: Authentifiziert aber kein Unternehmen, leite zur Unternehmenseinrichtung weiter");
-        navigate('/company-setup');
-      } else {
-        console.log("Admin: Authentifiziert mit Unternehmen", user?.company_id);
-      }
-    }
-  }, [isAuthenticated, loadingAuth, user, navigate]);
-  
-  // Verbesserte Fehlerbehandlung mit Timeout
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (loadingAuth) {
-        console.log("Admin: Authentifizierung dauert zu lange, zeige Fehler");
-        setShowError(true);
-      }
-    }, 5000); // 5 Sekunden warten, bevor ein Fehler angezeigt wird
-    
-    return () => clearTimeout(timer);
-  }, [loadingAuth]);
-  
-  // Wenn die Authentifizierung noch lädt, zeige einen verbesserten Ladebildschirm
+  // If auth is still loading, show loading state
   if (loadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" />
           <p className="mt-4 text-lg font-medium text-gray-700">Authentifizierung...</p>
-          
-          {showError && (
-            <div className="mt-6 p-4 border border-red-300 rounded bg-red-50 text-red-800">
-              <div className="flex items-center">
-                <AlertCircle className="h-5 w-5 mr-2" />
-                <p className="font-medium">Die Anmeldung dauert länger als erwartet</p>
-              </div>
-              <p className="mt-2 text-sm">Versuchen Sie, die Seite zu aktualisieren oder sich erneut anzumelden.</p>
-              <button 
-                className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                onClick={() => {
-                  toast.info("Weiterleitung zur Anmeldeseite...");
-                  navigate('/auth');
-                }}
-              >
-                Zur Anmeldeseite
-              </button>
-            </div>
-          )}
         </div>
       </div>
     );
   }
   
-  // Wenn der Nutzer nicht eingeloggt ist, zur Auth-Seite weiterleiten
+  // If not authenticated, redirect to auth page
   if (!isAuthenticated) {
-    console.log("Admin: Weiterleitung zur Auth-Seite");
-    return <Navigate to="/auth" />;
+    return <Navigate to="/auth" replace />;
   }
   
-  // Wenn der Nutzer noch kein Unternehmen hat, zur Unternehmenseinrichtung weiterleiten
+  // If user has no company, redirect to company setup
   if (isAuthenticated && user && !user.company_id) {
-    console.log("Admin: Weiterleitung zur Unternehmenseinrichtung");
-    return <Navigate to="/company-setup" />;
+    return <Navigate to="/company-setup" replace />;
   }
   
   return (
