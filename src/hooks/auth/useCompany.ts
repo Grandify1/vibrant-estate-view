@@ -24,6 +24,7 @@ export const useCompany = (user: AuthUser | null) => {
       
       if (profileError) {
         console.error("Error fetching profile:", profileError);
+        setLoadingCompany(false);
         return;
       }
       
@@ -37,6 +38,7 @@ export const useCompany = (user: AuthUser | null) => {
           
         if (companyError) {
           console.error("Error fetching company:", companyError);
+          setLoadingCompany(false);
           return;
         }
           
@@ -66,7 +68,7 @@ export const useCompany = (user: AuthUser | null) => {
       
       console.log("Creating company with user ID:", user.id);
       
-      // Step 1: Insert company data
+      // Step 1: Insert company data with our open RLS policy
       const { data: newCompany, error: companyError } = await supabase
         .from('companies')
         .insert({
