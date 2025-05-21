@@ -1,4 +1,3 @@
-
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { Property, initialProperty } from "../types/property";
@@ -86,9 +85,10 @@ const uploadImageToStorage = async (imageBlob: string, propertyId: string, image
     
     const blob = await response.blob();
     
-    // Generate a unique file path
-    const filePath = `${propertyId}/${imageId}.${blob.type.split('/')[1] || 'jpg'}`;
-    console.log(`Uploading image to ${filePath}`);
+    // Generate a unique file path (use file extension from blob type if available)
+    const fileExtension = blob.type.split('/')[1] || 'jpg';
+    const filePath = `${propertyId}/${imageId}.${fileExtension}`;
+    console.log(`Uploading image to ${filePath}, type: ${blob.type}, size: ${blob.size} bytes`);
     
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
@@ -209,6 +209,9 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
         });
         throw new Error("Keine Internetverbindung");
       }
+      
+      console.log("Property data before saving:", propertyData);
+      console.log("Adding new property:", propertyData);
       
       // Generate a temporary ID for file uploads
       const tempId = `temp-${Date.now()}`;
@@ -332,7 +335,8 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
               const fileName = urlParts[urlParts.length - 1];
               
               // Create a new path with the real property ID
-              const newFilePath = `${data.id}/${img.id || `img-${index}`}.${fileName.split('.')[1] || 'jpg'}`;
+              const fileExtension = fileName.split('.')[1] || 'jpg';
+              const newFilePath = `${data.id}/${img.id || `img-${index}`}.${fileExtension}`;
               
               try {
                 // Copy the file to the new location
@@ -381,7 +385,8 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
               const fileName = urlParts[urlParts.length - 1];
               
               // Create a new path with the real property ID
-              const newFilePath = `${data.id}/${plan.id || `plan-${index}`}.${fileName.split('.')[1] || 'jpg'}`;
+              const fileExtension = fileName.split('.')[1] || 'jpg';
+              const newFilePath = `${data.id}/${plan.id || `plan-${index}`}.${fileExtension}`;
               
               try {
                 // Copy the file to the new location
