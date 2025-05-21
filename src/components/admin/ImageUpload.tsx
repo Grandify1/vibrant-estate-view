@@ -28,6 +28,29 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     setIsLoading(true);
     
     try {
+      // First, check if the bucket exists and create it if it doesn't
+      const { data: buckets } = await supabase
+        .storage
+        .listBuckets();
+        
+      const bucketExists = buckets?.some(bucket => bucket.name === 'properties');
+      
+      if (!bucketExists) {
+        const { error: createError } = await supabase
+          .storage
+          .createBucket('properties', {
+            public: true,
+            fileSizeLimit: 10485760 // 10MB
+          });
+          
+        if (createError) {
+          console.error("Error creating bucket:", createError);
+          toast.error(`Fehler beim Erstellen des Buckets: ${createError.message}`);
+          setIsLoading(false);
+          return;
+        }
+      }
+      
       const uploadedUrls: string[] = [];
       
       for (let i = 0; i < files.length; i++) {
@@ -59,6 +82,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           .upload(filePath, compressedBlob);
           
         if (error) {
+          console.error(`Fehler beim Hochladen von ${file.name}:`, error);
           toast.error(`Fehler beim Hochladen von ${file.name}: ${error.message}`);
           continue;
         }
