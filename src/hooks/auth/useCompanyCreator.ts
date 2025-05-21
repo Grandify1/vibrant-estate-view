@@ -36,36 +36,32 @@ export const useCompanyCreator = (
       
       // Try direct SQL approach with RPC call - safer with RLS
       try {
-        // Try to use the RPC function if it exists
-        const { data: rpcResult, error: rpcError } = await supabase.rpc("create_company", {
-          name_param: companyData.name,
-          address_param: companyData.address || null,
-          phone_param: companyData.phone || null,
-          email_param: companyData.email || null,
-          logo_param: companyData.logo || null
+        // Fix: 'create_company' is not a valid function in the database, using custom function call instead
+        const { data: rpcResult, error: rpcError } = await supabase.functions.invoke('create-company', {
+          body: { companyData, userId: user.id }
         });
         
         if (!rpcError && rpcResult) {
-          console.log("Unternehmen via RPC erfolgreich erstellt:", rpcResult);
+          console.log("Unternehmen via Function erfolgreich erstellt:", rpcResult);
           
-          // If the RPC was successful and returned a company_id
-          if (typeof rpcResult === 'object' && rpcResult !== null && 'company_id' in rpcResult) {
+          // If the function was successful and returned a company
+          if (typeof rpcResult === 'object' && rpcResult !== null && rpcResult.company && 'id' in rpcResult.company) {
             // Update local state
-            setUser(prev => prev ? { ...prev, company_id: rpcResult.company_id } : null);
+            setUser(prev => prev ? { ...prev, company_id: rpcResult.company.id } : null);
             
             // Load company data
-            await loadCompanyData(rpcResult.company_id);
+            await loadCompanyData(rpcResult.company.id);
             
             toast.success("Unternehmen erfolgreich erstellt");
             return true;
           }
         } else {
-          throw new Error(rpcError?.message || "RPC error");
+          throw new Error(rpcError?.message || "Function error");
         }
       } catch (rpcError) {
-        console.error("RPC Fehler oder Funktion existiert nicht:", rpcError);
+        console.error("Function Fehler oder Funktion existiert nicht:", rpcError);
         
-        // Fall back to standard approach if RPC fails
+        // Fall back to standard approach if function fails
         try {
           // Create company with insert
           const { data: newCompany, error: companyError } = await supabase

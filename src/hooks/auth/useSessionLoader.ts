@@ -20,9 +20,14 @@ export const useSessionLoader = (
         
       if (profileData) {
         console.log("Profildaten:", profileData);
+        
+        // Get user email asynchronously
+        const { data } = await supabase.auth.getUser();
+        const email = data.user?.email || '';
+        
         setUser({
           id: userId,
-          email: supabase.auth.getUser().then(({ data }) => data.user?.email || ''),
+          email: email, // Fix: Assign email directly instead of a Promise
           first_name: profileData.first_name,
           last_name: profileData.last_name,
           company_id: profileData.company_id
