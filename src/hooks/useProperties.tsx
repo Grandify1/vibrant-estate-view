@@ -1,11 +1,11 @@
-
 import { useState, useEffect } from 'react';
-import { Property } from '@/types/property';
+import { Property, PropertyHighlight, PropertyImage, FloorPlan, PropertyDetails, EnergyDetails } from '@/types/property';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { compressImage } from '@/utils/imageCompression';
+import { Json } from '@/integrations/supabase/types';
 
 export function useProperties() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -109,11 +109,11 @@ export function useProperties() {
         title: data.title,
         address: data.address,
         status: data.status as 'active' | 'sold' | 'archived',
-        highlights: data.highlights || [],
-        images: data.images || [],
-        floorPlans: data.floor_plans || [],
-        details: data.details || {},
-        energy: data.energy || {},
+        highlights: data.highlights as PropertyHighlight[] || [],
+        images: data.images as PropertyImage[] || [],
+        floorPlans: data.floor_plans as FloorPlan[] || [],
+        details: data.details as PropertyDetails || {},
+        energy: data.energy as EnergyDetails || {},
         description: data.description || '',
         amenities: data.amenities || '',
         location: data.location || '',
@@ -176,11 +176,11 @@ export function useProperties() {
         title: data.title,
         address: data.address,
         status: data.status as 'active' | 'sold' | 'archived',
-        highlights: data.highlights || [],
-        images: data.images || [],
-        floorPlans: data.floor_plans || [],
-        details: data.details || {},
-        energy: data.energy || {},
+        highlights: data.highlights as PropertyHighlight[] || [],
+        images: data.images as PropertyImage[] || [],
+        floorPlans: data.floor_plans as FloorPlan[] || [],
+        details: data.details as PropertyDetails || {},
+        energy: data.energy as EnergyDetails || {},
         description: data.description || '',
         amenities: data.amenities || '',
         location: data.location || '',

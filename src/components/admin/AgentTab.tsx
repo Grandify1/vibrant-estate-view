@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Agent } from '@/types/agent';
@@ -80,8 +81,11 @@ const AgentTab: React.FC = () => {
           
           <AgentList 
             agents={agents}
-            onEdit={handleEditClick}
-            onDelete={(id: string) => handleDelete(id)}
+            onEdit={(id: string) => {
+              const agent = agents.find(a => a.id === id);
+              if (agent) handleEditClick(agent);
+            }}
+            onDelete={handleDelete}
           />
         </>
       )}
