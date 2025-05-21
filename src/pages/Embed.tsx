@@ -55,7 +55,8 @@ const EmbedPageContent = () => {
     const updateFrameHeight = () => {
       if (containerRef.current && window.parent !== window) {
         const height = containerRef.current.offsetHeight;
-        window.parent.postMessage({ type: 'resize-iframe', height: height + 16 }, '*');
+        // Minimaler Puffer um Scrollbars zu vermeiden
+        window.parent.postMessage({ type: 'resize-iframe', height: height }, '*');
       }
     };
 
@@ -101,14 +102,6 @@ const EmbedPageContent = () => {
   const handlePropertyClick = (property: Property) => {
     setSelectedProperty(property);
     setDetailOpen(true);
-    
-    // Verzögerte Höhenanpassung nach dem Öffnen des Modals
-    setTimeout(() => {
-      if (containerRef.current && window.parent !== window) {
-        const height = containerRef.current.offsetHeight;
-        window.parent.postMessage({ type: 'resize-iframe', height: height + 16 }, '*');
-      }
-    }, 200);
   };
 
   const handleDetailClose = () => {
