@@ -27,7 +27,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Dynamisch die aktuelle URL für Supabase verwenden
+// Dynamically use the current URL for Supabase
 const getCurrentUrl = () => {
   return window.location.origin;
 };
@@ -38,13 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   
-  // Supabase-Sitzung beim Laden prüfen
+  // Check Supabase session on load
   useEffect(() => {
     const checkSession = async () => {
       try {
         setLoadingAuth(true);
         
-        // Session abrufen
+        // Get session
         const { data: sessionData } = await supabase.auth.getSession();
         const session = sessionData?.session;
         
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { user } = session;
           setIsAuthenticated(true);
           
-          // Nutzerdaten aus dem Profil laden
+          // Load user data from profile
           const { data: profileData, error } = await supabase
             .from('profiles')
             .select('*')
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               company_id: profileData.company_id
             });
             
-            // Wenn der Nutzer einem Unternehmen zugeordnet ist, lade die Unternehmensdaten
+            // If user is associated with a company, load company data
             if (profileData.company_id) {
               await loadCompanyData(profileData.company_id);
             }
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setCompany(null);
         }
       } catch (error) {
-        console.error("Fehler beim Laden der Sitzung:", error);
+        console.error("Error loading session:", error);
       } finally {
         setLoadingAuth(false);
       }
@@ -93,13 +93,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     checkSession();
     
-    // Auf Änderungen der Authentifizierung hören
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
           setIsAuthenticated(true);
           
-          // Nutzerdaten setzen
+          // Set user data
           const { data: profileData, error } = await supabase
             .from('profiles')
             .select('*')
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               company_id: profileData.company_id
             });
             
-            // Wenn der Nutzer einem Unternehmen zugeordnet ist, lade die Unternehmensdaten
+            // If user is associated with a company, load company data
             if (profileData.company_id) {
               await loadCompanyData(profileData.company_id);
             }
@@ -139,29 +139,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
   
-  // Unternehmensdaten laden
+  // Load company data
   const loadCompanyData = async (companyId: string) => {
     try {
+      console.log("Loading company data for ID:", companyId);
       const { data: companyData, error } = await supabase
         .from('companies')
         .select('*')
         .eq('id', companyId)
-        .single();
+        .maybeSingle();
       
       if (error) {
-        console.error("Fehler beim Laden der Unternehmensdaten:", error);
+        console.error("Error loading company data:", error);
         return;
       }
       
       if (companyData) {
+        console.log("Company data loaded:", companyData);
         setCompany(companyData as Company);
+      } else {
+        console.log("No company found with ID:", companyId);
       }
     } catch (error) {
-      console.error("Fehler beim Laden der Unternehmensdaten:", error);
+      console.error("Error loading company data:", error);
     }
   };
   
-  // Login mit Supabase
+  // Login with Supabase
   const login = async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -170,23 +174,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       if (error) {
-        toast.error("Anmeldefehler: " + error.message);
+        toast.error("Login error: " + error.message);
         return false;
       }
       
-      toast.success("Erfolgreich angemeldet!");
+      toast.success("Successfully logged in!");
       return true;
     } catch (error) {
-      console.error("Fehler bei der Anmeldung:", error);
-      toast.error("Ein Fehler ist aufgetreten");
+      console.error("Error during login:", error);
+      toast.error("An error occurred");
       return false;
     }
   };
   
-  // Registrierung mit Supabase - ohne E-Mail-Bestätigung
+  // Register with Supabase - no email confirmation
   const signup = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
-      // Registrierung ohne E-Mail-Bestätigung
+      // Register without email confirmation
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -195,37 +199,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             first_name: firstName,
             last_name: lastName
           },
-          // Keine E-Mail-Bestätigung mehr erforderlich
+          // No email confirmation required
           emailRedirectTo: undefined
         }
       });
       
       if (error) {
-        toast.error("Registrierungsfehler: " + error.message);
+        toast.error("Registration error: " + error.message);
         return false;
       }
       
-      // Automatisch einloggen
+      // Automatically login
       await login(email, password);
       
-      toast.success("Registrierung erfolgreich! Sie sind jetzt angemeldet.");
+      toast.success("Registration successful! You are now logged in.");
       return true;
     } catch (error) {
-      console.error("Fehler bei der Registrierung:", error);
-      toast.error("Ein Fehler ist aufgetreten");
+      console.error("Error during registration:", error);
+      toast.error("An error occurred");
       return false;
     }
   };
   
-  // Unternehmen erstellen
+  // Create company
   const createCompany = async (companyData: Omit<Company, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
-      toast.error("Sie müssen angemeldet sein, um ein Unternehmen zu erstellen");
+      toast.error("You must be logged in to create a company");
       return false;
     }
     
     try {
-      // Unternehmen erstellen
+      console.log("Creating company with data:", companyData);
+      
+      // Create company
       const { data: newCompany, error: companyError } = await supabase
         .from('companies')
         .insert(companyData)
@@ -233,38 +239,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
       
       if (companyError) {
-        toast.error("Fehler beim Erstellen des Unternehmens: " + companyError.message);
+        console.error("Company creation error:", companyError);
+        toast.error("Error creating company: " + companyError.message);
         return false;
       }
       
-      // Nutzerprofil mit Unternehmen verknüpfen
+      console.log("Company created successfully:", newCompany);
+      
+      // Link user profile with company
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ company_id: newCompany.id })
         .eq('id', user.id);
       
       if (profileError) {
-        toast.error("Fehler beim Verknüpfen des Profils: " + profileError.message);
+        console.error("Profile linking error:", profileError);
+        toast.error("Error linking profile: " + profileError.message);
         return false;
       }
       
-      // Lokale Zustandsaktualisierung
+      // Update local state
       setUser(prev => prev ? { ...prev, company_id: newCompany.id } : null);
       setCompany(newCompany as Company);
       
-      toast.success("Unternehmen erfolgreich erstellt");
+      toast.success("Company created successfully");
       return true;
     } catch (error) {
-      console.error("Fehler beim Erstellen des Unternehmens:", error);
-      toast.error("Ein Fehler ist aufgetreten");
+      console.error("Error creating company:", error);
+      toast.error("An error occurred");
       return false;
     }
   };
 
-  // Unternehmen aktualisieren
+  // Update company
   const updateCompany = async (companyData: Partial<Omit<Company, 'id' | 'created_at' | 'updated_at'>>) => {
     if (!user || !company) {
-      toast.error("Sie müssen angemeldet sein und ein Unternehmen haben, um Änderungen vorzunehmen");
+      toast.error("You must be logged in and have a company to make changes");
       return false;
     }
     
@@ -275,30 +285,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', company.id);
       
       if (error) {
-        toast.error("Fehler beim Aktualisieren des Unternehmens: " + error.message);
+        toast.error("Error updating company: " + error.message);
         return false;
       }
       
-      // Lokalen Zustand aktualisieren
+      // Update local state
       setCompany(prev => prev ? { ...prev, ...companyData } as Company : null);
       
       return true;
     } catch (error) {
-      console.error("Fehler beim Aktualisieren des Unternehmens:", error);
-      toast.error("Ein Fehler ist aufgetreten");
+      console.error("Error updating company:", error);
+      toast.error("An error occurred");
       return false;
     }
   };
   
-  // Abmelden
+  // Logout
   const logout = () => {
     supabase.auth.signOut().then(() => {
       setIsAuthenticated(false);
       setUser(null);
       setCompany(null);
-      toast.info("Abgemeldet");
+      toast.info("Logged out");
     }).catch(error => {
-      console.error("Fehler beim Abmelden:", error);
+      console.error("Error during logout:", error);
     });
   };
   

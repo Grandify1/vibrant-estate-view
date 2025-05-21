@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const CompanySetupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -17,15 +19,15 @@ const CompanySetupPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  // Weiterleitung, wenn nicht authentifiziert
-  React.useEffect(() => {
+  // Redirect if not authenticated
+  useEffect(() => {
     if (!loadingAuth && !isAuthenticated) {
       navigate('/auth');
     }
   }, [isAuthenticated, loadingAuth, navigate]);
   
-  // Weiterleitung, wenn bereits ein Unternehmen vorhanden ist
-  React.useEffect(() => {
+  // Redirect if company already exists
+  useEffect(() => {
     if (company && company.id) {
       navigate('/admin');
     }
@@ -34,7 +36,7 @@ const CompanySetupPage: React.FC = () => {
   if (loadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
@@ -44,6 +46,20 @@ const CompanySetupPage: React.FC = () => {
     setIsLoading(true);
     
     try {
+      if (!name.trim()) {
+        toast.error('Bitte geben Sie einen Unternehmensnamen ein.');
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log('Creating company with data:', {
+        name,
+        address: address || null,
+        phone: phone || null,
+        email: email || null,
+        logo: null
+      });
+      
       const success = await createCompany({
         name,
         address: address || null,
@@ -53,8 +69,14 @@ const CompanySetupPage: React.FC = () => {
       });
       
       if (success) {
+        toast.success('Unternehmen erfolgreich erstellt!');
         navigate('/admin');
+      } else {
+        toast.error('Fehler beim Erstellen des Unternehmens');
       }
+    } catch (error) {
+      console.error('Error creating company:', error);
+      toast.error('Ein unerwarteter Fehler ist aufgetreten');
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +139,7 @@ const CompanySetupPage: React.FC = () => {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <span className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Unternehmen erstellen...
                 </span>
               ) : (
