@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,12 +19,13 @@ enum AdminView {
 
 const AdminPage = () => {
   const { isAuthenticated, login, logout, setAdminPassword, hasSetPassword } = useAuth();
-  const { properties, addProperty, updateProperty, deleteProperty, getProperty, setPropertyStatus } = useProperties();
+  const { properties, addProperty, updateProperty, deleteProperty, getProperty, setPropertyStatus, loading } = useProperties();
   
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [adminView, setAdminView] = useState<AdminView>(AdminView.LIST);
   const [editPropertyId, setEditPropertyId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,8 +43,9 @@ const AdminPage = () => {
     setNewPassword("");
   };
   
-  const handlePropertySubmit = (propertyData: Omit<Property, "id" | "createdAt" | "updatedAt">) => {
+  const handlePropertySubmit = async (propertyData: Omit<Property, "id" | "createdAt" | "updatedAt">) => {
     try {
+      setIsSubmitting(true);
       // Ensure propertyData contains the status field
       const dataWithStatus = {
         ...propertyData,
@@ -53,16 +56,18 @@ const AdminPage = () => {
       
       if (adminView === AdminView.CREATE) {
         console.log("Adding new property:", dataWithStatus);
-        addProperty(dataWithStatus);
+        await addProperty(dataWithStatus);
       } else if (adminView === AdminView.EDIT && editPropertyId) {
         console.log("Updating property:", editPropertyId, dataWithStatus);
-        updateProperty(editPropertyId, dataWithStatus);
+        await updateProperty(editPropertyId, dataWithStatus);
       }
       setAdminView(AdminView.LIST);
       setEditPropertyId(null);
     } catch (error) {
       console.error("Error submitting property:", error);
       toast.error("Ein Fehler ist aufgetreten");
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -71,8 +76,12 @@ const AdminPage = () => {
     setAdminView(AdminView.EDIT);
   };
   
-  const handleDeleteProperty = (id: string) => {
-    deleteProperty(id);
+  const handleDeleteProperty = async (id: string) => {
+    try {
+      await deleteProperty(id);
+    } catch (error) {
+      console.error("Error deleting property:", error);
+    }
   };
   
   const getEditProperty = () => {
@@ -167,7 +176,11 @@ const AdminPage = () => {
         </div>
       </div>
       
-      {adminView === AdminView.LIST && (
+      {loading && adminView === AdminView.LIST ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+        </div>
+      ) : adminView === AdminView.LIST && (
         <Tabs defaultValue="properties">
           <TabsList className="mb-6">
             <TabsTrigger value="properties">Immobilien</TabsTrigger>
@@ -228,6 +241,7 @@ const AdminPage = () => {
             onSubmit={handlePropertySubmit}
             onCancel={handleCancel}
             isEditing={adminView === AdminView.EDIT}
+            isSubmitting={isSubmitting}
           />
         </>
       )}
