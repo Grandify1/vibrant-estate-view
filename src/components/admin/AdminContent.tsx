@@ -6,6 +6,7 @@ import PropertyList from "@/components/admin/PropertyList";
 import PropertyForm from "@/components/admin/PropertyForm";
 import EmbedCodeTab from "@/components/admin/EmbedCodeTab";
 import AdminHeader from "@/components/admin/AdminHeader";
+import AgentTab from "@/components/admin/AgentTab"; 
 import { Property } from "@/types/property";
 import { toast } from "sonner";
 
@@ -130,6 +131,7 @@ const AdminContent: React.FC<AdminContentProps> = ({
         <Tabs defaultValue="properties">
           <TabsList className="mb-6">
             <TabsTrigger value="properties">Immobilien</TabsTrigger>
+            <TabsTrigger value="agents">Makler</TabsTrigger>
             <TabsTrigger value="embed">Embed Code</TabsTrigger>
           </TabsList>
           
@@ -140,6 +142,10 @@ const AdminContent: React.FC<AdminContentProps> = ({
               onDelete={handleDeleteProperty}
               onChangeStatus={setPropertyStatus}
             />
+          </TabsContent>
+          
+          <TabsContent value="agents">
+            <AgentTab />
           </TabsContent>
           
           <TabsContent value="embed">

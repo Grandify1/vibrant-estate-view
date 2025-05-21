@@ -55,6 +55,7 @@ export interface Property {
   description: string;
   amenities: string;
   location: string;
+  agent_id?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -165,6 +166,7 @@ export const initialProperty: Property = {
   description: '',
   amenities: '',
   location: '',
+  agent_id: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString()
 };

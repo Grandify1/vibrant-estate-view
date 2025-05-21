@@ -1,3 +1,4 @@
+
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { Property, initialProperty } from "../types/property";
@@ -5,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { compressImage } from "@/utils/imageCompression";
+import { useAuth } from "./useAuth";
 
 interface PropertiesContextType {
   properties: Property[];
@@ -22,7 +24,7 @@ interface PropertiesContextType {
 const PropertiesContext = createContext<PropertiesContextType | undefined>(undefined);
 
 // Helper functions to convert between our frontend model and Supabase model
-const toSupabaseProperty = (property: Omit<Property, "id" | "createdAt" | "updatedAt">) => {
+const toSupabaseProperty = (property: Omit<Property, "id" | "createdAt" | "updatedAt">, companyId?: string) => {
   // Convert specific properties to the expected Json type for Supabase
   const supabaseProperty = {
     title: property.title,
@@ -35,7 +37,9 @@ const toSupabaseProperty = (property: Omit<Property, "id" | "createdAt" | "updat
     energy: property.energy as unknown as Json,
     description: property.description || '',
     amenities: property.amenities || '',
-    location: property.location || ''
+    location: property.location || '',
+    company_id: companyId || null,
+    agent_id: property.agent_id || null
   };
   
   console.log("Converting to Supabase format:", supabaseProperty);
@@ -57,6 +61,7 @@ const fromSupabaseProperty = (dbProperty: any): Property => {
     description: dbProperty.description || '',
     amenities: dbProperty.amenities || '',
     location: dbProperty.location || '',
+    agent_id: dbProperty.agent_id || null,
     createdAt: dbProperty.created_at,
     updatedAt: dbProperty.updated_at
   };
@@ -136,6 +141,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
   const [lastError, setLastError] = useState<string | null>(null);
   // Update the type to accept any Promise-returning function
   const [pendingOperation, setPendingOperation] = useState<(() => Promise<any>) | null>(null);
+  const { user, company } = useAuth();
   
   // Check network status
   const [isOnline, setIsOnline] = useState(true);
@@ -171,10 +177,15 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setLastError(null);
       console.log("Fetching properties from Supabase...");
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .order('created_at', { ascending: false });
+      
+      let query = supabase.from('properties').select('*');
+      
+      // Wenn ein Unternehmen vorhanden ist, nur Immobilien dieses Unternehmens laden
+      if (company) {
+        query = query.eq('company_id', company.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) {
         console.error('Error fetching properties:', error);
@@ -197,7 +208,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     fetchProperties();
-  }, []);
+  }, [company?.id]);
   
   const retryOperation = async () => {
     if (pendingOperation) {
@@ -283,7 +294,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       console.log("Processed images:", propertyToAdd.images);
       
       // Convert to Supabase format
-      const supabaseData = toSupabaseProperty(propertyToAdd);
+      const supabaseData = toSupabaseProperty(propertyToAdd, company?.id);
       console.log("Converted to Supabase format:", supabaseData);
       
       // Enhanced error handling for the network request
@@ -568,6 +579,7 @@ export function PropertiesProvider({ children }: { children: ReactNode }) {
       if (updatedPropertyData.description !== undefined) supabaseUpdate.description = updatedPropertyData.description;
       if (updatedPropertyData.amenities !== undefined) supabaseUpdate.amenities = updatedPropertyData.amenities;
       if (updatedPropertyData.location !== undefined) supabaseUpdate.location = updatedPropertyData.location;
+      if (updatedPropertyData.agent_id !== undefined) supabaseUpdate.agent_id = updatedPropertyData.agent_id;
       
       console.log("Updating property:", id, "with update:", supabaseUpdate);
       
