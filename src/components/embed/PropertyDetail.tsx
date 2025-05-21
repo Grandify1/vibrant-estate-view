@@ -22,12 +22,16 @@ interface PropertyDetailProps {
 
 export default function PropertyDetail({ property, isOpen, onClose }: PropertyDetailProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
   
+  // Neue State-Variable für geladene Bilder
+  const [loadedImages, setLoadedImages] = useState<{[key: string]: boolean}>({});
+  
+  // Reset wenn sich die property ändert
   useEffect(() => {
-    // Reset active image index when property changes
-    setActiveImageIndex(0);
-    setImagesLoaded({});
+    if (property) {
+      setActiveImageIndex(0);
+      setLoadedImages({});
+    }
   }, [property?.id]);
   
   if (!property) return null;
@@ -37,13 +41,13 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
   
-  // Enhanced image handling
-  const getImageUrl = (imageUrl: string) => {
+  // Verbesserte Bildverarbeitung
+  const getImageUrl = (imageUrl: string): string => {
     if (!imageUrl) {
       return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
     }
     
-    // Check if image URL is valid
+    // Prüfen Sie, ob die Bild-URL gültig ist
     if (imageUrl.startsWith('http')) {
       return imageUrl;
     }
@@ -51,7 +55,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
     return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
   };
   
-  // Get all images, ensuring we have at least one
+  // Holen Sie alle Bilder und stellen Sie sicher, dass wir mindestens eines haben
   const getImages = () => {
     if (!property.images || property.images.length === 0) {
       return [{
@@ -61,7 +65,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
       }];
     }
     
-    // Sort images to put featured one first
+    // Sortieren Sie Bilder, um das ausgewählte zuerst zu platzieren
     return [...property.images].sort((a, b) => {
       if (a.isFeatured) return -1;
       if (b.isFeatured) return 1;
@@ -69,7 +73,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
     });
   };
   
-  // Progressive image component with loading state
+  // Bild-Komponente mit Ladezustand und Fallback
   const ImageWithFallback = ({ src, alt, className, onLoad }: { 
     src: string; 
     alt: string; 
@@ -77,39 +81,43 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
     onLoad?: () => void;
   }) => {
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(false);
+    const [hasError, setHasError] = useState(false);
     
     return (
       <div className="relative w-full h-full">
         {isLoading && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse" />
         )}
-        <img 
-          src={src}
-          alt={alt}
-          className={className}
-          onLoad={() => {
-            setIsLoading(false);
-            if (onLoad) onLoad();
-          }}
-          onError={() => {
-            setError(true);
-            setIsLoading(false);
-          }}
-          style={{ opacity: isLoading ? 0 : 1 }}
-        />
+        
+        {hasError ? (
+          <div className="absolute inset-0 bg-gray-300 flex items-center justify-center">
+            <span className="text-gray-500">Bild konnte nicht geladen werden</span>
+          </div>
+        ) : (
+          <img 
+            src={src}
+            alt={alt}
+            className={className}
+            onLoad={() => {
+              setIsLoading(false);
+              if (onLoad) onLoad();
+            }}
+            onError={() => {
+              setIsLoading(false);
+              setHasError(true);
+            }}
+            style={{ visibility: isLoading ? 'hidden' : 'visible' }}
+          />
+        )}
       </div>
     );
   };
   
   const images = getImages();
-  const currentImage = images[activeImageIndex]?.url || "";
+  const currentImageUrl = images[activeImageIndex]?.url || "";
   
-  const handleImageLoaded = (imgId: string) => {
-    setImagesLoaded(prev => ({
-      ...prev,
-      [imgId]: true
-    }));
+  const handleImageLoad = (imageId: string) => {
+    setLoadedImages(prev => ({...prev, [imageId]: true}));
   };
   
   const renderDetailItem = (label: string, value: string | undefined) => {
@@ -129,11 +137,11 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
         <DialogDescription className="sr-only">Detaillierte Informationen zur Immobilie</DialogDescription>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
-          {/* Left column - Image gallery */}
+          {/* Linke Spalte - Bildgalerie */}
           <div className="md:col-span-2 relative">
             <div className="aspect-[4/3] bg-gray-100">
               <ImageWithFallback 
-                src={getImageUrl(currentImage)}
+                src={getImageUrl(currentImageUrl)}
                 alt={property.title}
                 className="w-full h-full object-cover"
               />
@@ -163,7 +171,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                             src={getImageUrl(image.url)}
                             alt={`Bild ${index + 1}`}
                             className="w-full h-full object-cover"
-                            onLoad={() => handleImageLoaded(image.id || `img-${index}`)}
+                            onLoad={() => handleImageLoad(image.id || `img-${index}`)}
                           />
                         </button>
                       </CarouselItem>
@@ -180,7 +188,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
             )}
           </div>
           
-          {/* Right column - Property details */}
+          {/* Rechte Spalte - Immobiliendetails */}
           <div className="p-4 md:p-6">
             <h2 className="text-2xl font-bold">{property.title}</h2>
             <p className="text-gray-600 flex items-center mt-1">
@@ -243,9 +251,9 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
           </div>
         </div>
         
-        {/* Vertically stacked sections */}
+        {/* Vertikal gestapelte Abschnitte */}
         <div className="p-4 md:p-6 space-y-8">
-          {/* Details section */}
+          {/* Details-Abschnitt */}
           <div className="bg-gray-50 rounded-lg p-4 md:p-6">
             <h3 className="text-xl font-semibold mb-4">Details</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
@@ -306,7 +314,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
             )}
           </div>
           
-          {/* Description section */}
+          {/* Beschreibungsabschnitt */}
           {property.description && (
             <div className="bg-gray-50 rounded-lg p-4 md:p-6">
               <h3 className="text-xl font-semibold mb-4">Beschreibung</h3>
@@ -318,7 +326,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
             </div>
           )}
           
-          {/* Amenities section */}
+          {/* Ausstattungsabschnitt */}
           {property.amenities && (
             <div className="bg-gray-50 rounded-lg p-4 md:p-6">
               <h3 className="text-xl font-semibold mb-4">Ausstattung</h3>
@@ -330,7 +338,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
             </div>
           )}
           
-          {/* Location section */}
+          {/* Standortabschnitt */}
           {property.location && (
             <div className="bg-gray-50 rounded-lg p-4 md:p-6">
               <h3 className="text-xl font-semibold mb-4">Lage</h3>
@@ -342,7 +350,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
             </div>
           )}
           
-          {/* Contact section */}
+          {/* Kontaktabschnitt */}
           <div className="bg-gray-50 rounded-lg p-4 md:p-6">
             <h3 className="text-xl font-semibold mb-4">Kontakt</h3>
             <PropertyContactForm propertyTitle={property.title} />

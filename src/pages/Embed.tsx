@@ -13,11 +13,11 @@ const EmbedPageContent = () => {
   const [activeProperties, setActiveProperties] = useState<Property[]>([]);
   const [isOffline, setIsOffline] = useState(false);
   
-  // Check network status
+  // Netzwerkstatus prüfen
   useEffect(() => {
     const handleOnline = () => {
       setIsOffline(false);
-      retryOperation(); // Fetch properties when back online
+      retryOperation(); // Properties abrufen, wenn wieder online
     };
     
     const handleOffline = () => {
@@ -34,13 +34,13 @@ const EmbedPageContent = () => {
     };
   }, [retryOperation]);
   
-  // Update active properties whenever the properties list changes
+  // Aktive Properties aktualisieren, wenn sich die Properties-Liste ändert
   useEffect(() => {
     if (!loading && properties && properties.length > 0) {
-      // Filter for only active properties
+      // Filtern Sie nur aktive Properties
       const active = properties.filter(property => property.status === 'active');
       
-      // Set active properties from filtered list
+      // Setzen Sie aktive Properties aus der gefilterten Liste
       setActiveProperties(active);
     } else {
       setActiveProperties([]);
@@ -48,13 +48,22 @@ const EmbedPageContent = () => {
   }, [properties, loading]);
   
   const handlePropertyClick = (property: Property) => {
-    setSelectedProperty(property);
-    setDetailOpen(true);
+    // Vorbereitung vor dem Öffnen des Dialogs
+    setSelectedProperty(null); // Zurücksetzen des alten Property
+    
+    // Verzögerung, um die Komponente vollständig zurückzusetzen
+    setTimeout(() => {
+      setSelectedProperty(property);
+      setDetailOpen(true);
+    }, 10);
   };
 
   const handleDetailClose = () => {
     setDetailOpen(false);
-    setSelectedProperty(null);
+    // Erst nach dem Schließen des Dialogs setSelectedProperty zurücksetzen
+    setTimeout(() => {
+      setSelectedProperty(null);
+    }, 300);
   };
   
   const handleRetry = () => {

@@ -17,19 +17,29 @@ export async function compressImage(
   maxWidth = 1200,
   quality = 0.8
 ): Promise<{ compressedBlob: Blob; format: string }> {
+  // Sicherstellen, dass wir einen gültigen Blob haben
+  if (!blob || !(blob instanceof Blob)) {
+    console.error("Invalid blob provided to compressImage");
+    throw new Error("Invalid image blob");
+  }
+
   // Create an image element to load the blob
-  const img = document.createElement('img');
+  const img = new Image();
   const url = URL.createObjectURL(blob);
   
   // Wait for image to load
   try {
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Failed to load image"));
+      img.onerror = (e) => {
+        console.error("Failed to load image:", e);
+        reject(new Error("Failed to load image"));
+      };
       img.src = url;
     });
   } catch (error) {
     URL.revokeObjectURL(url);
+    console.error("Error loading image in compressImage:", error);
     return { compressedBlob: blob, format: blob.type.split('/')[1] || 'jpeg' };
   }
   
@@ -52,6 +62,7 @@ export async function compressImage(
   if (!ctx) {
     // If we can't get context, return original blob
     URL.revokeObjectURL(url);
+    console.error("Could not get canvas context");
     return { compressedBlob: blob, format: blob.type.split('/')[1] || 'jpeg' };
   }
   
@@ -61,24 +72,7 @@ export async function compressImage(
   ctx.drawImage(img, 0, 0, width, height);
   URL.revokeObjectURL(url);
   
-  // Try AVIF first (check browser support)
-  try {
-    const avifSupported = supportsAvif();
-    
-    if ('toBlob' in canvas && avifSupported) {
-      const avifBlob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob(resolve, 'image/avif', quality);
-      });
-      
-      if (avifBlob) {
-        return { compressedBlob: avifBlob, format: 'avif' };
-      }
-    }
-  } catch (error) {
-    // Fall back to WebP
-  }
-  
-  // Try WebP as fallback
+  // Versuche WebP als Hauptformat (besser unterstützt als AVIF)
   try {
     const webpBlob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(resolve, 'image/webp', quality);
@@ -88,16 +82,21 @@ export async function compressImage(
       return { compressedBlob: webpBlob, format: 'webp' };
     }
   } catch (error) {
+    console.warn("WebP conversion failed, falling back to JPEG:", error);
     // Fall back to JPEG
   }
   
   // Final fallback to JPEG
-  const jpegBlob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, 'image/jpeg', quality);
-  });
-  
-  if (jpegBlob) {
-    return { compressedBlob: jpegBlob, format: 'jpeg' };
+  try {
+    const jpegBlob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, 'image/jpeg', quality);
+    });
+    
+    if (jpegBlob) {
+      return { compressedBlob: jpegBlob, format: 'jpeg' };
+    }
+  } catch (error) {
+    console.error("All image conversions failed:", error);
   }
   
   // If all conversions fail, return original
@@ -105,7 +104,7 @@ export async function compressImage(
 }
 
 /**
- * Detects if browser supports AVIF format
+ * Detects if browser supports AVIF format - currently not used but kept for future
  */
 function supportsAvif(): boolean {
   try {
