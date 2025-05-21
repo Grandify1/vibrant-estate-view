@@ -103,17 +103,22 @@ export default function Admin() {
     return <Navigate to="/auth" replace />;
   }
 
-  // Änderungen hier: Nur zu Einstellungen weiterleiten, wenn kein Unternehmen existiert
+  // Setze den aktiven Tab basierend auf dem Unternehmensstatus
+  // Separate useEffect to handle tab changes based on company status
   useEffect(() => {
-    if (isAuthenticated && !company && activeTab === "properties") {
-      setActiveTab("settings");
-      toast.info("Bitte erstellen Sie zuerst ein Unternehmen, um Immobilien zu verwalten");
-    } else if (isAuthenticated && company && activeTab === "settings") {
-      // Wenn Unternehmen bereits existiert und wir bei Einstellungen sind, zu Immobilien wechseln
-      // Das verhindert, dass man nach dem Login immer bei Einstellungen landet
-      setActiveTab("properties");
+    if (!loadingAuth && isAuthenticated) {
+      if (!company && activeTab === "properties") {
+        // Wenn kein Unternehmen existiert und wir auf der Immobilienseite sind,
+        // wechsle zu Einstellungen
+        setActiveTab("settings");
+        toast.info("Bitte erstellen Sie zuerst ein Unternehmen, um Immobilien zu verwalten");
+      } else if (company && activeTab === "settings" && location.state?.activeTab !== "settings") {
+        // Wenn ein Unternehmen existiert und wir bei Einstellungen sind
+        // (aber nicht explizit dorthin navigiert wurden), zu Immobilien wechseln
+        setActiveTab("properties");
+      }
     }
-  }, [isAuthenticated, company, activeTab]);
+  }, [isAuthenticated, company, activeTab, loadingAuth, location.state]);
   
   return (
     <div className="min-h-screen flex flex-col">
