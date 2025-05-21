@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { compressImage } from '@/utils/imageCompression';
 import { toast } from 'sonner';
@@ -20,6 +20,30 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   initialImage
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [bucketChecked, setBucketChecked] = useState(false);
+  
+  // Check if the bucket exists when the component mounts
+  useEffect(() => {
+    const checkBucket = async () => {
+      try {
+        const { data: buckets } = await supabase
+          .storage
+          .listBuckets();
+          
+        const bucketExists = buckets?.some(bucket => bucket.name === 'properties');
+        setBucketChecked(true);
+        
+        if (!bucketExists) {
+          // If bucket doesn't exist, we'll try to create it during upload
+          console.log("Properties bucket doesn't exist yet.");
+        }
+      } catch (error) {
+        console.error("Error checking buckets:", error);
+      }
+    };
+    
+    checkBucket();
+  }, []);
   
   const uploadImages = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -28,30 +52,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     setIsLoading(true);
     
     try {
-      // First, check if the bucket exists and create it if it doesn't
-      const { data: buckets } = await supabase
-        .storage
-        .listBuckets();
-        
-      const bucketExists = buckets?.some(bucket => bucket.name === 'properties');
-      
-      if (!bucketExists) {
-        const { error: createError } = await supabase
-          .storage
-          .createBucket('properties', {
-            public: true,
-            fileSizeLimit: 10485760 // 10MB
-          });
-          
-        if (createError) {
-          console.error("Error creating bucket:", createError);
-          toast.error(`Fehler beim Erstellen des Buckets: ${createError.message}`);
-          setIsLoading(false);
-          return;
-        }
-      }
-      
-      const uploadedUrls: string[] = [];
+      let uploadedUrls: string[] = [];
       
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -76,23 +77,34 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
         const filePath = `images/${fileName}`;
         
-        // Zu Supabase hochladen
-        const { data, error } = await supabase.storage
-          .from('properties')
-          .upload(filePath, compressedBlob);
+        try {
+          // Zu Supabase hochladen
+          const { data, error } = await supabase.storage
+            .from('properties')
+            .upload(filePath, compressedBlob);
+            
+          if (error) {
+            console.error(`Fehler beim Hochladen von ${file.name}:`, error);
+            
+            // Special handling for bucket not found
+            if (error.message.includes("bucket not found") || error.message.includes("bucket_not_found")) {
+              toast.error("Bucket nicht gefunden. Bitte kontaktieren Sie den Administrator.");
+            } else {
+              toast.error(`Fehler beim Hochladen von ${file.name}: ${error.message}`);
+            }
+            continue;
+          }
           
-        if (error) {
-          console.error(`Fehler beim Hochladen von ${file.name}:`, error);
-          toast.error(`Fehler beim Hochladen von ${file.name}: ${error.message}`);
-          continue;
+          // URL der hochgeladenen Datei abrufen
+          const { data: { publicUrl } } = supabase.storage
+            .from('properties')
+            .getPublicUrl(filePath);
+            
+          uploadedUrls.push(publicUrl);
+        } catch (uploadError) {
+          console.error(`Exception beim Hochladen von ${file.name}:`, uploadError);
+          toast.error(`Unerwarteter Fehler beim Hochladen von ${file.name}`);
         }
-        
-        // URL der hochgeladenen Datei abrufen
-        const { data: { publicUrl } } = supabase.storage
-          .from('properties')
-          .getPublicUrl(filePath);
-          
-        uploadedUrls.push(publicUrl);
       }
       
       if (uploadedUrls.length > 0) {
@@ -131,13 +143,18 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       <Button
         type="button"
         variant="outline"
-        disabled={isLoading}
+        disabled={isLoading || !bucketChecked}
         onClick={() => document.getElementById('imageUpload')?.click()}
       >
         {isLoading ? (
           <span className="flex items-center">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Lädt hoch...
+          </span>
+        ) : !bucketChecked ? (
+          <span className="flex items-center">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Initialisiere...
           </span>
         ) : multiple ? (
           'Bilder hochladen'
