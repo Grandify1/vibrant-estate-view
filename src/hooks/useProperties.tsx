@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Property, PropertyHighlight, PropertyImage, FloorPlan, PropertyDetails, EnergyDetails } from '@/types/property';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,17 +32,17 @@ export function useProperties() {
           setError(error);
           console.error("Failed to fetch properties:", error);
         } else {
-          // Transform database format to match our Property type
+          // Transform database format to match our Property type with proper type casting
           const transformedData = data.map((item: any) => ({
             id: item.id,
             title: item.title,
             address: item.address,
             status: item.status as 'active' | 'sold' | 'archived',
-            highlights: item.highlights || [],
-            images: item.images || [],
-            floorPlans: item.floor_plans || [],
-            details: item.details || {},
-            energy: item.energy || {},
+            highlights: (item.highlights || []) as PropertyHighlight[],
+            images: (item.images || []) as PropertyImage[],
+            floorPlans: (item.floor_plans || []) as FloorPlan[],
+            details: (item.details || {}) as PropertyDetails,
+            energy: (item.energy || { certificateAvailable: false }) as EnergyDetails,
             description: item.description || '',
             amenities: item.amenities || '',
             location: item.location || '',
@@ -76,15 +77,16 @@ export function useProperties() {
       }
       
       // Transform our Property type to match database schema
+      // Convert complex types to JSON-compatible objects for Supabase
       const dbProperty = {
         title: property.title,
         address: property.address,
         status: property.status,
-        highlights: property.highlights,
-        images: property.images,
-        floor_plans: property.floorPlans,
-        details: property.details,
-        energy: property.energy,
+        highlights: JSON.parse(JSON.stringify(property.highlights)),
+        images: JSON.parse(JSON.stringify(property.images)),
+        floor_plans: JSON.parse(JSON.stringify(property.floorPlans)),
+        details: JSON.parse(JSON.stringify(property.details)),
+        energy: JSON.parse(JSON.stringify(property.energy)),
         description: property.description,
         amenities: property.amenities,
         location: property.location,
@@ -103,17 +105,17 @@ export function useProperties() {
         throw error;
       }
       
-      // Transform response back to our Property type
+      // Transform response back to our Property type with proper type casting
       const newProperty: Property = {
         id: data.id,
         title: data.title,
         address: data.address,
         status: data.status as 'active' | 'sold' | 'archived',
-        highlights: data.highlights as PropertyHighlight[] || [],
-        images: data.images as PropertyImage[] || [],
-        floorPlans: data.floor_plans as FloorPlan[] || [],
-        details: data.details as PropertyDetails || {},
-        energy: data.energy as EnergyDetails || {},
+        highlights: (data.highlights || []) as PropertyHighlight[],
+        images: (data.images || []) as PropertyImage[],
+        floorPlans: (data.floor_plans || []) as FloorPlan[],
+        details: (data.details || {}) as PropertyDetails,
+        energy: (data.energy || { certificateAvailable: false }) as EnergyDetails,
         description: data.description || '',
         amenities: data.amenities || '',
         location: data.location || '',
@@ -148,11 +150,11 @@ export function useProperties() {
       if (updates.title) dbUpdates.title = updates.title;
       if (updates.address) dbUpdates.address = updates.address;
       if (updates.status) dbUpdates.status = updates.status;
-      if (updates.highlights) dbUpdates.highlights = updates.highlights;
-      if (updates.images) dbUpdates.images = updates.images;
-      if (updates.floorPlans) dbUpdates.floor_plans = updates.floorPlans;
-      if (updates.details) dbUpdates.details = updates.details;
-      if (updates.energy) dbUpdates.energy = updates.energy;
+      if (updates.highlights) dbUpdates.highlights = JSON.parse(JSON.stringify(updates.highlights));
+      if (updates.images) dbUpdates.images = JSON.parse(JSON.stringify(updates.images));
+      if (updates.floorPlans) dbUpdates.floor_plans = JSON.parse(JSON.stringify(updates.floorPlans));
+      if (updates.details) dbUpdates.details = JSON.parse(JSON.stringify(updates.details));
+      if (updates.energy) dbUpdates.energy = JSON.parse(JSON.stringify(updates.energy));
       if (updates.description) dbUpdates.description = updates.description;
       if (updates.amenities) dbUpdates.amenities = updates.amenities;
       if (updates.location) dbUpdates.location = updates.location;
@@ -170,17 +172,17 @@ export function useProperties() {
         throw error;
       }
       
-      // Transform response back to our Property type
+      // Transform response back to our Property type with proper type casting
       const updatedProperty: Property = {
         id: data.id,
         title: data.title,
         address: data.address,
         status: data.status as 'active' | 'sold' | 'archived',
-        highlights: data.highlights as PropertyHighlight[] || [],
-        images: data.images as PropertyImage[] || [],
-        floorPlans: data.floor_plans as FloorPlan[] || [],
-        details: data.details as PropertyDetails || {},
-        energy: data.energy as EnergyDetails || {},
+        highlights: (data.highlights || []) as PropertyHighlight[],
+        images: (data.images || []) as PropertyImage[],
+        floorPlans: (data.floor_plans || []) as FloorPlan[],
+        details: (data.details || {}) as PropertyDetails,
+        energy: (data.energy || { certificateAvailable: false }) as EnergyDetails,
         description: data.description || '',
         amenities: data.amenities || '',
         location: data.location || '',

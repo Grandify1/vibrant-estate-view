@@ -79,12 +79,10 @@ const AgentTab: React.FC = () => {
             </Button>
           </div>
           
+          {/* Fix the type mismatch - the AgentList component expects 'agents' prop */}
           <AgentList 
-            agents={agents}
-            onEdit={(id: string) => {
-              const agent = agents.find(a => a.id === id);
-              if (agent) handleEditClick(agent);
-            }}
+            agents={agents} 
+            onEdit={handleEditClick}
             onDelete={handleDelete}
           />
         </>
