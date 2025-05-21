@@ -17,7 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useSession();
   
   const { login, signup, logout } = useLoginSignup();
-  const { company, loadCompany, createCompany } = useCompany(user);
+  const { company, loadCompany, createCompany, updateCompany } = useCompany(user);
   
   // Load company data when user is authenticated
   useEffect(() => {
@@ -36,7 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         loadingAuth,
         company,
-        createCompany
+        createCompany,
+        updateCompany
       }}
     >
       {children}

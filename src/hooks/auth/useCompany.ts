@@ -115,10 +115,74 @@ export const useCompany = (user: AuthUser | null) => {
     }
   };
   
+  // Update existing company
+  const updateCompany = async (updates: {
+    name?: string;
+    address?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    logo?: string | null;
+    website?: string | null;
+  }): Promise<boolean> => {
+    try {
+      if (!company) {
+        toast.error("Kein Unternehmen zum Aktualisieren gefunden");
+        return false;
+      }
+      
+      console.log("Updating company with ID:", company.id);
+      
+      // Remove undefined values to avoid overwriting with null
+      const cleanUpdates = Object.entries(updates).reduce(
+        (acc, [key, value]) => {
+          if (value !== undefined) {
+            acc[key] = value;
+          }
+          return acc;
+        }, 
+        {} as Record<string, any>
+      );
+      
+      const { error } = await supabase
+        .from('companies')
+        .update(cleanUpdates)
+        .eq('id', company.id);
+        
+      if (error) {
+        console.error("Fehler beim Aktualisieren des Unternehmens:", error);
+        toast.error("Fehler beim Aktualisieren des Unternehmens: " + error.message);
+        return false;
+      }
+      
+      // Reload company data to get updated values
+      const { data: updatedCompany, error: fetchError } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', company.id)
+        .single();
+        
+      if (fetchError || !updatedCompany) {
+        console.error("Fehler beim Laden des aktualisierten Unternehmens:", fetchError);
+        toast.warning("Unternehmen aktualisiert, aber konnte nicht neu geladen werden");
+        return true; // Still return true because the update worked
+      }
+      
+      // Update local state
+      setCompany(updatedCompany);
+      toast.success("Unternehmen erfolgreich aktualisiert!");
+      return true;
+    } catch (error: any) {
+      console.error("Unerwarteter Fehler:", error);
+      toast.error("Ein unerwarteter Fehler ist aufgetreten: " + error.message);
+      return false;
+    }
+  };
+  
   return {
     company,
     loadingCompany,
     loadCompany,
-    createCompany
+    createCompany,
+    updateCompany
   };
 };

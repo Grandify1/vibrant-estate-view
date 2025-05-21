@@ -7,12 +7,9 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Plus } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
-interface PropertyListWrapperProps {
-  companyId?: string;
-}
-
-const PropertyListWrapper: React.FC<PropertyListWrapperProps> = ({ companyId }) => {
+const PropertyListWrapper: React.FC = () => {
   const { 
     properties, 
     setPropertyStatus, 
@@ -20,14 +17,23 @@ const PropertyListWrapper: React.FC<PropertyListWrapperProps> = ({ companyId }) 
     loading,
     lastError
   } = useProperties();
+  const { company } = useAuth();
   const navigate = useNavigate();
   const [isRetrying, setIsRetrying] = useState(false);
   
-  if (!companyId) {
+  if (!company) {
     return (
       <Card>
         <CardContent className="p-6">
-          <p className="text-center text-muted-foreground">Es wurde kein Unternehmen gefunden.</p>
+          <p className="text-center text-muted-foreground">
+            Es wurde kein Unternehmen gefunden. 
+            Bitte erstellen Sie zuerst ein Unternehmen im Einstellungen-Tab.
+          </p>
+          <div className="flex justify-center mt-4">
+            <Button onClick={() => navigate('/admin', { state: { activeTab: 'settings' } })}>
+              Zu den Einstellungen
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );

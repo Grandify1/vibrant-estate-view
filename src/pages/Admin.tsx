@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,10 +26,20 @@ const PropertyTab = () => {
 };
 
 export default function Admin() {
-  const { isAuthenticated, loadingAuth } = useAuth();
+  const { isAuthenticated, loadingAuth, company } = useAuth();
   const [activeTab, setActiveTab] = useState("properties");
   const navigate = useNavigate();
+  const location = useLocation();
   const [authTimeout, setAuthTimeout] = useState(false);
+  
+  // Check for redirects from location state
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      // Clear the state to prevent unexpected redirects on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
   
   // Add a timeout for authentication to prevent infinite loading
   useEffect(() => {
@@ -92,6 +102,14 @@ export default function Admin() {
   if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
   }
+
+  // Automatically redirect to settings if no company exists
+  useEffect(() => {
+    if (isAuthenticated && !company && activeTab === "properties") {
+      setActiveTab("settings");
+      toast.info("Bitte erstellen Sie zuerst ein Unternehmen, um Immobilien zu verwalten");
+    }
+  }, [isAuthenticated, company, activeTab]);
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -99,7 +117,7 @@ export default function Admin() {
       
       <div className="flex-grow bg-gray-50 p-4 md:p-8">
         <div className="container mx-auto">
-          <Tabs defaultValue="properties" value={activeTab} onValueChange={setActiveTab}>
+          <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-8">
               <TabsTrigger value="properties">Immobilien</TabsTrigger>
               <TabsTrigger value="agents">Makler</TabsTrigger>

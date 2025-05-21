@@ -16,6 +16,7 @@ export interface Company {
   logo: string | null;
   created_at: string;
   updated_at: string;
+  website?: string | null;
 }
 
 export interface AuthContextType {
@@ -31,5 +32,13 @@ export interface AuthContextType {
     address?: string;
     phone?: string;
     email?: string;
+  }) => Promise<boolean>;
+  updateCompany: (updates: {
+    name?: string;
+    address?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    logo?: string | null;
+    website?: string | null;
   }) => Promise<boolean>;
 }
