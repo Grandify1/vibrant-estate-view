@@ -6,7 +6,7 @@ import { Property } from "@/types/property";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Bath, Bed, Calendar, ChevronLeft, Home, Ruler, MapPin, Info } from "lucide-react";
+import { Bath, Bed, Calendar, ChevronLeft, ChevronRight, Home, Ruler, MapPin, Info } from "lucide-react";
 import PropertyContactForm from "@/components/embed/ContactForm";
 import { Lightbox } from "@/components/ui/lightbox";
 
