@@ -16,29 +16,48 @@ const CompanySettings = () => {
   const [email, setEmail] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (company && !isLoaded) {
+    if (company) {
       setName(company.name || '');
       setAddress(company.address || '');
       setPhone(company.phone || '');
       setEmail(company.email || '');
       setIsLoaded(true);
+      setLoading(false);
+    } else {
+      // If there's no company after a reasonable time, stop loading
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 2000);
+      return () => clearTimeout(timer);
     }
-  }, [company, isLoaded]);
+  }, [company]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!company) {
+      toast.error('Kein Unternehmen gefunden');
+      return;
+    }
+    
     setIsSaving(true);
 
     try {
-      await updateCompany({
+      const success = await updateCompany({
         name,
         address,
         phone,
         email
       });
-      toast.success('Unternehmensdaten gespeichert');
+      
+      if (success) {
+        toast.success('Unternehmensdaten gespeichert');
+      } else {
+        toast.error('Fehler beim Speichern der Unternehmensdaten');
+      }
     } catch (error) {
       console.error('Fehler beim Speichern:', error);
       toast.error('Fehler beim Speichern der Unternehmensdaten');
@@ -47,11 +66,29 @@ const CompanySettings = () => {
     }
   };
 
-  if (!company) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin" />
       </div>
+    );
+  }
+  
+  if (!company && !loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Unternehmensdetails</CardTitle>
+          <CardDescription>
+            Sie haben noch kein Unternehmen erstellt
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="mb-4">Bitte erstellen Sie zuerst ein Unternehmen.</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 

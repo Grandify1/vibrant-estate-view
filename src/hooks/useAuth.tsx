@@ -53,11 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAuthenticated(true);
           
           // Nutzerdaten aus dem Profil laden
-          const { data: profileData } = await supabase
+          const { data: profileData, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
             
           if (profileData) {
             setUser({
@@ -72,6 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (profileData.company_id) {
               await loadCompanyData(profileData.company_id);
             }
+          } else {
+            console.error("Profile error:", error);
+            setUser({
+              id: user.id,
+              email: user.email || ''
+            });
           }
         } else {
           setIsAuthenticated(false);
@@ -94,11 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAuthenticated(true);
           
           // Nutzerdaten setzen
-          const { data: profileData } = await supabase
+          const { data: profileData, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
             
           if (profileData) {
             setUser({
@@ -113,6 +119,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (profileData.company_id) {
               await loadCompanyData(profileData.company_id);
             }
+          } else {
+            console.error("Profile error:", error);
+            setUser({
+              id: session.user.id,
+              email: session.user.email || ''
+            });
           }
         } else if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);

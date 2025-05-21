@@ -30,7 +30,10 @@ const UserManagement = () => {
 
   // Benutzer für das aktuelle Unternehmen laden
   const loadCompanyUsers = async () => {
-    if (!company?.id) return;
+    if (!company?.id) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
@@ -41,30 +44,35 @@ const UserManagement = () => {
         .select('id, first_name, last_name, company_id')
         .eq('company_id', company.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error loading profiles:", error);
+        toast.error("Fehler beim Laden der Benutzer");
+        setLoading(false);
+        return;
+      }
       
-      // Benutzerdetails abrufen (E-Mail-Adressen)
+      if (!data || data.length === 0) {
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Map data to users array with email info
       const usersWithEmail: CompanyUser[] = [];
       
       for (const profile of data) {
-        const { data: userData, error: userError } = await supabase
-          .from('profiles')
-          .select('id, first_name, last_name')
-          .eq('id', profile.id)
-          .single();
+        try {
+          // Get user info from auth.users via admin functions is not accessible
+          // Instead, we'll use what we have from the profile
           
-        if (userError) continue;
-        
-        // Auth-Daten separat abrufen (erfordert admin-Rechte)
-        const { data: authData } = await supabase.auth.admin.getUserById(profile.id);
-        
-        if (authData && authData.user) {
           usersWithEmail.push({
             id: profile.id,
-            email: authData.user.email || '',
-            first_name: userData.first_name,
-            last_name: userData.last_name
+            email: 'Email nicht verfügbar', // We can't get email directly from profiles
+            first_name: profile.first_name,
+            last_name: profile.last_name
           });
+        } catch (err) {
+          console.error("Error processing user:", err);
         }
       }
       
@@ -86,19 +94,29 @@ const UserManagement = () => {
     setIsInviting(true);
     
     try {
-      // 1. Benutzer in Auth erstellen
-      const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-        data: {
-          company_id: company?.id,
-          first_name: firstName,
-          last_name: lastName,
-          invited_by: (await supabase.auth.getUser()).data.user?.id
+      if (!email || !company?.id) {
+        toast.error("E-Mail-Adresse und Unternehmen sind erforderlich");
+        return;
+      }
+      
+      // Create a temporary password for the invited user
+      const tempPassword = Math.random().toString(36).slice(-10);
+      
+      // Create the user in Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: tempPassword,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          }
         }
       });
       
       if (error) throw error;
       
-      // 2. Profil für den Benutzer mit Unternehmenszuordnung erstellen
+      // Create profile for the user with company association
       if (data.user) {
         const { error: profileError } = await supabase
           .from('profiles')
@@ -106,33 +124,33 @@ const UserManagement = () => {
             id: data.user.id,
             first_name: firstName,
             last_name: lastName,
-            company_id: company?.id
+            company_id: company.id
           });
           
         if (profileError) throw profileError;
       }
       
-      toast.success(`Einladung an ${email} gesendet`);
+      toast.success(`Benutzer ${email} wurde erfolgreich eingeladen`);
       setDialogOpen(false);
       setEmail('');
       setFirstName('');
       setLastName('');
       loadCompanyUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fehler beim Einladen:', error);
-      toast.error('Der Benutzer konnte nicht eingeladen werden');
+      toast.error(`Der Benutzer konnte nicht eingeladen werden: ${error.message}`);
     } finally {
       setIsInviting(false);
     }
   };
   
-  const handleRemoveUser = async (userId: string, userEmail: string) => {
-    if (!confirm(`Möchten Sie den Benutzer ${userEmail} wirklich entfernen?`)) {
+  const handleRemoveUser = async (userId: string, userName: string) => {
+    if (!confirm(`Möchten Sie den Benutzer ${userName} wirklich entfernen?`)) {
       return;
     }
     
     try {
-      // 1. Profil aktualisieren, um Unternehmenszuordnung zu entfernen
+      // Update profile to remove company association
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ company_id: null })
@@ -140,11 +158,11 @@ const UserManagement = () => {
         
       if (profileError) throw profileError;
       
-      toast.success(`Benutzer ${userEmail} entfernt`);
+      toast.success(`Benutzer ${userName} entfernt`);
       loadCompanyUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fehler beim Entfernen des Benutzers:', error);
-      toast.error('Der Benutzer konnte nicht entfernt werden');
+      toast.error(`Der Benutzer konnte nicht entfernt werden: ${error.message}`);
     }
   };
 
@@ -247,7 +265,7 @@ const UserManagement = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleRemoveUser(user.id, user.email)}
+                        onClick={() => handleRemoveUser(user.id, `${user.first_name || ''} ${user.last_name || ''}`)}
                         className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-100"
                       >
                         <Trash2 className="h-4 w-4" />
