@@ -1,8 +1,9 @@
 
-import { ReactNode, createContext } from "react";
+import { ReactNode, createContext, useEffect } from "react";
 import { useSession } from "./useSession";
 import { useLoginSignup } from "./useLoginSignup";
-import { AuthContextType } from "./types";
+import { AuthContextType, AuthUser, Company } from "./types";
+import { useCompany } from "./useCompany";
 
 // Create the Auth context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,6 +17,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useSession();
   
   const { login, signup, logout } = useLoginSignup();
+  const { company, loadCompany, createCompany } = useCompany(user);
+  
+  // Load company data when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadCompany();
+    }
+  }, [isAuthenticated, user?.id]);
   
   return (
     <AuthContext.Provider 
@@ -25,7 +34,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signup,
         logout, 
         user,
-        loadingAuth
+        loadingAuth,
+        company,
+        createCompany
       }}
     >
       {children}
