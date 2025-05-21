@@ -101,11 +101,14 @@
               const href = link.getAttribute('href');
               
               // Wenn es ein interner Property-Link ist
-              if (href && href.startsWith('/property/')) {
+              if (href && (href.startsWith('/property/') || href.startsWith('/embed/property/'))) {
                 e.preventDefault();
                 
-                // Vollständige URL zum Property-Detail erstellen (ohne localhost)
-                const detailUrl = baseUrl + href;
+                // Neue URL bilden, sicherstellen dass wir die vollständige Basis-URL verwenden
+                const propertyId = href.split('/').pop();
+                const detailUrl = baseUrl + '/property/' + propertyId;
+                
+                // In neuem Tab öffnen
                 window.open(detailUrl, '_blank');
               }
             }

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Property } from "@/types/property";
 import PropertyCard from "./PropertyCard";
 import { Link } from "react-router-dom";
