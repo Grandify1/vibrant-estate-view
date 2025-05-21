@@ -54,9 +54,11 @@
     portalContainer.style.zIndex = '999999'; // Höchster z-index
     portalContainer.style.top = '0';
     portalContainer.style.left = '0';
-    portalContainer.style.width = '0';
-    portalContainer.style.height = '0';
+    portalContainer.style.width = '100%';
+    portalContainer.style.height = '100%';
     portalContainer.style.overflow = 'visible'; // Wichtig: Overflow muss visible sein
+    portalContainer.style.pointerEvents = 'none'; // Nur für Dialoge aktivieren
+    portalContainer.style.display = 'none'; // Standardmäßig ausgeblendet
     document.body.appendChild(portalContainer);
   }
   
@@ -97,6 +99,10 @@
     if (e.data && e.data.type === 'dialog-opened') {
       isDialogOpen = true;
       
+      // Portal-Container aktivieren
+      portalContainer.style.display = 'block';
+      portalContainer.style.pointerEvents = 'auto';
+      
       // Body Scroll Lock anwenden
       document.body.style.overflow = 'hidden';
       
@@ -113,6 +119,14 @@
     
     if (e.data && e.data.type === 'dialog-closed') {
       isDialogOpen = false;
+      
+      // Portal-Container deaktivieren
+      portalContainer.style.pointerEvents = 'none';
+      setTimeout(() => {
+        if (!isDialogOpen) {
+          portalContainer.style.display = 'none';
+        }
+      }, 300); // Kurze Verzögerung um Animation zu ermöglichen
       
       // Body Scroll wiederherstellen
       document.body.style.overflow = '';
@@ -133,6 +147,17 @@
           iframe.contentWindow.postMessage({ type: 'parent-resize' }, '*');
         }
       }, 500);
+    }
+
+    // Wenn Dialog-Inhalt gerendert werden soll
+    if (e.data && e.data.type === 'render-dialog-content') {
+      // Sicherstellen, dass unser Portal-Container sichtbar ist
+      portalContainer.style.display = 'block';
+      
+      // Dialog-Inhalt vom iframe empfangen und im Portal-Container rendern
+      if (e.data.content) {
+        portalContainer.innerHTML = e.data.content;
+      }
     }
   });
   
