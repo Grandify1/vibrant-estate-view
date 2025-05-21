@@ -103,14 +103,16 @@
       portalContainer.style.display = 'block';
       portalContainer.style.pointerEvents = 'auto';
       
-      // Body Scroll Lock anwenden
+      // Body Scroll Lock anwenden - WICHTIG für Position: absolute
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'relative';
       
       // Alle scroll locks aufheben in der Übersiecht
       document.querySelectorAll('html, body, #root, [id^="__"], [class*="container"]').forEach(el => {
         if (el) {
           if (!el.dataset.originalOverflow) {
             el.dataset.originalOverflow = el.style.overflow || '';
+            el.dataset.originalPosition = el.style.position || '';
           }
           el.style.overflow = 'visible';
         }
@@ -130,14 +132,19 @@
       
       // Body Scroll wiederherstellen
       document.body.style.overflow = '';
+      document.body.style.position = '';
       
       // Styles zurücksetzen mit Verzögerung
       setTimeout(() => {
         // Alle scroll locks zurücksetzen
         document.querySelectorAll('html, body, #root, [id^="__"], [class*="container"]').forEach(el => {
-          if (el && el.dataset.originalOverflow !== undefined) {
-            el.style.overflow = el.dataset.originalOverflow;
-            delete el.dataset.originalOverflow;
+          if (el) {
+            if (el.dataset.originalOverflow !== undefined) {
+              el.style.overflow = el.dataset.originalOverflow;
+              el.style.position = el.dataset.originalPosition || '';
+              delete el.dataset.originalOverflow;
+              delete el.dataset.originalPosition;
+            }
           }
         });
         
