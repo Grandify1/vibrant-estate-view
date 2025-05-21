@@ -26,7 +26,7 @@
   iframe.src = baseUrl + '/embed';
   iframe.style.width = widgetWidth;
   iframe.style.border = 'none';
-  iframe.style.minHeight = '500px'; // Zurück zur ursprünglichen Höhe
+  iframe.style.minHeight = '500px';
   iframe.style.maxWidth = '100%';
   iframe.style.overflow = 'hidden';
   iframe.id = 'immo-widget-iframe';
@@ -60,8 +60,8 @@
       resizeTimeout = setTimeout(() => {
         const iframe = document.getElementById('immo-widget-iframe');
         if (iframe) {
-          // Nur minimalen Puffer hinzufügen
-          const newHeight = e.data.height + 20;
+          // Setze eine vernünftige Mindesthöhe um sicherzustellen, dass genug Platz ist
+          const newHeight = Math.max(e.data.height + 20, 500);
           iframe.style.height = newHeight + 'px';
           
           // Event auslösen, damit die Website auf die Größenänderung reagieren kann
@@ -96,6 +96,6 @@
     // Nach dem Laden eine erste Höhenanpassung vornehmen
     setTimeout(() => {
       iframe.contentWindow.postMessage({ type: 'parent-resize' }, '*');
-    }, 300); // Kürzere Verzögerung
+    }, 300);
   });
 })();

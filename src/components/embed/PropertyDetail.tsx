@@ -102,7 +102,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto p-0 border bg-white z-[100]">
+      <DialogContent className="sm:max-w-[900px] min-h-[600px] max-h-[90vh] overflow-y-auto p-0 border bg-white z-[1001]">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
           {/* Left column - Image gallery */}
           <div className="md:col-span-2 relative">
