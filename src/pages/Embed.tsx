@@ -67,6 +67,14 @@ const EmbedPageContent = () => {
 
     // Add resize event listener
     window.addEventListener('resize', updateFrameHeight);
+    
+    // Listen for messages from parent window
+    const handleParentMessage = (e: MessageEvent) => {
+      if (e.data && e.data.type === 'parent-resize') {
+        updateFrameHeight();
+      }
+    };
+    window.addEventListener('message', handleParentMessage);
 
     // Create MutationObserver to watch for DOM changes
     const observer = new MutationObserver(() => {
@@ -77,13 +85,15 @@ const EmbedPageContent = () => {
       observer.observe(containerRef.current, { 
         childList: true, 
         subtree: true, 
-        attributes: true 
+        attributes: true,
+        characterData: true 
       });
     }
 
     return () => {
       clearTimeout(timer);
       window.removeEventListener('resize', updateFrameHeight);
+      window.removeEventListener('message', handleParentMessage);
       observer.disconnect();
     };
   }, [activeProperties, loading, detailOpen, lastError, isOffline]);
