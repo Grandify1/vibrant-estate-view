@@ -43,6 +43,19 @@
   // Flag für Dialog-Status
   let isDialogOpen = false;
   
+  // Modal container für absolute positioning erstellen
+  const modalContainer = document.createElement('div');
+  modalContainer.id = 'immo-widget-modal-container';
+  modalContainer.style.display = 'none';
+  modalContainer.style.position = 'fixed';
+  modalContainer.style.top = '0';
+  modalContainer.style.left = '0';
+  modalContainer.style.width = '100%';
+  modalContainer.style.height = '100%';
+  modalContainer.style.zIndex = '999999';
+  modalContainer.style.pointerEvents = 'none'; // Durchsichtig für Klicks
+  document.body.appendChild(modalContainer);
+  
   // Höhenanpassung durch Nachrichtenaustausch
   let resizeTimeout;
   let lastHeight = 0;
@@ -80,45 +93,68 @@
     if (e.data && e.data.type === 'dialog-opened') {
       isDialogOpen = true;
       
-      // Eltern-Container und alle übergeordneten Elemente anpassen
-      const iframe = document.getElementById('immo-widget-iframe');
-      if (iframe) {
-        iframe.style.overflow = 'visible';
-        container.style.overflow = 'visible';
-        
-        // Parent-Elemente finden und anpassen
-        let currentElement = container.parentElement;
-        while (currentElement && currentElement !== document.body) {
-          // Overflow-Eigenschaften speichern
-          if (!currentElement.dataset.originalOverflow) {
-            currentElement.dataset.originalOverflow = currentElement.style.overflow;
-          }
-          
-          // Overflow auf visible setzen
-          currentElement.style.overflow = 'visible';
-          currentElement = currentElement.parentElement;
-        }
+      // Wenn Dialog geöffnet ist, das Modal aktivieren
+      const modalContainer = document.getElementById('immo-widget-modal-container');
+      if (modalContainer) {
+        modalContainer.style.display = 'block';
+        modalContainer.style.pointerEvents = 'auto'; // Aktiviere Interaktion
       }
+
+      // Modalen Hintergrund hinzufügen
+      const modalBackdrop = document.createElement('div');
+      modalBackdrop.id = 'immo-widget-modal-backdrop';
+      modalBackdrop.style.position = 'fixed';
+      modalBackdrop.style.top = '0';
+      modalBackdrop.style.left = '0';
+      modalBackdrop.style.width = '100%';
+      modalBackdrop.style.height = '100%';
+      modalBackdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      modalBackdrop.style.zIndex = '9998';
+      document.body.style.overflow = 'hidden'; // Body Scroll verhindern
+      document.body.appendChild(modalBackdrop);
+      
+      // Alle scroll locks aufheben
+      document.querySelectorAll('html, body, #root, [id^="__"], [class*="container"]').forEach(el => {
+        if (el) {
+          if (!el.dataset.originalOverflow) {
+            el.dataset.originalOverflow = el.style.overflow || '';
+          }
+          el.style.overflow = 'visible';
+        }
+      });
     }
     
     if (e.data && e.data.type === 'dialog-closed') {
       isDialogOpen = false;
       
+      // Modalen Container deaktivieren
+      const modalContainer = document.getElementById('immo-widget-modal-container');
+      if (modalContainer) {
+        modalContainer.style.display = 'none';
+        modalContainer.style.pointerEvents = 'none';
+      }
+      
+      // Modalen Hintergrund entfernen
+      const modalBackdrop = document.getElementById('immo-widget-modal-backdrop');
+      if (modalBackdrop && modalBackdrop.parentNode) {
+        modalBackdrop.parentNode.removeChild(modalBackdrop);
+      }
+      
+      document.body.style.overflow = ''; // Body Scroll wiederherstellen
+      
       // Styles zurücksetzen mit Verzögerung
       setTimeout(() => {
-        const iframe = document.getElementById('immo-widget-iframe');
-        if (iframe) {
-          // Übergeordnete Elemente zurücksetzen
-          let currentElement = container.parentElement;
-          while (currentElement && currentElement !== document.body) {
-            if (currentElement.dataset.originalOverflow !== undefined) {
-              currentElement.style.overflow = currentElement.dataset.originalOverflow || '';
-              delete currentElement.dataset.originalOverflow;
-            }
-            currentElement = currentElement.parentElement;
+        // Alle scroll locks zurücksetzen
+        document.querySelectorAll('html, body, #root, [id^="__"], [class*="container"]').forEach(el => {
+          if (el && el.dataset.originalOverflow !== undefined) {
+            el.style.overflow = el.dataset.originalOverflow;
+            delete el.dataset.originalOverflow;
           }
-          
-          // Nach Dialog-Schließung Größe neu berechnen
+        });
+        
+        // Nach Dialog-Schließung Größe neu berechnen
+        const iframe = document.getElementById('immo-widget-iframe');
+        if (iframe && iframe.contentWindow) {
           iframe.contentWindow.postMessage({ type: 'parent-resize' }, '*');
         }
       }, 500);

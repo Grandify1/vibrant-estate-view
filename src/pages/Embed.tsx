@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useRef } from "react";
 import PropertyGrid from "@/components/embed/PropertyGrid";
 import PropertyDetail from "@/components/embed/PropertyDetail";
@@ -57,6 +58,12 @@ const EmbedPageContent = () => {
       window.parent.postMessage({ 
         type: detailOpen ? 'dialog-opened' : 'dialog-closed' 
       }, '*');
+      
+      // When dialog is open, set body overflow to visible to enable the modal to be fully seen
+      if (detailOpen) {
+        document.body.style.overflow = 'visible';
+        document.documentElement.style.overflow = 'visible';
+      }
     }
   }, [detailOpen]);
   
