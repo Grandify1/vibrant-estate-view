@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -19,10 +21,20 @@ const LoginForm = () => {
     setLoading(true);
     
     try {
+      console.log("LoginForm: Attempting login with email:", email);
       const success = await login(email, password);
+      
       if (success) {
+        console.log("LoginForm: Login successful, redirecting to admin");
+        toast.success("Erfolgreich angemeldet!");
         navigate('/admin');
+      } else {
+        console.log("LoginForm: Login failed");
+        toast.error("Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Eingaben.");
       }
+    } catch (error) {
+      console.error("LoginForm: Login error:", error);
+      toast.error("Ein Fehler ist bei der Anmeldung aufgetreten. Bitte versuchen Sie es erneut.");
     } finally {
       setLoading(false);
     }
@@ -65,7 +77,7 @@ const LoginForm = () => {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
               <span className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Anmelden...
               </span>
             ) : (
