@@ -39,17 +39,16 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   
   // Enhanced image handling
   const getImageUrl = (imageUrl: string) => {
-    if (!imageUrl || imageUrl.startsWith('blob:')) {
+    if (!imageUrl) {
       return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
     }
     
     // Check if image URL is valid
-    try {
-      new URL(imageUrl);
+    if (imageUrl.startsWith('http')) {
       return imageUrl;
-    } catch (e) {
-      return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
     }
+    
+    return "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop";
   };
   
   // Get all images, ensuring we have at least one
@@ -93,10 +92,9 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
             setIsLoading(false);
             if (onLoad) onLoad();
           }}
-          onError={(e) => {
+          onError={() => {
             setError(true);
             setIsLoading(false);
-            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&auto=format&fit=crop';
           }}
           style={{ opacity: isLoading ? 0 : 1 }}
         />
@@ -105,7 +103,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
   };
   
   const images = getImages();
-  const currentImage = images[activeImageIndex]?.url;
+  const currentImage = images[activeImageIndex]?.url || "";
   
   const handleImageLoaded = (imgId: string) => {
     setImagesLoaded(prev => ({
@@ -134,13 +132,11 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
           {/* Left column - Image gallery */}
           <div className="md:col-span-2 relative">
             <div className="aspect-[4/3] bg-gray-100">
-              {currentImage && (
-                <ImageWithFallback 
-                  src={getImageUrl(currentImage)}
-                  alt={property.title}
-                  className="w-full h-full object-cover"
-                />
-              )}
+              <ImageWithFallback 
+                src={getImageUrl(currentImage)}
+                alt={property.title}
+                className="w-full h-full object-cover"
+              />
             </div>
             
             {images.length > 1 && (
@@ -154,7 +150,7 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                 >
                   <CarouselContent>
                     {images.map((image, index) => (
-                      <CarouselItem key={image.id} className="basis-1/4 sm:basis-1/5 md:basis-1/6 lg:basis-1/7">
+                      <CarouselItem key={image.id || `img-${index}`} className="basis-1/4 sm:basis-1/5 md:basis-1/6 lg:basis-1/7">
                         <button
                           onClick={() => setActiveImageIndex(index)}
                           className={`w-full h-16 flex-shrink-0 rounded border-2 overflow-hidden ${
@@ -167,14 +163,18 @@ export default function PropertyDetail({ property, isOpen, onClose }: PropertyDe
                             src={getImageUrl(image.url)}
                             alt={`Bild ${index + 1}`}
                             className="w-full h-full object-cover"
-                            onLoad={() => handleImageLoaded(image.id)}
+                            onLoad={() => handleImageLoaded(image.id || `img-${index}`)}
                           />
                         </button>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious className="left-2" />
-                  <CarouselNext className="right-2" />
+                  {images.length > 4 && (
+                    <>
+                      <CarouselPrevious className="left-2" />
+                      <CarouselNext className="right-2" />
+                    </>
+                  )}
                 </Carousel>
               </div>
             )}

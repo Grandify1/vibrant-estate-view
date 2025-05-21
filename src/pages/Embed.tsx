@@ -16,13 +16,11 @@ const EmbedPageContent = () => {
   // Check network status
   useEffect(() => {
     const handleOnline = () => {
-      console.log("Connection restored, back online");
       setIsOffline(false);
       retryOperation(); // Fetch properties when back online
     };
     
     const handleOffline = () => {
-      console.log("Connection lost, offline");
       setIsOffline(true);
     };
     

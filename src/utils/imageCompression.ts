@@ -17,8 +17,6 @@ export async function compressImage(
   maxWidth = 1200,
   quality = 0.8
 ): Promise<{ compressedBlob: Blob; format: string }> {
-  console.log(`Compressing image, original size: ${Math.round(blob.size / 1024)}KB`);
-  
   // Create an image element to load the blob
   const img = document.createElement('img');
   const url = URL.createObjectURL(blob);
@@ -32,7 +30,6 @@ export async function compressImage(
     });
   } catch (error) {
     URL.revokeObjectURL(url);
-    console.log("Error loading image for compression:", error);
     return { compressedBlob: blob, format: blob.type.split('/')[1] || 'jpeg' };
   }
   
@@ -46,8 +43,6 @@ export async function compressImage(
     height = Math.round(width * aspectRatio);
   }
   
-  console.log(`Resizing image from ${img.width}x${img.height} to ${width}x${height}`);
-  
   // Create canvas for resizing
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -57,7 +52,6 @@ export async function compressImage(
   if (!ctx) {
     // If we can't get context, return original blob
     URL.revokeObjectURL(url);
-    console.log("Could not get canvas context, returning original image");
     return { compressedBlob: blob, format: blob.type.split('/')[1] || 'jpeg' };
   }
   
@@ -72,48 +66,41 @@ export async function compressImage(
     const avifSupported = supportsAvif();
     
     if ('toBlob' in canvas && avifSupported) {
-      console.log("Browser supports AVIF, trying AVIF conversion");
       const avifBlob = await new Promise<Blob | null>((resolve) => {
         canvas.toBlob(resolve, 'image/avif', quality);
       });
       
       if (avifBlob) {
-        console.log(`Image compressed to AVIF: ${Math.round(avifBlob.size / 1024)}KB`);
         return { compressedBlob: avifBlob, format: 'avif' };
       }
     }
   } catch (error) {
-    console.log('AVIF conversion failed, falling back:', error);
+    // Fall back to WebP
   }
   
   // Try WebP as fallback
   try {
-    console.log("Trying WebP conversion");
     const webpBlob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(resolve, 'image/webp', quality);
     });
     
     if (webpBlob) {
-      console.log(`Image compressed to WebP: ${Math.round(webpBlob.size / 1024)}KB`);
       return { compressedBlob: webpBlob, format: 'webp' };
     }
   } catch (error) {
-    console.log('WebP conversion failed, falling back to JPEG:', error);
+    // Fall back to JPEG
   }
   
   // Final fallback to JPEG
-  console.log("Trying JPEG conversion as final fallback");
   const jpegBlob = await new Promise<Blob | null>((resolve) => {
     canvas.toBlob(resolve, 'image/jpeg', quality);
   });
   
   if (jpegBlob) {
-    console.log(`Image compressed to JPEG: ${Math.round(jpegBlob.size / 1024)}KB`);
     return { compressedBlob: jpegBlob, format: 'jpeg' };
   }
   
   // If all conversions fail, return original
-  console.log('All conversions failed, using original image');
   return { compressedBlob: blob, format: blob.type.split('/')[1] || 'jpeg' };
 }
 
@@ -125,7 +112,6 @@ function supportsAvif(): boolean {
     const canvas = document.createElement('canvas');
     return canvas.toDataURL('image/avif').indexOf('data:image/avif') === 0;
   } catch (error) {
-    console.log('AVIF support detection failed:', error);
     return false;
   }
 }
