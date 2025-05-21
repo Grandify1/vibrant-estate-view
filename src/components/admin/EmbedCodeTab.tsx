@@ -73,6 +73,7 @@ const EmbedCodeTab: React.FC = () => {
           <li>Die Immobilien werden dynamisch aus Ihrem Konto geladen.</li>
           <li>Nur aktive Immobilien Ihres Unternehmens werden im Widget angezeigt.</li>
           <li>Alle Designänderungen im Admin-Bereich werden automatisch im Widget übernommen.</li>
+          <li>Wenn Besucher auf eine Immobilie klicken, öffnet sich die Detailansicht in einem neuen Tab auf Ihrer Website.</li>
         </ul>
       </div>
     </div>

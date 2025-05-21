@@ -89,33 +89,20 @@
       // Periodisch die Höhe anpassen
       setInterval(() => adjustIframeHeight(iframe), 1000);
       
-      // Links innerhalb des iframes abfangen und in neuem Tab öffnen
-      try {
-        const iframeContent = iframe.contentWindow;
-        
-        if (iframeContent) {
-          iframeContent.addEventListener('click', function(e) {
-            // Wenn es ein Link-Element ist
-            if (e.target.closest('a')) {
-              const link = e.target.closest('a');
-              const href = link.getAttribute('href');
-              
-              // Wenn es ein interner Property-Link ist
-              if (href && (href.startsWith('/property/') || href.startsWith('/embed/property/'))) {
-                e.preventDefault();
-                
-                // Neue URL bilden, sicherstellen dass wir die vollständige Basis-URL verwenden
-                const propertyId = href.split('/').pop();
-                const detailUrl = baseUrl + '/property/' + propertyId;
-                
-                // In neuem Tab öffnen
-                window.open(detailUrl, '_blank');
-              }
+      // Hinzufügen von Click-Ereignisbehandlung für Links in der Webseite
+      if (iframe.contentDocument) {
+        iframe.contentDocument.addEventListener('click', function(e) {
+          const target = e.target;
+          const link = target.closest('a');
+          
+          if (link) {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            if (href) {
+              window.open(href, '_blank');
             }
-          });
-        }
-      } catch (e) {
-        console.log('Konnte keine Click-Handler im iframe registrieren (CORS)');
+          }
+        });
       }
     });
   }
@@ -166,6 +153,13 @@
       const iframe = document.getElementById('immo-widget-iframe');
       if (iframe) {
         iframe.style.height = (e.data.height + 5) + 'px';
+      }
+    }
+    
+    // Handling für externe Links aus dem iframe
+    if (e.data && e.data.type === 'external-link') {
+      if (e.data.url) {
+        window.open(e.data.url, '_blank');
       }
     }
   });

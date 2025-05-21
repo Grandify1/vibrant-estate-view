@@ -2,9 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import PropertyGrid from '@/components/embed/PropertyGrid';
-import PropertyDetail from '@/components/embed/PropertyDetail';
 import { Property, PropertyHighlight, PropertyImage, PropertyDetails, EnergyDetails, FloorPlan } from '@/types/property';
-import { useSearchParams, useLocation, useParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Json } from '@/integrations/supabase/types';
 
 // Helper function to safely parse JSON data
@@ -30,17 +29,10 @@ const safelyParseJson = <T extends unknown>(jsonValue: Json | null, fallback: T)
 export default function Embed() {
   const [searchParams] = useSearchParams();
   const companyId = searchParams.get('companyId');
-  const location = useLocation();
-  const { propertyId } = useParams<{ propertyId?: string }>();
   
   const [properties, setProperties] = useState<Property[]>([]);
-  const [currentProperty, setCurrentProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-
-  // Determine if we're on a property detail route
-  const isPropertyDetailRoute = location.pathname.startsWith('/embed/property/');
 
   // Load properties for the grid
   useEffect(() => {
@@ -124,116 +116,13 @@ export default function Embed() {
       }
     };
 
-    // Only load properties on the main embed page
-    if (!isPropertyDetailRoute) {
-      fetchProperties();
-    }
-  }, [companyId, isPropertyDetailRoute]);
+    fetchProperties();
+  }, [companyId]);
 
-  // Load a specific property for the detail view
-  useEffect(() => {
-    const fetchProperty = async () => {
-      if (!propertyId) return;
-      
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const { data, error } = await supabase
-          .from('properties')
-          .select('*')
-          .eq('id', propertyId)
-          .single();
-        
-        if (error) {
-          console.error('Error fetching property details:', error);
-          setError(error.message);
-          return;
-        }
-        
-        if (!data) {
-          setError('Immobilie nicht gefunden');
-          return;
-        }
-        
-        // Default empty values for safe parsing
-        const emptyHighlights: PropertyHighlight[] = [];
-        const emptyImages: PropertyImage[] = [];
-        const emptyFloorPlans: FloorPlan[] = [];
-        const emptyDetails: PropertyDetails = {
-          price: '',
-          livingArea: '',
-          plotArea: '',
-          rooms: '',
-          bathrooms: '',
-          bedrooms: '',
-          propertyType: '',
-          availableFrom: '',
-          maintenanceFee: '',
-          constructionYear: '',
-          condition: '',
-          heatingType: '',
-          energySource: '',
-          floor: '',
-          totalFloors: '',
-          parkingSpaces: ''
-        };
-        const emptyEnergy: EnergyDetails = {
-          certificateAvailable: false,
-          includesWarmWater: false
-        };
-        
-        // Format the property data
-        const formattedProperty: Property = {
-          id: data.id,
-          title: data.title || '',
-          address: data.address || '',
-          description: data.description || '',
-          amenities: data.amenities || '',
-          location: data.location || '',
-          status: data.status as 'active' | 'sold' | 'archived',
-          company_id: data.company_id,
-          agent_id: data.agent_id,
-          highlights: safelyParseJson<PropertyHighlight[]>(data.highlights, emptyHighlights),
-          images: safelyParseJson<PropertyImage[]>(data.images, emptyImages),
-          floorPlans: safelyParseJson<FloorPlan[]>(data.floor_plans, emptyFloorPlans),
-          details: safelyParseJson<PropertyDetails>(data.details, emptyDetails),
-          energy: safelyParseJson<EnergyDetails>(data.energy, emptyEnergy),
-          createdAt: data.created_at,
-          updatedAt: data.updated_at
-        };
-        
-        setCurrentProperty(formattedProperty);
-        setDetailOpen(true);
-      } catch (error: any) {
-        console.error('Error in fetchProperty:', error);
-        setError(error.message || 'Ein unbekannter Fehler ist aufgetreten');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    // Only fetch the property details when on a detail route
-    if (isPropertyDetailRoute && propertyId) {
-      fetchProperty();
-    } else {
-      setDetailOpen(false);
-      setCurrentProperty(null);
-    }
-  }, [propertyId, isPropertyDetailRoute]);
-
-  // Render either the grid or the detail view
+  // Render only the grid in the embed view
   return (
     <div className="w-full bg-white py-2">
-      {!isPropertyDetailRoute ? (
-        <PropertyGrid properties={properties} loading={loading} error={error} />
-      ) : (
-        <PropertyDetail 
-          property={currentProperty} 
-          isOpen={detailOpen} 
-          onClose={() => setDetailOpen(false)} 
-        />
-      )}
+      <PropertyGrid properties={properties} loading={loading} error={error} />
     </div>
   );
 }
