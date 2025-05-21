@@ -9,6 +9,7 @@ import PropertyListWrapper from "@/components/admin/PropertyListWrapper";
 import AgentTab from "@/components/admin/AgentTab";
 import EmbedCodeTab from "@/components/admin/EmbedCodeTab";
 import SettingsTab from "@/components/admin/SettingsTab";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 // Property Tab Komponente 
@@ -36,7 +37,54 @@ export default function Admin() {
   const { isAuthenticated, loadingAuth, user } = useAuth();
   const [activeTab, setActiveTab] = useState("properties");
   const navigate = useNavigate();
-  const [showError, setShowError] = useState(false);
+  const [authTimeout, setAuthTimeout] = useState(false);
+  
+  // Add a timeout for authentication to prevent infinite loading
+  useEffect(() => {
+    if (loadingAuth) {
+      const timer = setTimeout(() => {
+        setAuthTimeout(true);
+      }, 5000); // 5 seconds timeout
+      
+      return () => clearTimeout(timer);
+    } else {
+      setAuthTimeout(false);
+    }
+  }, [loadingAuth]);
+  
+  // Display appropriate UI based on auth state
+  useEffect(() => {
+    console.log("Admin: Auth Status:", { isAuthenticated, loadingAuth, user });
+    
+    if (!loadingAuth) {
+      if (!isAuthenticated) {
+        console.log("Admin: Nicht authentifiziert, leite zur Auth-Seite weiter");
+      } else if (user && !user.company_id) {
+        console.log("Admin: Authentifiziert aber kein Unternehmen, leite zur Unternehmenseinrichtung weiter");
+      } else {
+        console.log("Admin: Authentifiziert mit Unternehmen", user?.company_id);
+      }
+    }
+  }, [isAuthenticated, loadingAuth, user]);
+  
+  // If auth is taking too long, show a helpful message
+  if (authTimeout) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center p-6 bg-orange-50 border border-orange-200 rounded-lg max-w-md">
+          <AlertCircle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Authentifizierung dauert zu lange</h2>
+          <p className="mb-4">Es scheint ein Problem mit der Authentifizierung zu geben. Bitte versuchen Sie, sich erneut anzumelden.</p>
+          <Button 
+            onClick={() => navigate('/auth')}
+            className="w-full"
+          >
+            Zur Anmeldeseite
+          </Button>
+        </div>
+      </div>
+    );
+  }
   
   // If auth is still loading, show loading state
   if (loadingAuth) {
@@ -57,6 +105,7 @@ export default function Admin() {
   
   // If user has no company, redirect to company setup
   if (isAuthenticated && user && !user.company_id) {
+    console.log("Admin: Weiterleitung zur Unternehmenseinrichtung");
     return <Navigate to="/company-setup" replace />;
   }
   

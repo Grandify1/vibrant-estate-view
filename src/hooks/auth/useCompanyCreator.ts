@@ -21,8 +21,19 @@ export const useCompanyCreator = (
 
       console.log("Erstelle Unternehmen mit Daten:", companyData);
       console.log("User ID:", user.id);
+      
+      // Get session to verify authentication
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      
+      if (!session) {
+        toast.error("Keine aktive Session gefunden");
+        return false;
+      }
+      
+      console.log("Session beim Erstellen des Unternehmens:", session.user.id);
 
-      // Insert company data directly using RPC
+      // Insert company data
       const { data: company, error } = await supabase
         .from('companies')
         .insert(companyData)
@@ -32,6 +43,31 @@ export const useCompanyCreator = (
       if (error) {
         console.error("Fehler beim Erstellen des Unternehmens:", error);
         toast.error("Fehler beim Erstellen des Unternehmens");
+        
+        // Try alternative approach if there's an error
+        console.log("Wir versuchen einen alternativen Ansatz...");
+        
+        const { data: altCompany, error: altError } = await supabase
+          .from('companies')
+          .insert(companyData)
+          .select()
+          .single();
+          
+        if (altError) {
+          console.error("Wiederholter Fehler beim Erstellen des Unternehmens:", altError);
+          return false;
+        }
+        
+        if (!altCompany) {
+          return false;
+        }
+        
+        // If alternative approach worked, continue with this company
+        company = altCompany;
+      }
+
+      if (!company) {
+        toast.error("Unternehmen konnte nicht erstellt werden");
         return false;
       }
 

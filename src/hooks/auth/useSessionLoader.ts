@@ -87,11 +87,13 @@ export const useSessionLoader = (
     let authListener: any;
     
     const checkSession = async () => {
+      if (!mounted) return;
+      
       try {
-        console.log("Checking session...");
         setLoadingAuth(true);
+        console.log("Checking session...");
         
-        // THEN check for existing session
+        // Get initial session
         const { data: sessionData } = await supabase.auth.getSession();
         const session = sessionData?.session;
         
@@ -101,27 +103,32 @@ export const useSessionLoader = (
           
           // Load user data from profile
           await handleProfileData(session.user.id);
-          setLoadingAuth(false);
         } else {
           console.log("Keine Session gefunden");
           if (mounted) {
             setIsAuthenticated(false);
             setUser(null);
-            setLoadingAuth(false);
           }
         }
+        
+        console.log("Session check complete, setting loadingAuth to false");
+        if (mounted) setLoadingAuth(false);
         
         // Set up auth state listener AFTER initial check
         if (mounted) {
           const { data } = supabase.auth.onAuthStateChange(
-            async (event, session) => {
+            (event, session) => {
               console.log("Auth state changed:", event, session?.user?.id);
               
               if (session) {
                 setIsAuthenticated(true);
                 
-                // Use normal function call instead of setTimeout
-                await handleProfileData(session.user.id);
+                // Use setTimeout to prevent auth deadlock
+                setTimeout(async () => {
+                  if (mounted) {
+                    await handleProfileData(session.user.id);
+                  }
+                }, 0);
               } else {
                 setIsAuthenticated(false);
                 setUser(null);

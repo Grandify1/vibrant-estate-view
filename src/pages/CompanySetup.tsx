@@ -28,8 +28,8 @@ const CompanySetupPage: React.FC = () => {
       if (!isAuthenticated) {
         console.log("CompanySetup: Nicht authentifiziert, leite zur Auth-Seite weiter");
         navigate('/auth');
-      } else {
-        console.log("CompanySetup: Authentifiziert als", user?.id);
+      } else if (user) {
+        console.log("CompanySetup: Authentifiziert als", user.id);
       }
     }
   }, [isAuthenticated, loadingAuth, navigate, user]);
@@ -104,6 +104,7 @@ const CompanySetupPage: React.FC = () => {
       
       console.log("Erstelle Unternehmen mit Daten:", companyData);
       console.log("User ID:", user.id);
+      
       const success = await createCompany(companyData);
       
       if (success) {
