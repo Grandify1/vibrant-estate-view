@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -245,7 +244,7 @@ const AuthPage: React.FC = () => {
         </CardContent>
         <CardFooter className="justify-center border-t pt-4">
           <p className="text-sm text-gray-500">
-            Immobilien-Verwaltungssystem &copy; {new Date().getFullYear()}
+            immoupload.com &copy; {new Date().getFullYear()}
           </p>
         </CardFooter>
       </Card>
