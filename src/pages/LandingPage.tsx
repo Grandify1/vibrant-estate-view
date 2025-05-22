@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -87,7 +86,7 @@ const LandingPage: React.FC = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-10">
-                <Button size="lg" asChild className="bg-estate-accent hover:bg-estate-accent/90 text-estate-dark">
+                <Button size="lg" asChild className="bg-white hover:bg-white/90 text-estate-dark">
                   <Link to="/auth">Jetzt kostenlos starten</Link>
                 </Button>
                 <Button variant="outline" size="lg" onClick={() => scrollToSection('how-it-works')} 
@@ -131,8 +130,7 @@ const LandingPage: React.FC = () => {
             </div>
             
             <div className="hidden md:block relative">
-              <div className="absolute -right-40 top-0 w-[600px] h-[400px] bg-[url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3')] bg-cover bg-center rounded-lg shadow-2xl transform -rotate-2"></div>
-              <div className="absolute -left-20 top-20 w-[400px] h-[300px] bg-[url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3')] bg-cover bg-center rounded-lg shadow-2xl transform rotate-3"></div>
+              {/* Removed the overlapping images in the foreground */}
             </div>
           </div>
           
@@ -149,7 +147,7 @@ const LandingPage: React.FC = () => {
                 </div>
                 <span className="ml-3 text-white font-medium">5.0 aus 5</span>
               </div>
-              <p className="text-white/80 text-sm ml-2 hidden md:block">basierend auf 187 Bewertungen</p>
+              <p className="text-white/80 text-sm ml-2 hidden md:block">basierend auf bisherigen Kundenerfahrungen</p>
             </div>
           </div>
         </div>
