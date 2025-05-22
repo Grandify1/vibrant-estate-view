@@ -86,7 +86,7 @@ const LandingPage: React.FC = () => {
               </p>
               
               <div className="mb-10">
-                <Button size="lg" asChild className="bg-white hover:bg-white/90 text-estate-dark text-lg px-8 py-6">
+                <Button asChild className="bg-white hover:bg-white/90 text-estate-dark">
                   <Link to="/auth">Jetzt starten</Link>
                 </Button>
               </div>
