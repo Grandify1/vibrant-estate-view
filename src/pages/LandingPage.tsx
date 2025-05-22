@@ -76,27 +76,23 @@ const LandingPage: React.FC = () => {
         </div>
         
         <div className="container relative z-10">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div className="text-white">
+          <div className="flex flex-col items-center text-center">
+            <div className="text-white max-w-3xl mx-auto">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
                 Ihre Immobilien <span className="text-estate-accent">professionell</span> präsentieren
               </h1>
-              <p className="text-xl mb-8 text-white/90 max-w-lg">
+              <p className="text-xl mb-8 text-white/90">
                 Mit ImmoUpload binden Sie Ihre Immobilien mühelos in Ihre Website ein – ohne technisches Know-how oder teure Entwickler.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 mb-10">
-                <Button size="lg" asChild className="bg-white hover:bg-white/90 text-estate-dark">
-                  <Link to="/auth">Jetzt kostenlos starten</Link>
-                </Button>
-                <Button variant="outline" size="lg" onClick={() => scrollToSection('how-it-works')} 
-                  className="border-white text-white hover:bg-white/20">
-                  So funktioniert's <ChevronDown className="ml-1 h-4 w-4" />
+              <div className="mb-10">
+                <Button size="lg" asChild className="bg-white hover:bg-white/90 text-estate-dark text-lg px-8 py-6">
+                  <Link to="/auth">Jetzt starten</Link>
                 </Button>
               </div>
               
               {/* Key benefits */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto">
                 <div className="flex items-start">
                   <div className="mr-3 p-2 rounded-full bg-estate-accent/20">
                     <Rocket className="h-5 w-5 text-estate-accent" />
@@ -128,14 +124,10 @@ const LandingPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            
-            <div className="hidden md:block relative">
-              {/* Removed the overlapping images in the foreground */}
-            </div>
           </div>
           
           {/* Trust element */}
-          <div className="mt-8 md:mt-16 p-4 bg-white/10 backdrop-blur-sm rounded-xl">
+          <div className="mt-8 md:mt-16 p-4 bg-white/10 backdrop-blur-sm rounded-xl max-w-4xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between">
               <p className="text-white font-medium mb-3 md:mb-0">Unsere Kunden bewerten uns mit</p>
               <div className="flex items-center">
