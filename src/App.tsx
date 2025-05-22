@@ -14,6 +14,7 @@ import PropertyFormPage from "./pages/PropertyFormPage";
 import { AuthProvider } from "./hooks/useAuth";
 import { PropertiesProvider } from "./hooks/useProperties";
 import { AgentsProvider } from "./hooks/useAgents";
+import LandingPage from "./pages/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -27,7 +28,8 @@ const App = () => (
               <Toaster />
               <Sonner />
               <Routes>
-                <Route path="/" element={<Navigate to="/admin" replace />} />
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/admin/properties/new" element={<PropertyFormPage />} />
                 <Route path="/admin/properties/edit/:id" element={<PropertyFormPage />} />
