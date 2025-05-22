@@ -145,7 +145,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Redesigned Applications Section with Images */}
+      {/* Redesigned Applications Section with Images - BUTTONS REMOVED */}
       <section id="applications" className="py-20 bg-white">
         <div className="container">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-estate-dark">
@@ -153,7 +153,7 @@ const LandingPage: React.FC = () => {
           </h2>
           
           <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-10">
-            {/* Card 1 */}
+            {/* Card 1 - Button removed */}
             <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
               <div className="h-56 bg-[url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3')] bg-cover bg-center"></div>
               <div className="p-8">
@@ -178,15 +178,10 @@ const LandingPage: React.FC = () => {
                     <span>Professionelle Immobilienanzeigen</span>
                   </li>
                 </ul>
-                <div className="mt-6">
-                  <Button variant="outline" onClick={() => scrollToSection('how-it-works')} className="group">
-                    Mehr erfahren <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
               </div>
             </div>
             
-            {/* Card 2 */}
+            {/* Card 2 - Button removed */}
             <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
               <div className="h-56 bg-[url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3')] bg-cover bg-center"></div>
               <div className="p-8">
@@ -211,15 +206,10 @@ const LandingPage: React.FC = () => {
                     <span>Unabhängigkeit in der Immobilienvermarktung</span>
                   </li>
                 </ul>
-                <div className="mt-6">
-                  <Button variant="outline" onClick={() => scrollToSection('pricing')} className="group">
-                    Preise ansehen <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
               </div>
             </div>
             
-            {/* Card 3 */}
+            {/* Card 3 - Button removed */}
             <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
               <div className="h-56 bg-[url('https://images.unsplash.com/photo-1605810230434-7631ac76ec81?ixlib=rb-4.0.3')] bg-cover bg-center"></div>
               <div className="p-8">
@@ -244,13 +234,6 @@ const LandingPage: React.FC = () => {
                     <span>Mehr Kontrolle, weniger Zeitaufwand</span>
                   </li>
                 </ul>
-                <div className="mt-6">
-                  <Button variant="outline" asChild className="group">
-                    <Link to="/auth">
-                      Dashboard testen <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </Button>
-                </div>
               </div>
             </div>
           </div>
