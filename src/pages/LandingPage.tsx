@@ -171,11 +171,11 @@ const LandingPage: React.FC = () => {
                   </li>
                   <li className="flex items-start">
                     <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span className="text-gray-700">Sofort einsatzbereit mit einem kurzen Code</span>
+                    <span>Sofort einsatzbereit mit einem kurzen Code</span>
                   </li>
                   <li className="flex items-start">
                     <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span className="text-gray-700">Professionelle Immobilienanzeigen</span>
+                    <span>Professionelle Immobilienanzeigen</span>
                   </li>
                 </ul>
                 <div className="mt-6">
@@ -204,11 +204,11 @@ const LandingPage: React.FC = () => {
                   </li>
                   <li className="flex items-start">
                     <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span className="text-gray-700">Spart erheblich Kosten</span>
+                    <span>Spart erheblich Kosten</span>
                   </li>
                   <li className="flex items-start">
                     <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span className="text-gray-700">Unabhängigkeit in der Immobilienvermarktung</span>
+                    <span>Unabhängigkeit in der Immobilienvermarktung</span>
                   </li>
                 </ul>
                 <div className="mt-6">
@@ -233,15 +233,15 @@ const LandingPage: React.FC = () => {
                 <ul className="space-y-2">
                   <li className="flex items-start">
                     <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span className="text-gray-700">Intuitive Bedienung des Dashboards</span>
+                    <span>Intuitive Bedienung des Dashboards</span>
                   </li>
                   <li className="flex items-start">
                     <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span className="text-gray-700">Änderungen erscheinen sofort online</span>
+                    <span>Änderungen erscheinen sofort online</span>
                   </li>
                   <li className="flex items-start">
                     <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span className="text-gray-700">Mehr Kontrolle, weniger Zeitaufwand</span>
+                    <span>Mehr Kontrolle, weniger Zeitaufwand</span>
                   </li>
                 </ul>
                 <div className="mt-6">
@@ -344,7 +344,7 @@ const LandingPage: React.FC = () => {
             className="bg-white text-estate hover:bg-estate hover:text-white border-white"
             asChild
           >
-            <Link to="/auth">Jetzt kostenfrei starten</Link>
+            <Link to="/auth">Jetzt starten</Link>
           </Button>
         </div>
       </section>
@@ -448,7 +448,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
       
-      {/* Pricing Section */}
+      {/* Updated Pricing Section */}
       <section id="pricing" className="py-20">
         <div className="container">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-estate-dark">
@@ -456,22 +456,22 @@ const LandingPage: React.FC = () => {
           </h2>
           
           <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
-            {/* Free Plan */}
+            {/* Starter Plan - Updated price and features */}
             <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
               <div className="p-8">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-2xl font-bold text-estate-dark">Starter</h3>
-                  <span className="bg-estate-light/20 text-estate px-3 py-1 rounded-full text-sm font-medium">Kostenlos</span>
+                  <span className="bg-estate-light/20 text-estate px-3 py-1 rounded-full text-sm font-medium">Empfohlen</span>
                 </div>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold">€0</span>
+                  <span className="text-4xl font-bold">€19</span>
                   <span className="text-gray-500">/Monat</span>
                 </div>
                 <p className="text-gray-600 mb-6">Perfekt für Einsteiger und kleine Portfolios.</p>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start">
                     <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>Bis zu 5 Immobilien</span>
+                    <span>Bis zu 9 Immobilien</span>
                   </li>
                   <li className="flex items-start">
                     <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
@@ -489,12 +489,12 @@ const LandingPage: React.FC = () => {
               </div>
               <div className="px-8 pb-8">
                 <Button className="w-full" variant="outline" asChild>
-                  <Link to="/auth">Kostenlos starten</Link>
+                  <Link to="/auth">Jetzt starten</Link>
                 </Button>
               </div>
             </div>
             
-            {/* Premium Plan */}
+            {/* Professional Plan - Updated price and features */}
             <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-estate">
               <div className="bg-estate text-white p-3 text-center font-medium">
                 Empfohlen für Immobilienmakler
@@ -505,7 +505,7 @@ const LandingPage: React.FC = () => {
                   <span className="bg-estate text-white px-3 py-1 rounded-full text-sm font-medium">Beliebt</span>
                 </div>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold">€29</span>
+                  <span className="text-4xl font-bold">€39</span>
                   <span className="text-gray-500">/Monat</span>
                 </div>
                 <p className="text-gray-600 mb-6">Ideal für professionelle Immobilienmakler.</p>
@@ -525,10 +525,6 @@ const LandingPage: React.FC = () => {
                   <li className="flex items-start">
                     <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
                     <span>Prioritäts-Support</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>Keine Immoupload-Branding</span>
                   </li>
                   <li className="flex items-start">
                     <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
@@ -559,7 +555,7 @@ const LandingPage: React.FC = () => {
             className="bg-white text-estate hover:bg-estate-light hover:text-white border-white"
             asChild
           >
-            <Link to="/auth">Jetzt kostenlos starten</Link>
+            <Link to="/auth">Jetzt starten</Link>
           </Button>
         </div>
       </section>
