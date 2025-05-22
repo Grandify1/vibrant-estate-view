@@ -10,7 +10,10 @@ import {
   Users, 
   Star, 
   CircleCheck,
-  ArrowRight
+  ArrowRight,
+  Award,
+  ShieldCheck,
+  Rocket
 } from 'lucide-react';
 
 const LandingPage: React.FC = () => {
@@ -66,112 +69,199 @@ const LandingPage: React.FC = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative py-20 md:py-32 bg-gradient-to-b from-estate-gray to-white overflow-hidden">
+      {/* Enhanced Hero Section */}
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        {/* Background with gradient overlay */}
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1773&q=80')] bg-cover bg-center">
+          <div className="absolute inset-0 bg-gradient-to-r from-estate-dark/90 to-estate/70"></div>
+        </div>
+        
         <div className="container relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-estate-dark mb-6">
-              Präsentieren Sie Ihre Immobilien 
-              <span className="text-estate"> professionell</span> auf Ihrer Website
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Mit ImmoupLoad binden Sie Ihre Immobilien mühelos in Ihre eigene Website ein – ganz ohne technisches Know-how oder teure Entwickler.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild>
-                <Link to="/auth">Jetzt kostenlos starten</Link>
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => scrollToSection('how-it-works')}>
-                So funktioniert's <ChevronDown className="ml-1 h-4 w-4" />
-              </Button>
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="text-white">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                Ihre Immobilien <span className="text-estate-accent">professionell</span> präsentieren
+              </h1>
+              <p className="text-xl mb-8 text-white/90 max-w-lg">
+                Mit ImmoUpload binden Sie Ihre Immobilien mühelos in Ihre Website ein – ohne technisches Know-how oder teure Entwickler.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 mb-10">
+                <Button size="lg" asChild className="bg-estate-accent hover:bg-estate-accent/90 text-estate-dark">
+                  <Link to="/auth">Jetzt kostenlos starten</Link>
+                </Button>
+                <Button variant="outline" size="lg" onClick={() => scrollToSection('how-it-works')} 
+                  className="border-white text-white hover:bg-white/20">
+                  So funktioniert's <ChevronDown className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+              
+              {/* Key benefits */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+                <div className="flex items-start">
+                  <div className="mr-3 p-2 rounded-full bg-estate-accent/20">
+                    <Rocket className="h-5 w-5 text-estate-accent" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">Einfache Integration</h3>
+                    <p className="text-sm text-white/80">Nur ein Code-Snippet für Ihre Website</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <div className="mr-3 p-2 rounded-full bg-estate-accent/20">
+                    <ShieldCheck className="h-5 w-5 text-estate-accent" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">Ohne Technik-Kenntnisse</h3>
+                    <p className="text-sm text-white/80">Intuitive Bedienung für jeden</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <div className="mr-3 p-2 rounded-full bg-estate-accent/20">
+                    <Award className="h-5 w-5 text-estate-accent" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">Professionelles Ergebnis</h3>
+                    <p className="text-sm text-white/80">Hochwertige Immobiliendarstellung</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="hidden md:block relative">
+              <div className="absolute -right-40 top-0 w-[600px] h-[400px] bg-[url('https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3')] bg-cover bg-center rounded-lg shadow-2xl transform -rotate-2"></div>
+              <div className="absolute -left-20 top-20 w-[400px] h-[300px] bg-[url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3')] bg-cover bg-center rounded-lg shadow-2xl transform rotate-3"></div>
+            </div>
+          </div>
+          
+          {/* Trust element */}
+          <div className="mt-8 md:mt-16 p-4 bg-white/10 backdrop-blur-sm rounded-xl">
+            <div className="flex flex-col md:flex-row items-center justify-between">
+              <p className="text-white font-medium mb-3 md:mb-0">Unsere Kunden bewerten uns mit</p>
+              <div className="flex items-center">
+                <span className="text-xl font-bold mr-2 text-white">Exzellent</span>
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} className="h-6 w-6 fill-estate-accent text-estate-accent" />
+                  ))}
+                </div>
+                <span className="ml-3 text-white font-medium">5.0 aus 5</span>
+              </div>
+              <p className="text-white/80 text-sm ml-2 hidden md:block">basierend auf 187 Bewertungen</p>
             </div>
           </div>
         </div>
-        
-        <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-b from-transparent to-white" />
       </section>
 
-      {/* Applications Section */}
-      <section id="applications" className="py-20">
+      {/* Redesigned Applications Section with Images */}
+      <section id="applications" className="py-20 bg-white">
         <div className="container">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-estate-dark">
             Anwendungen für <span className="text-estate">Immobilienmakler</span>
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-10">
             {/* Card 1 */}
-            <div className="bg-white rounded-lg shadow-lg p-8 transition-all hover:shadow-xl hover:-translate-y-1">
-              <div className="w-12 h-12 bg-estate-light/20 rounded-full flex items-center justify-center mb-4">
-                <Code className="text-estate" />
+            <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+              <div className="h-56 bg-[url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3')] bg-cover bg-center"></div>
+              <div className="p-8">
+                <div className="w-12 h-12 bg-estate-light/20 rounded-full flex items-center justify-center mb-4">
+                  <Code className="text-estate" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-estate-dark">Immobilien unkompliziert auf die eigene Website darstellen</h3>
+                <p className="text-gray-600 mb-6">
+                  Viele Immobilienmakler verzichten auf Immobilienanzeigen auf ihrer Website, da technisches Wissen fehlt. Mit ImmoUpload fügen Sie einfach einen Code-Schnipsel ein – fertig!
+                </p>
+                <ul className="space-y-2">
+                  <li className="flex items-start">
+                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
+                    <span className="text-gray-700">Kein technisches Vorwissen nötig</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
+                    <span className="text-gray-700">Sofort einsatzbereit mit einem kurzen Code</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
+                    <span className="text-gray-700">Professionelle Immobilienanzeigen</span>
+                  </li>
+                </ul>
+                <div className="mt-6">
+                  <Button variant="outline" onClick={() => scrollToSection('how-it-works')} className="group">
+                    Mehr erfahren <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </div>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-estate-dark">Immobilien unkompliziert auf die eigene Website darstellen</h3>
-              <p className="text-gray-600 mb-6">
-                Viele Immobilienmakler verzichten darauf, ihre Angebote auf der eigenen Webseite zu präsentieren, weil ihnen technisches Wissen fehlt. Immoupload bietet eine simple, intuitive Lösung: Sie erhalten einen kleinen Code-Schnipsel, den Sie ganz einfach in Ihre Webseite einfügen – fertig! Alle Immobilien erscheinen sofort professionell und aktuell auf Ihrer Seite.
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>Kein technisches Vorwissen nötig</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>Sofort einsatzbereit mit einem kurzen Code</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>Professionelle Immobilienanzeigen auf der eigenen Website</span>
-                </li>
-              </ul>
             </div>
             
             {/* Card 2 */}
-            <div className="bg-white rounded-lg shadow-lg p-8 transition-all hover:shadow-xl hover:-translate-y-1">
-              <div className="w-12 h-12 bg-estate-light/20 rounded-full flex items-center justify-center mb-4">
-                <FileText className="text-estate" />
+            <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+              <div className="h-56 bg-[url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3')] bg-cover bg-center"></div>
+              <div className="p-8">
+                <div className="w-12 h-12 bg-estate-light/20 rounded-full flex items-center justify-center mb-4">
+                  <FileText className="text-estate" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-estate-dark">Nie mehr teure Agenturen oder Entwickler nötig</h3>
+                <p className="text-gray-600 mb-6">
+                  Sparen Sie die Kosten für Agenturen und Webentwickler. Mit ImmoUpload genügt ein kleiner Code-Schnipsel für eine perfekte Präsentation Ihrer Immobilien.
+                </p>
+                <ul className="space-y-2">
+                  <li className="flex items-start">
+                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
+                    <span className="text-gray-700">Keine externen Dienstleister mehr nötig</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
+                    <span className="text-gray-700">Spart erheblich Kosten</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
+                    <span className="text-gray-700">Unabhängigkeit in der Immobilienvermarktung</span>
+                  </li>
+                </ul>
+                <div className="mt-6">
+                  <Button variant="outline" onClick={() => scrollToSection('pricing')} className="group">
+                    Preise ansehen <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </div>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-estate-dark">Nie mehr teure Agenturen oder Entwickler nötig</h3>
-              <p className="text-gray-600 mb-6">
-                Bisher mussten Sie für die professionelle Präsentation Ihrer Immobilien auf der eigenen Website oft teure Agenturen oder Webentwickler engagieren. Mit Immoupload sparen Sie diese Kosten vollständig ein. Ein kleiner Code-Schnipsel genügt, und Ihre Immobilien sind perfekt präsentiert – ganz ohne Zusatzkosten oder technische Kopfschmerzen.
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>Keine externen Dienstleister oder Agenturen mehr nötig</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>Spart erheblich Kosten</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>Unabhängigkeit in der Immobilienvermarktung</span>
-                </li>
-              </ul>
             </div>
             
             {/* Card 3 */}
-            <div className="bg-white rounded-lg shadow-lg p-8 transition-all hover:shadow-xl hover:-translate-y-1">
-              <div className="w-12 h-12 bg-estate-light/20 rounded-full flex items-center justify-center mb-4">
-                <Users className="text-estate" />
+            <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+              <div className="h-56 bg-[url('https://images.unsplash.com/photo-1605810230434-7631ac76ec81?ixlib=rb-4.0.3')] bg-cover bg-center"></div>
+              <div className="p-8">
+                <div className="w-12 h-12 bg-estate-light/20 rounded-full flex items-center justify-center mb-4">
+                  <Users className="text-estate" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-estate-dark">Einfache Verwaltung der Immobilien direkt aus Ihrem Dashboard</h3>
+                <p className="text-gray-600 mb-6">
+                  Verwalten Sie Ihre Immobilienanzeigen komfortabel im übersichtlichen Dashboard. Änderungen erscheinen automatisch auf Ihrer Website.
+                </p>
+                <ul className="space-y-2">
+                  <li className="flex items-start">
+                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
+                    <span className="text-gray-700">Intuitive Bedienung des Dashboards</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
+                    <span className="text-gray-700">Änderungen erscheinen sofort online</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
+                    <span className="text-gray-700">Mehr Kontrolle, weniger Zeitaufwand</span>
+                  </li>
+                </ul>
+                <div className="mt-6">
+                  <Button variant="outline" asChild className="group">
+                    <Link to="/auth">
+                      Dashboard testen <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  </Button>
+                </div>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-estate-dark">Einfache Verwaltung der Immobilien direkt aus Ihrem Dashboard</h3>
-              <p className="text-gray-600 mb-6">
-                Verwalten Sie Ihre Immobilienanzeigen komfortabel in Ihrem eigenen übersichtlichen Dashboard. Änderungen wie Preisupdates oder neue Fotos erscheinen automatisch auf Ihrer Webseite – ohne zusätzlichen Aufwand. So wird die Immobilienpräsentation für Sie nicht zur technischen Herausforderung, sondern zur einfachen, angenehmen Aufgabe.
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>Intuitive Bedienung des Dashboards</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>Änderungen erscheinen sofort automatisch online</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>Mehr Kontrolle, weniger Zeitaufwand</span>
-                </li>
-              </ul>
             </div>
           </div>
         </div>
@@ -368,7 +458,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
       
-      {/* Pricing Section (placeholder) */}
+      {/* Pricing Section */}
       <section id="pricing" className="py-20">
         <div className="container">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-estate-dark">
