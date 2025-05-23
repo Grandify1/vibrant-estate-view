@@ -2,7 +2,7 @@
 /**
  * ImmoUpload Widget - Vereinfachte Version
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 3.2
+ * Version 3.3
  */
 (function() {
   // Globales Objekt für das Widget erstellen
@@ -24,8 +24,27 @@
   const widgetHeight = script.getAttribute('data-height') || 'auto';
   const widgetWidth = script.getAttribute('data-width') || '100%';
   
+  // Debug-Modus
+  const debugMode = script.getAttribute('data-debug') === 'true';
+  
+  // Debug-Funktion
+  function debug(message, data) {
+    if (debugMode) {
+      const timestamp = new Date().toISOString();
+      const prefix = `[ImmoWidget ${timestamp}]`;
+      
+      if (data) {
+        console.log(prefix, message, data);
+      } else {
+        console.log(prefix, message);
+      }
+    }
+  }
+  
   // Initialisierung des Widgets
   function initWidget() {
+    debug('Widget Initialisierung gestartet');
+    
     // Container identifizieren oder erstellen
     let container = document.getElementById('immo-widget-container');
     if (!container) {
@@ -36,6 +55,8 @@
       console.error('ImmoUpload Widget: Container mit ID "immo-widget-container" oder Klasse "immo-widget-container" nicht gefunden.');
       return;
     }
+    
+    debug('Container gefunden', container);
     
     // Container-Style setzen
     container.style.overflow = 'hidden';
@@ -61,6 +82,8 @@
     `;
     document.head.appendChild(styleTag);
     
+    debug('Styles hinzugefügt');
+    
     // Iframe erstellen
     const iframe = document.createElement('iframe');
     iframe.src = baseUrl + '/embed';
@@ -75,11 +98,15 @@
     iframe.setAttribute('title', 'Immobilien Übersicht');
     iframe.setAttribute('loading', 'eager');
     
+    debug('Iframe erstellt mit URL:', iframe.src);
+    
     // Iframe zum Container hinzufügen
     container.appendChild(iframe);
     
     // Nach dem Laden eine erste Höhenanpassung vornehmen
     iframe.addEventListener('load', function() {
+      debug('Iframe geladen, Event wird ausgelöst');
+      
       // Event auslösen, damit die Website weiß, dass das Widget geladen wurde
       const event = new CustomEvent('immo-widget-loaded');
       document.dispatchEvent(event);
@@ -87,6 +114,7 @@
       // Warten bis das iframe vollständig geladen ist
       setTimeout(() => {
         adjustIframeHeight(iframe);
+        debug('Erste Höhenanpassung durchgeführt');
         
         // Periodisch die Höhe anpassen
         const heightInterval = setInterval(() => {
@@ -96,6 +124,7 @@
         // Clean up interval nach 30 Sekunden
         setTimeout(() => {
           clearInterval(heightInterval);
+          debug('Automatische Höhenanpassung beendet');
         }, 30000);
       }, 1000);
     });
@@ -103,47 +132,83 @@
   
   // Funktion zur Höhenanpassung des Iframes - sicherheitsorientiert
   function adjustIframeHeight(iframe) {
+    debug('Versuche Iframe-Höhe anzupassen');
+    
     try {
       // Prüfe ob iframe und contentWindow verfügbar sind
       if (!iframe || !iframe.contentWindow) {
-        console.log('Iframe oder contentWindow nicht verfügbar');
+        debug('Iframe oder contentWindow nicht verfügbar');
         return;
       }
       
       // Versuche Zugriff auf das iframe-Dokument
-      const iframeDoc = iframe.contentWindow.document;
-      if (!iframeDoc || !iframeDoc.body) {
-        console.log('Iframe-Dokument oder body nicht verfügbar');
+      let iframeDoc;
+      try {
+        iframeDoc = iframe.contentWindow.document;
+        
+        if (!iframeDoc || !iframeDoc.body) {
+          debug('Iframe-Dokument oder body nicht verfügbar');
+          
+          // Post-Message als Alternative verwenden
+          try {
+            debug('Versuche Height-Request via postMessage');
+            iframe.contentWindow.postMessage({ type: 'request-height' }, '*');
+          } catch (postMessageError) {
+            debug('Post-Message blockiert', postMessageError);
+          }
+          
+          return;
+        }
+      } catch (accessError) {
+        debug('Cross-Origin-Zugriff verweigert', accessError);
+        
+        // Post-Message als Alternative verwenden
+        try {
+          debug('Versuche Height-Request via postMessage nach Access-Error');
+          iframe.contentWindow.postMessage({ type: 'request-height' }, '*');
+        } catch (postMessageError) {
+          debug('Post-Message blockiert nach Access-Error', postMessageError);
+        }
+        
         return;
       }
       
       const height = iframeDoc.body.scrollHeight;
       if (height && height > 100) {
+        debug('Neue Höhe gefunden:', height);
         iframe.style.height = height + 'px';
         console.log('Iframe-Höhe angepasst:', height + 'px');
+      } else {
+        debug('Ungültige Höhe gefunden:', height);
       }
     } catch (e) {
       // Cross-Origin-Fehler abfangen
-      console.log('Cross-Origin-Einschränkung - automatische Größenanpassung deaktiviert');
+      debug('Cross-Origin-Einschränkung - automatische Größenanpassung deaktiviert', e);
       
       // Post-Message als Alternative verwenden
       try {
+        debug('Versuche Height-Request via postMessage nach Error');
         iframe.contentWindow.postMessage({ type: 'request-height' }, '*');
       } catch (postMessageError) {
-        console.log('Post-Message ebenfalls blockiert');
+        debug('Post-Message ebenfalls blockiert', postMessageError);
       }
     }
   }
   
   // Warten auf DOM Content Loaded
   if (document.readyState === 'loading') {
+    debug('Dokument wird noch geladen, warte auf DOMContentLoaded');
     document.addEventListener('DOMContentLoaded', initWidget);
   } else {
+    debug('Dokument bereits geladen, initialisiere Widget sofort');
     initWidget();
   }
   
   // Globale Event-Handler für Nachrichtenaustausch
+  debug('Event-Listener für postMessage registrieren');
   window.addEventListener('message', function(e) {
+    debug('Nachricht empfangen:', e.data);
+    
     // Sicherheits-Check - erlauben Sie auch die Produktions-Domain
     const allowedOrigins = [
       'https://immoupload.com',
@@ -153,24 +218,30 @@
     ];
     
     // Prüfen, ob die Ursprungs-Domain erlaubt ist
-    if (!allowedOrigins.some(origin => e.origin.includes(origin)) && 
-        !e.origin.includes('localhost') && 
-        !e.origin.includes('127.0.0.1')) {
+    const originAllowed = allowedOrigins.some(origin => e.origin.includes(origin)) || 
+                         e.origin.includes('localhost') || 
+                         e.origin.includes('127.0.0.1');
+    
+    if (!originAllowed) {
+      debug('Origin nicht erlaubt:', e.origin);
       return;
     }
+    
+    debug('Origin erlaubt:', e.origin);
     
     // Behandlung von Resize-Events für das iframe
     if (e.data && e.data.type === 'resize-iframe') {
       const iframe = document.getElementById('immo-widget-iframe');
       if (iframe && e.data.height) {
         iframe.style.height = e.data.height + 'px';
-        console.log('Iframe-Höhe via Post-Message angepasst:', e.data.height + 'px');
+        debug('Iframe-Höhe via Post-Message angepasst:', e.data.height);
       }
     }
     
     // Handling für externe Links aus dem iframe
     if (e.data && e.data.type === 'external-link') {
       if (e.data.url) {
+        debug('Externe URL öffnen:', e.data.url);
         window.open(e.data.url, '_blank');
       }
     }
@@ -178,10 +249,11 @@
   
   // Fix für drawHighlights-Fehler
   window.drawHighlights = window.drawHighlights || function() {
-    console.log('drawHighlights-Fallback aufgerufen');
+    debug('drawHighlights-Fallback aufgerufen');
     // Leere Fallback-Funktion, um Fehler zu vermeiden
   };
   
   // Widget als initialisiert markieren
+  debug('Widget wurde erfolgreich initialisiert');
   window.ImmoWidget.initialized = true;
 })();

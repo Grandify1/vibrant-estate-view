@@ -44,27 +44,32 @@ export const useSessionLoader = (
           // Get user metadata from session
           const metadata = data.user?.user_metadata;
           
-          const { error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              id: userId,
-              first_name: metadata?.first_name || null,
-              last_name: metadata?.last_name || null
-            });
-            
-          if (createError) {
-            console.error("Fehler beim Erstellen des Profils:", createError);
-          } else {
-            console.log("Profil erfolgreich erstellt");
-            
-            // Set basic user data after creating profile
-            setUser({
-              id: userId,
-              email: email,
-              first_name: metadata?.first_name,
-              last_name: metadata?.last_name,
-              company_id: null // Initialize company_id as null for new users
-            });
+          try {
+            // Verwende upsert anstatt insert, um Duplikate zu vermeiden
+            const { error: createError } = await supabase
+              .from('profiles')
+              .upsert({
+                id: userId,
+                first_name: metadata?.first_name || null,
+                last_name: metadata?.last_name || null
+              });
+              
+            if (createError) {
+              console.error("Fehler beim Erstellen des Profils:", createError);
+            } else {
+              console.log("Profil erfolgreich erstellt");
+              
+              // Set basic user data after creating profile
+              setUser({
+                id: userId,
+                email: email,
+                first_name: metadata?.first_name,
+                last_name: metadata?.last_name,
+                company_id: null // Initialize company_id as null for new users
+              });
+            }
+          } catch (e) {
+            console.error("Fehler beim Erstellen des Profils:", e);
           }
         }
       }
