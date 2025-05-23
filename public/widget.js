@@ -1,8 +1,7 @@
-
 /**
  * ImmoUpload Widget - Production Version
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 4.4 - Zero Padding, Dynamic Height Only
+ * Version 4.5 - Smart Height Calculation
  */
 (function() {
   // Globales Objekt für das Widget erstellen
@@ -50,12 +49,13 @@
       }
     }
     
-    // Container-Style setzen - absolut kein Padding oder Mindesthöhe
+    // Container-Style setzen - minimal für gute Darstellung
     container.style.overflow = 'visible';
     container.style.position = 'relative';
     container.style.margin = '0';
     container.style.padding = '0';
     container.style.height = 'auto';
+    container.style.minHeight = '300px'; // Minimale Höhe für Loading-State
     
     // CSS für Hover-Effekte einfügen
     const styleTag = document.createElement('style');
@@ -80,11 +80,13 @@
         margin: 0 !important;
         padding: 0 !important;
         height: auto !important;
+        min-height: 300px !important;
       }
       .immo-widget-container {
         margin: 0 !important;
         padding: 0 !important;
         height: auto !important;
+        min-height: 300px !important;
       }
     `;
     document.head.appendChild(styleTag);
@@ -98,14 +100,15 @@
       iframeUrl += `${separator}company=${script.getAttribute('data-company')}`;
     }
     
-    // Iframe erstellen - komplett ohne Mindesthöhe
+    // Iframe erstellen mit intelligenter Höhe
     const iframe = document.createElement('iframe');
     iframe.src = iframeUrl;
     iframe.style.width = widgetWidth;
     iframe.style.border = 'none';
     iframe.style.margin = '0';
     iframe.style.padding = '0';
-    iframe.style.height = 'auto';
+    iframe.style.height = '300px'; // Starthöhe
+    iframe.style.minHeight = '300px'; // Mindesthöhe
     iframe.style.maxWidth = '100%';
     iframe.style.overflow = 'visible';
     iframe.id = 'immo-widget-iframe';
@@ -131,7 +134,7 @@
       // Erste Höhenanpassung nach kurzer Verzögerung
       setTimeout(() => {
         adjustIframeHeight(iframe);
-      }, 100);
+      }, 200);
     });
   }
   
@@ -167,7 +170,7 @@
     initWidget();
   }
   
-  // Event-Handler für Nachrichtenaustausch - nur exakte Inhaltshöhe setzen
+  // Event-Handler für Nachrichtenaustausch - intelligente Höhenanpassung
   window.addEventListener('message', function(e) {
     // Erweiterte Sicherheits-Checks
     const allowedOrigins = [
@@ -188,18 +191,20 @@
       return;
     }
     
-    // Behandlung von Resize-Events für das iframe - exakte Höhe ohne zusätzliches Padding
+    // Behandlung von Resize-Events für das iframe - intelligente Höhe
     if (e.data && e.data.type === 'resize-iframe') {
       const iframe = document.getElementById('immo-widget-iframe');
       if (iframe && e.data.height) {
-        // Exakte Höhe ohne Mindesthöhe oder zusätzliches Padding
-        const newHeight = e.data.height;
+        // Verwende die vom Embed berechnete Höhe, aber stelle sicher, dass sie mindestens 300px ist
+        const newHeight = Math.max(e.data.height, 300);
         iframe.style.height = newHeight + 'px';
+        iframe.style.minHeight = '300px';
         
-        // Container-Höhe ebenfalls exakt anpassen
+        // Container-Höhe anpassen
         const container = iframe.parentElement;
         if (container) {
           container.style.height = newHeight + 'px';
+          container.style.minHeight = '300px';
         }
       }
     }
@@ -228,5 +233,5 @@
   
   // Widget als initialisiert markieren
   window.ImmoWidget.initialized = true;
-  window.ImmoWidget.version = '4.4';
+  window.ImmoWidget.version = '4.5';
 })();

@@ -37,21 +37,40 @@ export default function Embed() {
   // Optimized height calculation and communication with parent
   useEffect(() => {
     const sendHeightToParent = () => {
-      // Absolut minimaler Abstand - nur 2px total
-      const contentHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-      const paddedHeight = contentHeight + 2;
-      
-      window.parent.postMessage({ 
-        type: 'resize-iframe', 
-        height: paddedHeight,
-        source: 'immo-embed'
-      }, '*');
+      // Warte kurz, damit das Layout gerendert ist
+      setTimeout(() => {
+        const contentHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+        
+        // Berechne die Anzahl der Reihen basierend auf der Bildschirmbreite und Anzahl Properties
+        const screenWidth = window.innerWidth;
+        let cardsPerRow = 1;
+        
+        if (screenWidth >= 1024) cardsPerRow = 3; // lg
+        else if (screenWidth >= 640) cardsPerRow = 2; // sm
+        
+        const numberOfRows = Math.ceil(properties.length / cardsPerRow);
+        
+        // Geschätzte Kartenhöhe: 280px pro Karte + 12px gap zwischen Reihen + padding
+        const estimatedCardHeight = 280;
+        const gapBetweenRows = 12;
+        const basePadding = 16; // 8px oben + 8px unten
+        
+        const estimatedHeight = (numberOfRows * estimatedCardHeight) + ((numberOfRows - 1) * gapBetweenRows) + basePadding;
+        
+        // Verwende die größere der beiden Höhen, aber füge einen kleinen Puffer hinzu
+        const finalHeight = Math.max(contentHeight, estimatedHeight) + 20;
+        
+        window.parent.postMessage({ 
+          type: 'resize-iframe', 
+          height: finalHeight,
+          source: 'immo-embed'
+        }, '*');
+      }, 100);
     };
 
     // Send initial height after content is rendered
-    if (!loading) {
-      const timer = setTimeout(sendHeightToParent, 50);
-      return () => clearTimeout(timer);
+    if (!loading && properties.length > 0) {
+      sendHeightToParent();
     }
 
     // Listen for resize events
@@ -161,9 +180,8 @@ export default function Embed() {
     fetchProperties();
   }, [companyId]);
 
-  // Absolut kein Padding - das Widget soll exakt so hoch sein wie der Inhalt
   return (
-    <div className="w-full bg-white">
+    <div className="w-full bg-white py-2">
       <PropertyGrid properties={properties} loading={loading} error={error} />
     </div>
   );
