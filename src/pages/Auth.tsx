@@ -35,7 +35,14 @@ const AuthPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
   
-  // Verbesserte Weiterleitung mit Logs
+  // Show success message for payment - MOVED TO TOP
+  useEffect(() => {
+    if (paymentSuccess) {
+      toast.success('Zahlung erfolgreich! Vielen Dank für deine Anmeldung.');
+    }
+  }, [paymentSuccess]);
+  
+  // Verbesserte Weiterleitung mit Logs - MOVED TO TOP
   useEffect(() => {
     console.log("Auth: Auth Status:", { isAuthenticated, loadingAuth, user });
     
@@ -54,6 +61,7 @@ const AuthPage: React.FC = () => {
     }
   }, [isAuthenticated, loadingAuth, navigate, user, paymentSuccess, selectedPlan]);
   
+  // NOW the conditional returns come AFTER all hooks
   if (loadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen flex-col">
@@ -74,13 +82,6 @@ const AuthPage: React.FC = () => {
       </div>
     </div>;
   }
-  
-  // Show success message for payment
-  useEffect(() => {
-    if (paymentSuccess) {
-      toast.success('Zahlung erfolgreich! Vielen Dank für deine Anmeldung.');
-    }
-  }, [paymentSuccess]);
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +116,7 @@ const AuthPage: React.FC = () => {
     
     try {
       console.log("Auth: Versuche Registrierung mit Email:", registerEmail);
-      const success = await signup(registerEmail, registerPassword, firstName, lastName);
+      const success = await signup(registerEmail, registerPassword, firstName, lastName, selectedPlan);
       console.log("Auth: Registrierung Ergebnis:", success);
       
       if (success) {
