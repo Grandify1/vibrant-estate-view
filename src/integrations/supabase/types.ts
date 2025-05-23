@@ -343,6 +343,10 @@ export type Database = {
         Args: { coupon_id_param: string }
         Returns: undefined
       }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       safe_update_user_profile: {
         Args: {
           user_id_param: string

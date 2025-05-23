@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,7 +56,7 @@ const UserManagement = () => {
   const DEFAULT_PASSWORD = 'PasswortZurücksetzen123#';
 
   useEffect(() => {
-    console.log("UserManagement: Component mounted, loading data...");
+    console.log("UserManagement: Loading data...");
     loadUsers();
     loadCompanies();
   }, []);
@@ -75,16 +76,14 @@ const UserManagement = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      console.log("Loading all users from auth...");
+      console.log("Loading users...");
       
       // Use the RPC function
       const { data: users, error } = await supabase.rpc('get_all_users_with_profiles');
 
-      console.log("Users response:", { users, error });
-
       if (error) throw error;
 
-      console.log("Final users:", users);
+      console.log("Users loaded:", users?.length || 0);
       setUsers(users || []);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -97,26 +96,19 @@ const UserManagement = () => {
   const loadCompanies = async () => {
     setCompaniesLoading(true);
     try {
-      console.log("Loading companies...");
-      
       const { data, error } = await supabase
         .from('companies')
         .select('id, name')
         .order('name');
 
-      console.log("Companies response:", { data, error });
-
       if (error) {
-        console.error("Companies error:", error);
         throw error;
       }
       
       if (data && Array.isArray(data)) {
-        console.log("Setting companies:", data);
         setCompanies(data);
         setFilteredCompanies(data);
       } else {
-        console.warn("Companies data is not an array or is null:", data);
         setCompanies([]);
         setFilteredCompanies([]);
       }
@@ -131,7 +123,6 @@ const UserManagement = () => {
   };
 
   const resetForm = () => {
-    console.log("Resetting form to default values");
     setFormData({
       email: '',
       first_name: '',
@@ -145,7 +136,7 @@ const UserManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("Form submission started with data:", formData);
+    console.log("UserManagement: Form submission started");
     
     // Validate all required fields
     if (!formData.email.trim()) {
@@ -165,7 +156,6 @@ const UserManagement = () => {
 
     // Ensure password is not empty for new users
     if (!editingUser && !formData.password.trim()) {
-      console.error("Password is empty for new user creation");
       toast.error('Passwort ist erforderlich');
       return;
     }
@@ -173,34 +163,25 @@ const UserManagement = () => {
     setLoading(true);
     try {
       if (editingUser) {
-        console.log("Updating existing user:", editingUser.id);
-        console.log("Company ID to update:", formData.company_id);
+        console.log("UserManagement: Updating user:", editingUser.id, "with company:", formData.company_id);
         
         // Use the safe update function
-        const { data, error } = await (supabase as any).rpc('safe_update_user_profile', {
+        const { data, error } = await supabase.rpc('safe_update_user_profile', {
           user_id_param: editingUser.id,
           first_name_param: formData.first_name,
           last_name_param: formData.last_name,
           company_id_param: formData.company_id || null
         });
 
-        console.log("Safe update result:", { data, error });
+        console.log("UserManagement: Update result:", { success: !error, hasData: !!data });
 
         if (error) {
-          console.error("Safe update error:", error);
           throw error;
         }
         
-        console.log("User profile updated successfully");
         toast.success('Benutzer erfolgreich aktualisiert');
       } else {
-        console.log("Creating new user with payload:", {
-          email: formData.email,
-          password: formData.password ? "***PRESENT***" : "***EMPTY***",
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          company_id: formData.company_id || null
-        });
+        console.log("UserManagement: Creating new user");
         
         // Create new user via admin API function with proper payload
         const payload = {
@@ -211,26 +192,20 @@ const UserManagement = () => {
           company_id: formData.company_id || null
         };
         
-        console.log("Invoking create-user function with payload:", payload);
-        
         const { data, error } = await supabase.functions.invoke('create-user', {
           body: payload
         });
 
-        console.log("Create-user response:", { data, error });
-
         if (error) {
-          console.error("Edge function error:", error);
           throw error;
         }
         
         if (!data?.success) {
           const errorMessage = data?.message || 'Unbekannter Fehler beim Erstellen des Benutzers';
-          console.error("Edge function returned error:", errorMessage);
           throw new Error(errorMessage);
         }
         
-        console.log("User created successfully:", data);
+        console.log("UserManagement: User created successfully");
         toast.success('Benutzer erfolgreich erstellt');
       }
 
@@ -239,13 +214,7 @@ const UserManagement = () => {
       setEditingUser(null);
       resetForm();
     } catch (error: any) {
-      console.error('Error saving user:', error);
-      console.error('Error details:', {
-        message: error.message,
-        context: error.context,
-        stack: error.stack
-      });
-      
+      console.error('UserManagement: Error saving user:', error);
       toast.error('Fehler beim Speichern des Benutzers: ' + (error.message || 'Unbekannter Fehler'));
     } finally {
       setLoading(false);
@@ -253,7 +222,7 @@ const UserManagement = () => {
   };
 
   const handleEdit = (user: UserWithAuth) => {
-    console.log("Editing user:", user);
+    console.log("UserManagement: Editing user:", user.id);
     
     setEditingUser(user);
     setFormData({
@@ -268,12 +237,14 @@ const UserManagement = () => {
   };
 
   const handleCompanySelect = (company: Company) => {
+    console.log("UserManagement: Company selected:", company.name);
     setFormData({ ...formData, company_id: company.id });
     setCompanySearch(company.name);
     setShowCompanyDropdown(false);
   };
 
   const clearCompanySelection = () => {
+    console.log("UserManagement: Company selection cleared");
     setFormData({ ...formData, company_id: '' });
     setCompanySearch('');
     setShowCompanyDropdown(false);
@@ -283,7 +254,6 @@ const UserManagement = () => {
     if (window.confirm('Sind Sie sicher, dass Sie das Passwort zurücksetzen möchten?')) {
       try {
         setLoading(true);
-        console.log("Resetting password for user:", userId);
         
         const { data, error } = await supabase.functions.invoke('reset-password', {
           body: {
@@ -291,8 +261,6 @@ const UserManagement = () => {
             new_password: DEFAULT_PASSWORD
           }
         });
-        
-        console.log("Reset password response:", { data, error });
         
         if (error) throw error;
         if (!data?.success) throw new Error(data?.message || 'Fehler beim Zurücksetzen des Passwortes');
@@ -316,14 +284,11 @@ const UserManagement = () => {
   const handleDeleteUser = async (userId: string) => {
     try {
       setLoading(true);
-      console.log("Deleting user:", userId);
       
       // Delete user via admin API function
       const { data, error } = await supabase.functions.invoke('delete-user', {
         body: { user_id: userId }
       });
-      
-      console.log("Delete user response:", { data, error });
       
       if (error) throw error;
       if (!data?.success) throw new Error(data?.message || 'Unbekannter Fehler beim Löschen des Benutzers');
@@ -354,7 +319,6 @@ const UserManagement = () => {
             </CardDescription>
           </div>
           <Dialog open={showCreateDialog} onOpenChange={(open) => {
-            console.log("Dialog open state changed:", open);
             setShowCreateDialog(open);
             if (!open) {
               setEditingUser(null);
@@ -363,7 +327,6 @@ const UserManagement = () => {
           }}>
             <DialogTrigger asChild>
               <Button onClick={() => {
-                console.log("Creating new user dialog opened");
                 resetForm();
               }}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -386,10 +349,7 @@ const UserManagement = () => {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => {
-                      console.log("Email changed:", e.target.value);
-                      setFormData({ ...formData, email: e.target.value });
-                    }}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="benutzer@example.com"
                     disabled={!!editingUser}
                     required
@@ -402,10 +362,7 @@ const UserManagement = () => {
                     <Input
                       id="first_name"
                       value={formData.first_name}
-                      onChange={(e) => {
-                        console.log("First name changed:", e.target.value);
-                        setFormData({ ...formData, first_name: e.target.value });
-                      }}
+                      onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                       placeholder="Max"
                       required
                     />
@@ -415,10 +372,7 @@ const UserManagement = () => {
                     <Input
                       id="last_name"
                       value={formData.last_name}
-                      onChange={(e) => {
-                        console.log("Last name changed:", e.target.value);
-                        setFormData({ ...formData, last_name: e.target.value });
-                      }}
+                      onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                       placeholder="Mustermann"
                       required
                     />
@@ -440,7 +394,6 @@ const UserManagement = () => {
                           type="text"
                           value={companySearch}
                           onChange={(e) => {
-                            console.log("Company search changed:", e.target.value);
                             setCompanySearch(e.target.value);
                             setShowCompanyDropdown(true);
                           }}
@@ -495,10 +448,7 @@ const UserManagement = () => {
                         id="password"
                         type="text"
                         value={formData.password}
-                        onChange={(e) => {
-                          console.log("Password changed:", e.target.value ? "***SET***" : "***EMPTY***");
-                          setFormData({ ...formData, password: e.target.value });
-                        }}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         placeholder="Passwort eingeben"
                         required
                       />

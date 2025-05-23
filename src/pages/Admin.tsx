@@ -42,7 +42,7 @@ export default function Admin() {
   useEffect(() => {
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab);
-      setUserChangedTab(true); // Markieren, dass der Tab über Navigation geändert wurde
+      setUserChangedTab(true);
       // Clear the state to prevent unexpected redirects on refresh
       window.history.replaceState({}, document.title);
     }
@@ -73,23 +73,10 @@ export default function Admin() {
     }
   }, [loadingAuth, company]);
   
-  // Display appropriate UI based on auth state
-  useEffect(() => {
-    console.log("Admin: Auth Status:", { isAuthenticated, loadingAuth });
-    
-    if (!loadingAuth) {
-      if (!isAuthenticated) {
-        console.log("Admin: Nicht authentifiziert, leite zur Auth-Seite weiter");
-      } else {
-        console.log("Admin: Authentifiziert");
-      }
-    }
-  }, [isAuthenticated, loadingAuth]);
-  
   // Handle tab changes based on user selection
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    setUserChangedTab(true); // Benutzer hat manuell gewechselt
+    setUserChangedTab(true);
   };
   
   // Separate useEffect to handle tab changes based on company status
@@ -97,14 +84,10 @@ export default function Admin() {
     // Only run this effect after initial load is complete to prevent flash messages
     if (initialLoadComplete && !loadingAuth && isAuthenticated) {
       if (!company && activeTab === "properties" && !userChangedTab) {
-        // Nur weiterleiten, wenn kein Unternehmen existiert, wir auf der Immobilienseite sind,
-        // und der Benutzer nicht manuell gewechselt hat
         setActiveTab("settings");
         toast.info("Bitte erstellen Sie zuerst ein Unternehmen, um Immobilien zu verwalten");
       } else if (company && activeTab === "settings" && !userChangedTab && 
                 location.state?.activeTab !== "settings") {
-        // Nur weiterleiten, wenn wir ein Unternehmen haben, bei Einstellungen sind,
-        // der Benutzer nicht manuell gewechselt hat und nicht explizit zu Einstellungen navigiert wurde
         setActiveTab("properties");
       }
     }

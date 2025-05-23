@@ -12,13 +12,9 @@ export const useSessionLoader = (
   // Handle profile creation or loading
   const handleProfileData = async (userId: string) => {
     try {
-      console.log("Handling profile data for user:", userId);
-      
-      // Get user email from session (NOT from auth.users table!)
+      // Get user email from session
       const { data: sessionData } = await supabase.auth.getSession();
       const email = sessionData?.session?.user?.email || '';
-      
-      console.log("User email from session:", email);
       
       // First try to get existing profile
       const { data: profileData, error: profileError } = await supabase
@@ -27,11 +23,7 @@ export const useSessionLoader = (
         .eq('id', userId)
         .maybeSingle();
         
-      console.log("Profile query result:", { profileData, profileError });
-        
       if (profileData) {
-        console.log("Existing profile found:", profileData);
-        
         setUser({
           id: userId,
           email: email,
@@ -40,11 +32,8 @@ export const useSessionLoader = (
           company_id: profileData.company_id
         });
       } else {
-        console.log("No profile found, creating new one...");
-        
         // Get user metadata from session
         const metadata = sessionData?.session?.user?.user_metadata;
-        console.log("User metadata:", metadata);
         
         try {
           // Use UPSERT to create or update profile
@@ -61,10 +50,7 @@ export const useSessionLoader = (
             .select()
             .single();
             
-          console.log("Upsert result:", { newProfile, upsertError });
-            
           if (upsertError) {
-            console.error("Upsert error:", upsertError);
             // If upsert fails, still set basic user data
             setUser({
               id: userId,
@@ -74,7 +60,6 @@ export const useSessionLoader = (
               company_id: null
             });
           } else {
-            console.log("Profile successfully created/updated");
             setUser({
               id: userId,
               email: email,
@@ -84,7 +69,6 @@ export const useSessionLoader = (
             });
           }
         } catch (e) {
-          console.error("Error during profile upsert:", e);
           // Fallback: set basic user data even if profile creation fails
           setUser({
             id: userId,
@@ -96,7 +80,6 @@ export const useSessionLoader = (
         }
       }
     } catch (error) {
-      console.error("Error handling profile data:", error);
       // Even on error, try to set basic user data
       try {
         const { data: sessionData } = await supabase.auth.getSession();
@@ -126,35 +109,29 @@ export const useSessionLoader = (
       
       try {
         setLoadingAuth(true);
-        console.log("Checking session...");
         
         // Get initial session
         const { data: sessionData } = await supabase.auth.getSession();
         const session = sessionData?.session;
         
         if (session && mounted) {
-          console.log("Session found:", session.user.id);
           setIsAuthenticated(true);
           
           // Load user data from profile
           await handleProfileData(session.user.id);
         } else {
-          console.log("No session found");
           if (mounted) {
             setIsAuthenticated(false);
             setUser(null);
           }
         }
         
-        console.log("Session check complete, setting loadingAuth to false");
         if (mounted) setLoadingAuth(false);
         
         // Set up auth state listener AFTER initial check
         if (mounted) {
           const { data } = supabase.auth.onAuthStateChange(
             (event, session) => {
-              console.log("Auth state changed:", event, session?.user?.id);
-              
               if (session) {
                 setIsAuthenticated(true);
                 
