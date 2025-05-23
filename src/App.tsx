@@ -11,6 +11,7 @@ import PropertyDetail from "./pages/PropertyDetail";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import PropertyFormPage from "./pages/PropertyFormPage";
+import Payment from "./pages/Payment";
 import { AuthProvider } from "./hooks/useAuth";
 import { PropertiesProvider } from "./hooks/useProperties";
 import { AgentsProvider } from "./hooks/useAgents";

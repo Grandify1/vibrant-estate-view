@@ -83,23 +83,6 @@ serve(async (req) => {
       },
     });
 
-    // Record subscription attempt
-    const supabaseService = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    await supabaseService.from("subscriptions").insert({
-      user_id: user.id,
-      email: user.email,
-      plan_type: plan,
-      status: "pending",
-      amount: selectedPlan.amount,
-      currency: "eur",
-      coupon_code: coupon_code || null,
-    });
-
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
