@@ -17,27 +17,53 @@ export const useSessionLoader = (
       const email = sessionData?.session?.user?.email || '';
       const metadata = sessionData?.session?.user?.user_metadata || {};
       
-      // Versuchen, das vorhandene Profil mit direkter ID-Abfrage abzurufen
+      console.log('Attempting to fetch profile for user:', userId);
+      
+      // Try to get existing profile first
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
         
       if (profileError) {
-        console.log("Fehler beim Abrufen des Profils, versuche es zu erstellen:", profileError.message);
+        console.log("Profile fetch error:", profileError.message);
+        // If it's a permission error, we'll handle it gracefully
+        if (profileError.code === '42501') {
+          console.log("Permission denied for profiles table, setting basic user data");
+          // Set basic user data without profile
+          setUser({
+            id: userId,
+            email: email,
+            first_name: metadata?.first_name || null,
+            last_name: metadata?.last_name || null,
+            company_id: null
+          });
+          return;
+        }
+        throw profileError;
+      }
         
-        // Wenn das Profil nicht gefunden wurde oder ein Berechtigungsfehler auftrat,
-        // eine sichere Upsert-Operation durchführen
-        try {
-          // Werte aus Metadaten vorbereiten
-          const firstName = metadata?.first_name || null;
-          const lastName = metadata?.last_name || null;
-          
-          // Spezielle Behandlung für Admin-User - automatische Unternehmenszuordnung
-          let companyId = null;
-          if (email === 'dustin.althaus@me.com') {
-            // Versuche das erste verfügbare Unternehmen zu finden
+      if (profileData) {
+        console.log("Profile found:", profileData);
+        // Profile exists, use it
+        setUser({
+          id: userId,
+          email: email,
+          first_name: profileData.first_name,
+          last_name: profileData.last_name,
+          company_id: profileData.company_id
+        });
+      } else {
+        console.log("No profile found, creating new one");
+        // No profile exists, try to create one
+        const firstName = metadata?.first_name || null;
+        const lastName = metadata?.last_name || null;
+        
+        // For admin, try to assign to first company
+        let companyId = null;
+        if (email === 'dustin.althaus@me.com') {
+          try {
             const { data: companies } = await supabase
               .from('companies')
               .select('id')
@@ -45,14 +71,18 @@ export const useSessionLoader = (
             
             if (companies && companies.length > 0) {
               companyId = companies[0].id;
-              console.log("Admin user automatisch einem Unternehmen zugeordnet:", companyId);
+              console.log("Admin user assigned to company:", companyId);
             }
+          } catch (companyError) {
+            console.log("Could not fetch companies:", companyError);
           }
-          
-          // Verwende die "upsert" Methode
-          const { data: newProfile, error: upsertError } = await supabase
+        }
+        
+        // Try to create profile
+        try {
+          const { data: newProfile, error: createError } = await supabase
             .from('profiles')
-            .upsert({
+            .insert({
               id: userId,
               first_name: firstName,
               last_name: lastName,
@@ -61,9 +91,9 @@ export const useSessionLoader = (
             .select()
             .single();
             
-          if (upsertError) {
-            console.error("Fehler beim Erstellen/Aktualisieren des Profils:", upsertError);
-            // Fallback: Grundlegende Benutzerdaten setzen
+          if (createError) {
+            console.log("Could not create profile:", createError);
+            // Fallback to basic user data
             setUser({
               id: userId,
               email: email,
@@ -71,8 +101,8 @@ export const useSessionLoader = (
               last_name: lastName,
               company_id: companyId
             });
-          } else if (newProfile) {
-            // Profil wurde erfolgreich erstellt/aktualisiert
+          } else {
+            console.log("Profile created successfully:", newProfile);
             setUser({
               id: userId,
               email: email,
@@ -81,52 +111,21 @@ export const useSessionLoader = (
               company_id: newProfile.company_id
             });
           }
-        } catch (e) {
-          console.error("Unerwarteter Fehler beim Verarbeiten des Profils:", e);
-          // Fallback: Grundlegende Benutzerdaten setzen
+        } catch (createException) {
+          console.log("Exception creating profile, using fallback:", createException);
+          // Final fallback
           setUser({
             id: userId,
             email: email,
-            first_name: metadata?.first_name,
-            last_name: metadata?.last_name,
-            company_id: null
+            first_name: firstName,
+            last_name: lastName,
+            company_id: companyId
           });
         }
-      } else if (profileData) {
-        // Vorhandenes Profil gefunden
-        // Spezielle Behandlung für Admin ohne Unternehmen
-        if (email === 'dustin.althaus@me.com' && !profileData.company_id) {
-          // Versuche das erste verfügbare Unternehmen zu finden und zuzuordnen
-          const { data: companies } = await supabase
-            .from('companies')
-            .select('id')
-            .limit(1);
-          
-          if (companies && companies.length > 0) {
-            const companyId = companies[0].id;
-            console.log("Admin user Unternehmen zuordnen:", companyId);
-            
-            // Profile aktualisieren
-            await supabase
-              .from('profiles')
-              .update({ company_id: companyId })
-              .eq('id', userId);
-              
-            profileData.company_id = companyId;
-          }
-        }
-        
-        setUser({
-          id: userId,
-          email: email,
-          first_name: profileData.first_name,
-          last_name: profileData.last_name,
-          company_id: profileData.company_id
-        });
       }
     } catch (error) {
-      console.error("Fehler bei der Profilverarbeitung:", error);
-      // Fallback: Versuche grundlegende Benutzerdaten zu setzen
+      console.error("Critical error in profile handling:", error);
+      // Emergency fallback - just set basic auth data
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const email = sessionData?.session?.user?.email || '';
@@ -135,12 +134,19 @@ export const useSessionLoader = (
         setUser({
           id: userId,
           email: email,
-          first_name: metadata?.first_name,
-          last_name: metadata?.last_name,
+          first_name: metadata?.first_name || null,
+          last_name: metadata?.last_name || null,
           company_id: null
         });
-      } catch (fallbackError) {
-        console.error("Kritischer Fehler beim Abrufen der Benutzerdaten:", fallbackError);
+      } catch (emergencyError) {
+        console.error("Emergency fallback failed:", emergencyError);
+        setUser({
+          id: userId,
+          email: '',
+          first_name: null,
+          last_name: null,
+          company_id: null
+        });
       }
     }
   };
@@ -162,8 +168,6 @@ export const useSessionLoader = (
         
         if (session && mounted) {
           setIsAuthenticated(true);
-          
-          // Load user data from profile
           await handleProfileData(session.user.id);
         } else {
           if (mounted) {
@@ -174,19 +178,18 @@ export const useSessionLoader = (
         
         if (mounted) setLoadingAuth(false);
         
-        // Set up auth state listener AFTER initial check
+        // Set up auth state listener
         if (mounted) {
           const { data } = supabase.auth.onAuthStateChange(
-            (event, session) => {
+            async (event, session) => {
+              console.log('Auth state changed:', event, session?.user?.id);
               if (session) {
                 setIsAuthenticated(true);
-                
-                // Use setTimeout to prevent auth deadlock
                 setTimeout(async () => {
                   if (mounted) {
                     await handleProfileData(session.user.id);
                   }
-                }, 0);
+                }, 100);
               } else {
                 setIsAuthenticated(false);
                 setUser(null);

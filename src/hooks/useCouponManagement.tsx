@@ -55,20 +55,26 @@ export const useCouponManagement = () => {
   const createCoupon = async (couponData: CouponForm): Promise<boolean> => {
     setLoading(true);
     try {
+      // Prepare the data with proper null handling for dates
+      const insertData = {
+        code: couponData.code.toUpperCase(),
+        discount_type: couponData.discount_type,
+        discount_value: couponData.discount_value,
+        description: couponData.description || null,
+        usage_type: couponData.usage_type,
+        max_uses: couponData.max_uses || null,
+        // Convert empty strings to null for timestamp fields
+        valid_from: couponData.valid_from && couponData.valid_from.trim() !== '' ? couponData.valid_from : null,
+        valid_until: couponData.valid_until && couponData.valid_until.trim() !== '' ? couponData.valid_until : null,
+        active: couponData.active,
+        current_uses: 0
+      };
+
+      console.log('Creating coupon with data:', insertData);
+
       const { error } = await supabase
         .from('coupons')
-        .insert({
-          code: couponData.code.toUpperCase(), // Always store as uppercase for consistency
-          discount_type: couponData.discount_type,
-          discount_value: couponData.discount_value,
-          description: couponData.description,
-          usage_type: couponData.usage_type,
-          max_uses: couponData.max_uses,
-          valid_from: couponData.valid_from,
-          valid_until: couponData.valid_until,
-          active: couponData.active,
-          current_uses: 0
-        });
+        .insert(insertData);
 
       if (error) throw error;
       
@@ -91,11 +97,20 @@ export const useCouponManagement = () => {
   const updateCoupon = async (id: string, updates: Partial<CouponForm>): Promise<boolean> => {
     setLoading(true);
     try {
-      // If we're updating the code, ensure it's uppercase
+      // Prepare updates with proper null handling
       const finalUpdates = {
         ...updates,
-        code: updates.code ? updates.code.toUpperCase() : updates.code
+        code: updates.code ? updates.code.toUpperCase() : updates.code,
+        // Convert empty strings to null for timestamp fields
+        valid_from: updates.valid_from !== undefined 
+          ? (updates.valid_from && updates.valid_from.trim() !== '' ? updates.valid_from : null)
+          : undefined,
+        valid_until: updates.valid_until !== undefined 
+          ? (updates.valid_until && updates.valid_until.trim() !== '' ? updates.valid_until : null)
+          : undefined
       };
+      
+      console.log('Updating coupon with data:', finalUpdates);
       
       const { error } = await supabase
         .from('coupons')
