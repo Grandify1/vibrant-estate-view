@@ -17,18 +17,46 @@ export const useSessionLoader = (
         console.log("Auth state changed:", event, session?.user?.id);
         
         if (session?.user) {
-          // Create AuthUser object from session user data
-          const authUser: AuthUser = {
-            id: session.user.id,
-            email: session.user.email || '',
-            first_name: session.user.user_metadata?.first_name || null,
-            last_name: session.user.user_metadata?.last_name || null,
-            company_id: null // Will be loaded separately by useCompany
-          };
-          
-          console.log("Setting authenticated user:", authUser);
-          setUser(authUser);
-          setIsAuthenticated(true);
+          try {
+            // Fetch user profile to get company_id
+            const { data: profile, error: profileError } = await supabase
+              .rpc('safe_update_user_profile', {
+                user_id_param: session.user.id,
+                first_name_param: session.user.user_metadata?.first_name || '',
+                last_name_param: session.user.user_metadata?.last_name || '',
+                company_id_param: null // Don't update company_id, just get current data
+              });
+              
+            if (profileError) {
+              console.error("Error fetching profile:", profileError);
+            }
+            
+            // Create AuthUser object from session user data
+            const authUser: AuthUser = {
+              id: session.user.id,
+              email: session.user.email || '',
+              first_name: session.user.user_metadata?.first_name || null,
+              last_name: session.user.user_metadata?.last_name || null,
+              company_id: profile ? (profile as any).company_id : null
+            };
+            
+            console.log("Setting authenticated user:", authUser);
+            setUser(authUser);
+            setIsAuthenticated(true);
+          } catch (error) {
+            console.error("Error in auth state change:", error);
+            // Still set user but without company_id
+            const authUser: AuthUser = {
+              id: session.user.id,
+              email: session.user.email || '',
+              first_name: session.user.user_metadata?.first_name || null,
+              last_name: session.user.user_metadata?.last_name || null,
+              company_id: null
+            };
+            
+            setUser(authUser);
+            setIsAuthenticated(true);
+          }
         } else {
           console.log("No session, setting user to null");
           setUser(null);
@@ -51,18 +79,47 @@ export const useSessionLoader = (
         }
         
         if (session?.user) {
-          // Create AuthUser object from session user data
-          const authUser: AuthUser = {
-            id: session.user.id,
-            email: session.user.email || '',
-            first_name: session.user.user_metadata?.first_name || null,
-            last_name: session.user.user_metadata?.last_name || null,
-            company_id: null // Will be loaded separately by useCompany
-          };
-          
-          console.log("Found existing session:", authUser);
-          setUser(authUser);
-          setIsAuthenticated(true);
+          try {
+            // Fetch user profile to get company_id
+            const { data: profile, error: profileError } = await supabase
+              .rpc('safe_update_user_profile', {
+                user_id_param: session.user.id,
+                first_name_param: session.user.user_metadata?.first_name || '',
+                last_name_param: session.user.user_metadata?.last_name || '',
+                company_id_param: null // Don't update company_id, just get current data
+              });
+              
+            if (profileError) {
+              console.error("Error fetching profile:", profileError);
+            }
+            
+            // Create AuthUser object from session user data
+            const authUser: AuthUser = {
+              id: session.user.id,
+              email: session.user.email || '',
+              first_name: session.user.user_metadata?.first_name || null,
+              last_name: session.user.user_metadata?.last_name || null,
+              company_id: profile ? (profile as any).company_id : null
+            };
+            
+            console.log("Found existing session with profile:", authUser);
+            setUser(authUser);
+            setIsAuthenticated(true);
+          } catch (error) {
+            console.error("Error fetching profile data:", error);
+            // Still set user but without company_id
+            const authUser: AuthUser = {
+              id: session.user.id,
+              email: session.user.email || '',
+              first_name: session.user.user_metadata?.first_name || null,
+              last_name: session.user.user_metadata?.last_name || null,
+              company_id: null
+            };
+            
+            console.log("Found existing session without profile:", authUser);
+            setUser(authUser);
+            setIsAuthenticated(true);
+          }
         } else {
           console.log("No existing session found");
           setUser(null);
