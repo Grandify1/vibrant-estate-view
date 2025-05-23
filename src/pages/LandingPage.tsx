@@ -25,7 +25,6 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [pricingPeriod, setPricingPeriod] = useState('monthly');
 
   const content = {
     de: {
@@ -84,9 +83,6 @@ const LandingPage = () => {
       pricing: {
         title: "Transparente Preise",
         subtitle: "Wählen Sie das Paket, das zu Ihnen passt",
-        monthly: "Monatlich",
-        yearly: "Jährlich",
-        yearlyDiscount: "2 Monate gratis",
         plans: [
           {
             name: "Starter",
@@ -213,9 +209,6 @@ const LandingPage = () => {
       pricing: {
         title: "Transparent pricing",
         subtitle: "Choose the package that fits you",
-        monthly: "Monthly",
-        yearly: "Yearly",
-        yearlyDiscount: "2 months free",
         plans: [
           {
             name: "Starter",
@@ -454,32 +447,6 @@ const LandingPage = () => {
             <p className="text-xl text-gray-600 mb-8">
               {currentContent.pricing.subtitle}
             </p>
-            
-            <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg mb-8">
-              <button
-                onClick={() => setPricingPeriod('monthly')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  pricingPeriod === 'monthly'
-                    ? 'bg-white shadow-sm text-estate-dark'
-                    : 'text-gray-600 hover:text-estate'
-                }`}
-              >
-                {currentContent.pricing.monthly}
-              </button>
-              <button
-                onClick={() => setPricingPeriod('yearly')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  pricingPeriod === 'yearly'
-                    ? 'bg-white shadow-sm text-estate-dark'
-                    : 'text-gray-600 hover:text-estate'
-                }`}
-              >
-                {currentContent.pricing.yearly}
-                <span className="ml-2 text-xs bg-estate-accent/20 text-estate-accent px-2 py-0.5 rounded">
-                  {currentContent.pricing.yearlyDiscount}
-                </span>
-              </button>
-            </div>
           </div>
           
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -644,4 +611,3 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
-
