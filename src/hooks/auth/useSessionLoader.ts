@@ -1,14 +1,15 @@
 
+
 import { useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "./types";
 
 // Helper function to get company ID with hardcoded fallback
 const getCompanyId = async (userId: string, email: string | undefined) => {
-  // Hardcoded fix for dustin.althaus@me.com
+  // Hardcoded fix for dustin.althaus@me.com - UPDATED WITH COMPLETE UUID
   if (email === 'dustin.althaus@me.com') {
     console.log("Using hardcoded company ID for admin user");
-    return '76e733b3-8ab9-4276-9d42-632d';
+    return '76e733b3-8ab9-4276-9d42-632d06b87e58';
   }
   
   try {
