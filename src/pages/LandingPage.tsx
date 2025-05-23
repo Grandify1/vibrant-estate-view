@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -310,6 +309,7 @@ const LandingPage = () => {
     }
   };
 
+  // Fix the flag assignment - show current language flag, switch to other language
   const languageFlag = language === 'de' ? '🇩🇪' : '🇺🇸';
   const switchToFlag = language === 'de' ? '🇺🇸' : '🇩🇪';
 
