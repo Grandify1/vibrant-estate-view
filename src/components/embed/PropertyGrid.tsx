@@ -29,26 +29,26 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error 
   
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[200px] py-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="flex justify-center items-center py-2">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
   
   if (error) {
     return (
-      <div className="text-center py-4 px-4">
+      <div className="text-center py-2 px-4">
         <div className="text-red-500 font-medium">Fehler beim Laden der Daten</div>
-        <p className="text-gray-600 mt-2">{error}</p>
+        <p className="text-gray-600 mt-1">{error}</p>
       </div>
     );
   }
   
   if (properties.length === 0) {
     return (
-      <div className="text-center py-4 px-4">
+      <div className="text-center py-2 px-4">
         <h3 className="text-lg font-medium text-gray-700">Keine Immobilien gefunden</h3>
-        <p className="text-gray-500 mt-2">
+        <p className="text-gray-500 mt-1">
           Derzeit sind keine aktiven Immobilienangebote verfügbar.
         </p>
       </div>

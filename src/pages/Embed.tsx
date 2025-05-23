@@ -37,9 +37,9 @@ export default function Embed() {
   // Optimized height calculation and communication with parent
   useEffect(() => {
     const sendHeightToParent = () => {
-      // Minimaler Abstand - nur 10px total (5px oben + 5px unten)
+      // Absolut minimaler Abstand - nur 2px total
       const contentHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-      const paddedHeight = contentHeight + 10;
+      const paddedHeight = contentHeight + 2;
       
       window.parent.postMessage({ 
         type: 'resize-iframe', 
@@ -161,9 +161,9 @@ export default function Embed() {
     fetchProperties();
   }, [companyId]);
 
-  // Sehr minimaler Abstand - nur 5px oben und unten
+  // Absolut kein Padding - das Widget soll exakt so hoch sein wie der Inhalt
   return (
-    <div className="w-full bg-white py-1">
+    <div className="w-full bg-white">
       <PropertyGrid properties={properties} loading={loading} error={error} />
     </div>
   );
