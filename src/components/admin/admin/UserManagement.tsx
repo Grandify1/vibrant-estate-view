@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,10 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Edit, Copy, Key, Loader2, Trash2, Search, X } from 'lucide-react';
+import { Edit, Copy, Key, Loader2, Search, Plus, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 interface UserWithAuth {
   id: string;
@@ -27,71 +28,44 @@ interface Company {
 }
 
 interface UserForm {
-  email: string;
   first_name: string;
   last_name: string;
   company_id: string;
-  password: string;
 }
 
 interface UserManagementProps {
-  selectedCompany?: { id: string, name: string } | null;
+  selectedCompany?: {id: string, name: string} | null;
 }
 
-const UserManagement: React.FC<UserManagementProps> = ({ selectedCompany }) => {
+const UserManagement = ({ selectedCompany }: UserManagementProps) => {
+  const { company } = useAuth();
   const [users, setUsers] = useState<UserWithAuth[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<UserWithAuth[]>([]);
+  const [allUsers, setAllUsers] = useState<UserWithAuth[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
   const [companiesLoading, setCompaniesLoading] = useState(false);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithAuth | null>(null);
   const [companySearch, setCompanySearch] = useState('');
-  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
+  const [userSearch, setUserSearch] = useState('');
+  const [filteredUsers, setFilteredUsers] = useState<UserWithAuth[]>([]);
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [formData, setFormData] = useState<UserForm>({
-    email: '',
     first_name: '',
     last_name: '',
-    company_id: '',
-    password: ''
+    company_id: ''
   });
 
   const DEFAULT_PASSWORD = 'PasswortZurücksetzen123#';
-
-  // Set initial company filter if a company was selected
-  useEffect(() => {
-    if (selectedCompany) {
-      console.log("Selected company from navigation:", selectedCompany);
-      setCompanyFilter(selectedCompany.id);
-      setCompanySearch(selectedCompany.name);
-      
-      // If we're creating a new user, pre-select this company
-      if (!editingUser && !formData.company_id) {
-        setFormData(prev => ({
-          ...prev,
-          company_id: selectedCompany.id
-        }));
-      }
-    }
-  }, [selectedCompany]);
 
   useEffect(() => {
     console.log("UserManagement: Component mounted, loading data...");
     loadUsers();
     loadCompanies();
-  }, []);
-
-  // Filter users when they change or when company filter changes
-  useEffect(() => {
-    if (companyFilter) {
-      const filtered = users.filter(user => user.company_id === companyFilter);
-      setFilteredUsers(filtered);
-    } else {
-      setFilteredUsers(users);
-    }
-  }, [users, companyFilter]);
+  }, [selectedCompany]);
 
   useEffect(() => {
     // Filter companies based on search
@@ -105,26 +79,43 @@ const UserManagement: React.FC<UserManagementProps> = ({ selectedCompany }) => {
     }
   }, [companySearch, companies]);
 
+  useEffect(() => {
+    // Filter users based on search (for assignment dialog)
+    if (userSearch.trim() === '') {
+      setFilteredUsers([]);
+    } else {
+      const filtered = allUsers.filter(user =>
+        (user.email.toLowerCase().includes(userSearch.toLowerCase()) ||
+         `${user.first_name} ${user.last_name}`.toLowerCase().includes(userSearch.toLowerCase())) &&
+        !user.company_id // Only show users without a company
+      );
+      setFilteredUsers(filtered);
+    }
+  }, [userSearch, allUsers]);
+
   const loadUsers = async () => {
     setLoading(true);
     try {
       console.log("Loading all users from auth...");
       
-      // Use the updated function
-      const { data: users, error } = await supabase.rpc('get_all_users_with_profiles');
-
-      console.log("Users response:", { users, error });
-
-      if (error) throw error;
-
-      console.log("Final users:", users);
-      setUsers(users || []);
+      // Get all users via RPC function
+      const { data: allUsersData, error: usersError } = await supabase.rpc('get_all_users_with_profiles');
       
-      // Initial filtering if a company filter is active
-      if (companyFilter) {
-        setFilteredUsers((users || []).filter(user => user.company_id === companyFilter));
+      if (usersError) {
+        console.error("Error fetching users:", usersError);
+        throw usersError;
+      }
+
+      console.log("Final users:", allUsersData);
+      setAllUsers(allUsersData || []);
+      
+      // If a specific company is selected, filter users
+      if (selectedCompany) {
+        const companyUsers = (allUsersData || []).filter(user => user.company_id === selectedCompany.id);
+        console.log(`Filtered users for company ${selectedCompany.name}:`, companyUsers);
+        setUsers(companyUsers);
       } else {
-        setFilteredUsers(users || []);
+        setUsers(allUsersData || []);
       }
     } catch (error) {
       console.error('Error loading users:', error);
@@ -173,32 +164,22 @@ const UserManagement: React.FC<UserManagementProps> = ({ selectedCompany }) => {
   const resetForm = () => {
     console.log("Resetting form to default values");
     setFormData({
-      email: '',
       first_name: '',
       last_name: '',
-      company_id: selectedCompany?.id || '',
-      password: DEFAULT_PASSWORD
+      company_id: ''
     });
-    
-    // If a company is selected, pre-set the search field
-    if (selectedCompany) {
-      setCompanySearch(selectedCompany.name);
-    } else {
-      setCompanySearch('');
-    }
+    setCompanySearch('');
+    setUserSearch('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!editingUser) return;
+    
     console.log("Form submission started with data:", formData);
     
     // Validate all required fields
-    if (!formData.email.trim()) {
-      toast.error('E-Mail ist erforderlich');
-      return;
-    }
-    
     if (!formData.first_name.trim()) {
       toast.error('Vorname ist erforderlich');
       return;
@@ -209,94 +190,68 @@ const UserManagement: React.FC<UserManagementProps> = ({ selectedCompany }) => {
       return;
     }
 
-    // Ensure password is not empty for new users
-    if (!editingUser && !formData.password.trim()) {
-      console.error("Password is empty for new user creation");
-      toast.error('Passwort ist erforderlich');
-      return;
-    }
-
     setLoading(true);
     try {
-      if (editingUser) {
-        console.log("Updating existing user:", editingUser.id);
-        
-        // Update existing user profile
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({
-            id: editingUser.id,
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            company_id: formData.company_id || null
-          }, {
-            onConflict: 'id'
-          });
-
-        if (error) throw error;
-        toast.success('Benutzer erfolgreich aktualisiert');
-      } else {
-        console.log("Creating new user with payload:", {
-          email: formData.email,
-          password: formData.password ? "***PRESENT***" : "***EMPTY***",
+      console.log("Updating existing user:", editingUser.id);
+      
+      // Update existing user profile
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: editingUser.id,
           first_name: formData.first_name,
           last_name: formData.last_name,
           company_id: formData.company_id || null
-        });
-        
-        // Create new user via admin API function with proper payload
-        const payload = {
-          email: formData.email,
-          password: formData.password,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          company_id: formData.company_id || null
-        };
-        
-        console.log("Invoking create-user function with payload:", payload);
-        
-        const { data, error } = await supabase.functions.invoke('create-user', {
-          body: payload
+        }, {
+          onConflict: 'id'
         });
 
-        console.log("Create-user response:", { data, error });
-
-        if (error) {
-          console.error("Edge function error:", error);
-          throw error;
-        }
-        
-        if (!data?.success) {
-          const errorMessage = data?.message || 'Unbekannter Fehler beim Erstellen des Benutzers';
-          console.error("Edge function returned error:", errorMessage);
-          throw new Error(errorMessage);
-        }
-        
-        console.log("User created successfully:", data);
-        toast.success('Benutzer erfolgreich erstellt');
-      }
+      if (error) throw error;
+      toast.success('Benutzer erfolgreich aktualisiert');
 
       await loadUsers();
-      setShowCreateDialog(false);
+      setShowEditDialog(false);
       setEditingUser(null);
       resetForm();
     } catch (error: any) {
       console.error('Error saving user:', error);
-      console.error('Error details:', {
-        message: error.message,
-        context: error.context,
-        stack: error.stack
-      });
-      
       toast.error('Fehler beim Speichern des Benutzers: ' + (error.message || 'Unbekannter Fehler'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClearCompanyFilter = () => {
-    setCompanyFilter(null);
-    setFilteredUsers(users);
+  const handleAssignUserToCompany = async (userId: string) => {
+    if (!selectedCompany) {
+      toast.error('Kein Unternehmen ausgewählt');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      console.log("Assigning user to company:", userId, selectedCompany.id);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          company_id: selectedCompany.id
+        }, {
+          onConflict: 'id'
+        });
+
+      if (error) throw error;
+      toast.success(`Benutzer erfolgreich zu ${selectedCompany.name} hinzugefügt`);
+
+      await loadUsers();
+      setShowAssignDialog(false);
+      setUserSearch('');
+    } catch (error: any) {
+      console.error('Error assigning user to company:', error);
+      toast.error('Fehler beim Zuweisen des Benutzers: ' + (error.message || 'Unbekannter Fehler'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = (user: UserWithAuth) => {
@@ -304,14 +259,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ selectedCompany }) => {
     
     setEditingUser(user);
     setFormData({
-      email: user.email,
       first_name: user.first_name || '',
       last_name: user.last_name || '',
-      company_id: user.company_id || '',
-      password: DEFAULT_PASSWORD
+      company_id: user.company_id || ''
     });
     setCompanySearch(user.company_name || '');
-    setShowCreateDialog(true);
+    setShowEditDialog(true);
   };
 
   const handleCompanySelect = (company: Company) => {
@@ -360,34 +313,23 @@ const UserManagement: React.FC<UserManagementProps> = ({ selectedCompany }) => {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    try {
-      setLoading(true);
-      console.log("Deleting user:", userId);
-      
-      // Delete user via admin API function
-      const { data, error } = await supabase.functions.invoke('delete-user', {
-        body: { user_id: userId }
-      });
-      
-      console.log("Delete user response:", { data, error });
-      
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.message || 'Unbekannter Fehler beim Löschen des Benutzers');
-      
-      toast.success('Benutzer erfolgreich gelöscht');
-      await loadUsers();
-    } catch (error: any) {
-      console.error('Error deleting user:', error);
-      toast.error('Fehler beim Löschen des Benutzers: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('In Zwischenablage kopiert');
+  };
+
+  const getDisplayTitle = () => {
+    if (selectedCompany) {
+      return `Benutzer von ${selectedCompany.name}`;
+    }
+    return 'Alle Benutzer';
+  };
+
+  const getDisplayDescription = () => {
+    if (selectedCompany) {
+      return `Verwalten Sie Benutzer des Unternehmens ${selectedCompany.name}`;
+    }
+    return 'Verwalten Sie alle Benutzer im System';
   };
 
   return (
@@ -395,71 +337,105 @@ const UserManagement: React.FC<UserManagementProps> = ({ selectedCompany }) => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>
-              {companyFilter && selectedCompany
-                ? `Benutzer für ${selectedCompany.name}`
-                : 'Benutzer verwalten'}
-            </CardTitle>
-            <CardDescription>
-              {companyFilter
-                ? `Benutzer des ausgewählten Unternehmens verwalten`
-                : 'Alle Benutzer aus der Authentifizierung verwalten und Unternehmen zuordnen'}
-            </CardDescription>
+            <CardTitle>{getDisplayTitle()}</CardTitle>
+            <CardDescription>{getDisplayDescription()}</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            {companyFilter && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleClearCompanyFilter}
-              >
-                <X className="h-4 w-4 mr-1" />
-                Filter entfernen
-              </Button>
+          <div className="flex gap-2">
+            {selectedCompany && (
+              <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Benutzer hinzufügen
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Benutzer zu {selectedCompany.name} hinzufügen</DialogTitle>
+                    <DialogDescription>
+                      Wählen Sie einen bestehenden Benutzer aus, um ihn diesem Unternehmen zuzuweisen
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="user_search">Benutzer suchen</Label>
+                      <div className="relative">
+                        <div className="relative">
+                          <Input
+                            id="user_search"
+                            type="text"
+                            value={userSearch}
+                            onChange={(e) => {
+                              setUserSearch(e.target.value);
+                              setShowUserDropdown(true);
+                            }}
+                            onFocus={() => setShowUserDropdown(true)}
+                            placeholder="E-Mail oder Name eingeben..."
+                            className="pr-10"
+                          />
+                          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        </div>
+                        
+                        {showUserDropdown && userSearch.trim() !== '' && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {filteredUsers.length === 0 ? (
+                              <div className="px-3 py-2 text-gray-500">
+                                Keine verfügbaren Benutzer gefunden
+                              </div>
+                            ) : (
+                              filteredUsers.map((user) => (
+                                <button
+                                  key={user.id}
+                                  type="button"
+                                  onClick={() => {
+                                    handleAssignUserToCompany(user.id);
+                                    setShowUserDropdown(false);
+                                  }}
+                                  className="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                                >
+                                  <div className="font-semibold">{user.email}</div>
+                                  <div className="text-sm text-gray-500">
+                                    {user.first_name && user.last_name ? 
+                                      `${user.first_name} ${user.last_name}` : 
+                                      'Name nicht gesetzt'
+                                    }
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Nur Benutzer ohne Unternehmens-Zuordnung werden angezeigt
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowAssignDialog(false)}>
+                      Abbrechen
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             )}
-            <Dialog open={showCreateDialog} onOpenChange={(open) => {
+            
+            <Dialog open={showEditDialog} onOpenChange={(open) => {
               console.log("Dialog open state changed:", open);
-              setShowCreateDialog(open);
+              setShowEditDialog(open);
               if (!open) {
                 setEditingUser(null);
                 resetForm();
               }
             }}>
-              <DialogTrigger asChild>
-                <Button onClick={() => {
-                  console.log("Creating new user dialog opened");
-                  resetForm();
-                }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Neuer Benutzer
-                </Button>
-              </DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>
-                    {editingUser ? 'Benutzer bearbeiten' : 'Neuen Benutzer erstellen'}
-                  </DialogTitle>
+                  <DialogTitle>Benutzer bearbeiten</DialogTitle>
                   <DialogDescription>
-                    Geben Sie die Benutzerdaten ein
+                    Benutzerdaten bearbeiten
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-Mail *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => {
-                        console.log("Email changed:", e.target.value);
-                        setFormData({ ...formData, email: e.target.value });
-                      }}
-                      placeholder="benutzer@example.com"
-                      disabled={!!editingUser}
-                      required
-                    />
-                  </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="first_name">Vorname *</Label>
@@ -551,38 +527,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ selectedCompany }) => {
                     </div>
                   </div>
 
-                  {!editingUser && (
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Standard-Passwort *</Label>
-                      <div className="flex space-x-2">
-                        <Input
-                          id="password"
-                          type="text"
-                          value={formData.password}
-                          onChange={(e) => {
-                            console.log("Password changed:", e.target.value ? "***SET***" : "***EMPTY***");
-                            setFormData({ ...formData, password: e.target.value });
-                          }}
-                          placeholder="Passwort eingeben"
-                          required
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => copyToClipboard(formData.password)}
-                          disabled={!formData.password}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
                   <DialogFooter>
                     <Button type="submit" disabled={loading}>
                       {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      {editingUser ? 'Aktualisieren' : 'Erstellen'}
+                      Aktualisieren
                     </Button>
                   </DialogFooter>
                 </form>
@@ -596,11 +544,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ selectedCompany }) => {
           <div className="flex justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
-        ) : filteredUsers.length === 0 ? (
+        ) : users.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            {companyFilter 
-              ? 'Keine Benutzer für dieses Unternehmen vorhanden.' 
-              : 'Keine Benutzer vorhanden.'}
+            {selectedCompany ? 
+              `Keine Benutzer in ${selectedCompany.name} vorhanden.` : 
+              'Keine Benutzer vorhanden.'
+            }
           </div>
         ) : (
           <Table>
@@ -614,7 +563,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ selectedCompany }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
+              {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div>
@@ -670,34 +619,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ selectedCompany }) => {
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="bg-red-50 hover:bg-red-100 border-red-200"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Benutzer löschen</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Sind Sie sicher, dass Sie diesen Benutzer löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="bg-red-500 hover:bg-red-600"
-                            >
-                              Löschen
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>

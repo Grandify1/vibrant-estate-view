@@ -19,51 +19,7 @@ export const useSessionLoader = (
       
       console.log('Attempting to fetch profile for user:', userId);
       
-      // For admin user, try to assign to first company without checking profile
-      if (email === 'dustin.althaus@me.com') {
-        console.log("Admin user detected, fetching company directly");
-        try {
-          const { data: companies, error: companiesError } = await supabase
-            .from('companies')
-            .select('id, name')
-            .order('created_at', { ascending: false })
-            .limit(1);
-          
-          if (!companiesError && companies && companies.length > 0) {
-            console.log("Admin assigned to company:", companies[0].id, companies[0].name);
-            
-            // Try to update the profile with the company ID
-            const { error: updateError } = await supabase
-              .from('profiles')
-              .upsert({
-                id: userId,
-                first_name: metadata?.first_name || "Admin",
-                last_name: metadata?.last_name || "User",
-                company_id: companies[0].id
-              });
-              
-            if (updateError) {
-              console.log("Could not update profile:", updateError);
-            }
-            
-            // Set user data with company ID
-            setUser({
-              id: userId,
-              email: email,
-              first_name: metadata?.first_name || "Admin",
-              last_name: metadata?.last_name || "User",
-              company_id: companies[0].id
-            });
-            return;
-          } else {
-            console.log("No companies found or error:", companiesError);
-          }
-        } catch (companyError) {
-          console.log("Admin company fetch error:", companyError);
-        }
-      }
-      
-      // Try to get existing profile (for non-admin or as fallback)
+      // Try to get existing profile first (this will work for all users including admin)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -72,19 +28,6 @@ export const useSessionLoader = (
         
       if (profileError) {
         console.log("Profile fetch error:", profileError.message);
-        // If it's a permission error, we'll handle it gracefully
-        if (profileError.code === '42501') {
-          console.log("Permission denied for profiles table, setting basic user data");
-          // Set basic user data without profile
-          setUser({
-            id: userId,
-            email: email,
-            first_name: metadata?.first_name || null,
-            last_name: metadata?.last_name || null,
-            company_id: null
-          });
-          return;
-        }
         throw profileError;
       }
         
@@ -98,66 +41,62 @@ export const useSessionLoader = (
           last_name: profileData.last_name,
           company_id: profileData.company_id
         });
-      } else {
-        console.log("No profile found, creating new one");
-        // No profile exists, try to create one
-        const firstName = metadata?.first_name || null;
-        const lastName = metadata?.last_name || null;
-        
-        // For admin, try to assign to first company
-        let companyId = null;
-        if (email === 'dustin.althaus@me.com') {
-          try {
-            const { data: companies } = await supabase
+        return;
+      }
+
+      // No profile exists, create one
+      console.log("No profile found, creating new one");
+      const firstName = metadata?.first_name || null;
+      const lastName = metadata?.last_name || null;
+      
+      // For admin, try to assign to first company (Grandify)
+      let companyId = null;
+      if (email === 'dustin.althaus@me.com') {
+        console.log("Admin user detected, fetching Grandify company");
+        try {
+          const { data: companies, error: companiesError } = await supabase
+            .from('companies')
+            .select('id, name')
+            .eq('name', 'Grandify')
+            .maybeSingle();
+          
+          if (!companiesError && companies) {
+            companyId = companies.id;
+            console.log("Admin user assigned to Grandify company:", companyId);
+          } else {
+            // Fallback: get first company
+            const { data: fallbackCompanies } = await supabase
               .from('companies')
-              .select('id')
+              .select('id, name')
+              .order('created_at', { ascending: false })
               .limit(1);
             
-            if (companies && companies.length > 0) {
-              companyId = companies[0].id;
-              console.log("Admin user assigned to company:", companyId);
+            if (fallbackCompanies && fallbackCompanies.length > 0) {
+              companyId = fallbackCompanies[0].id;
+              console.log("Admin user assigned to first company:", companyId, fallbackCompanies[0].name);
             }
-          } catch (companyError) {
-            console.log("Could not fetch companies:", companyError);
           }
+        } catch (companyError) {
+          console.log("Could not fetch companies:", companyError);
         }
-        
-        // Try to create profile
-        try {
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              id: userId,
-              first_name: firstName,
-              last_name: lastName,
-              company_id: companyId
-            })
-            .select()
-            .single();
-            
-          if (createError) {
-            console.log("Could not create profile:", createError);
-            // Fallback to basic user data
-            setUser({
-              id: userId,
-              email: email,
-              first_name: firstName,
-              last_name: lastName,
-              company_id: companyId
-            });
-          } else {
-            console.log("Profile created successfully:", newProfile);
-            setUser({
-              id: userId,
-              email: email,
-              first_name: newProfile.first_name,
-              last_name: newProfile.last_name,
-              company_id: newProfile.company_id
-            });
-          }
-        } catch (createException) {
-          console.log("Exception creating profile, using fallback:", createException);
-          // Final fallback
+      }
+      
+      // Try to create profile
+      try {
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            first_name: firstName,
+            last_name: lastName,
+            company_id: companyId
+          })
+          .select()
+          .single();
+          
+        if (createError) {
+          console.log("Could not create profile:", createError);
+          // Fallback to basic user data
           setUser({
             id: userId,
             email: email,
@@ -165,7 +104,26 @@ export const useSessionLoader = (
             last_name: lastName,
             company_id: companyId
           });
+        } else {
+          console.log("Profile created successfully:", newProfile);
+          setUser({
+            id: userId,
+            email: email,
+            first_name: newProfile.first_name,
+            last_name: newProfile.last_name,
+            company_id: newProfile.company_id
+          });
         }
+      } catch (createException) {
+        console.log("Exception creating profile, using fallback:", createException);
+        // Final fallback
+        setUser({
+          id: userId,
+          email: email,
+          first_name: firstName,
+          last_name: lastName,
+          company_id: companyId
+        });
       }
     } catch (error) {
       console.error("Critical error in profile handling:", error);
