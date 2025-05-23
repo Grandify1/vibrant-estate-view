@@ -71,6 +71,8 @@ const UserManagement = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
+      console.log("Loading users...");
+      
       // Get profiles with company information
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
@@ -86,6 +88,8 @@ const UserManagement = () => {
         `)
         .order('created_at', { ascending: false });
 
+      console.log("Profiles response:", { profiles, profilesError });
+
       if (profilesError) throw profilesError;
 
       // Since we can't access auth.users directly, we'll work with profiles only
@@ -99,6 +103,7 @@ const UserManagement = () => {
         created_at: profile.created_at
       }));
 
+      console.log("Merged users:", mergedUsers);
       setUsers(mergedUsers);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -110,10 +115,14 @@ const UserManagement = () => {
 
   const loadCompanies = async () => {
     try {
+      console.log("Loading companies...");
+      
       const { data, error } = await supabase
         .from('companies')
         .select('id, name')
         .order('name');
+
+      console.log("Companies response:", { data, error });
 
       if (error) throw error;
       setCompanies(data || []);
@@ -136,14 +145,35 @@ const UserManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email.trim() || !formData.first_name.trim() || !formData.last_name.trim()) {
-      toast.error('E-Mail, Vor- und Nachname sind erforderlich');
+    console.log("Form submission started with data:", formData);
+    
+    // CRITICAL FIX: Validate all required fields
+    if (!formData.email.trim()) {
+      toast.error('E-Mail ist erforderlich');
+      return;
+    }
+    
+    if (!formData.first_name.trim()) {
+      toast.error('Vorname ist erforderlich');
+      return;
+    }
+    
+    if (!formData.last_name.trim()) {
+      toast.error('Nachname ist erforderlich');
+      return;
+    }
+
+    // CRITICAL FIX: Ensure password is not empty
+    if (!editingUser && !formData.password.trim()) {
+      toast.error('Passwort ist erforderlich');
       return;
     }
 
     setLoading(true);
     try {
       if (editingUser) {
+        console.log("Updating existing user:", editingUser.id);
+        
         // Update existing user profile
         const { error } = await supabase
           .from('profiles')
@@ -157,20 +187,43 @@ const UserManagement = () => {
         if (error) throw error;
         toast.success('Benutzer erfolgreich aktualisiert');
       } else {
-        // Create new user via admin API function
+        console.log("Creating new user with payload:", {
+          email: formData.email,
+          password: formData.password ? "***" : "EMPTY PASSWORD",
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          company_id: formData.company_id || null
+        });
+        
+        // CRITICAL FIX: Create new user via admin API function with proper payload
+        const payload = {
+          email: formData.email,
+          password: formData.password, // Ensure this is the actual password, not empty
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          company_id: formData.company_id || null
+        };
+        
+        console.log("Invoking create-user function with payload:", payload);
+        
         const { data, error } = await supabase.functions.invoke('create-user', {
-          body: {
-            email: formData.email,
-            password: formData.password,
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            company_id: formData.company_id || null
-          }
+          body: payload
         });
 
-        if (error) throw error;
-        if (!data?.success) throw new Error(data?.message || 'Unbekannter Fehler beim Erstellen des Benutzers');
+        console.log("Create-user response:", { data, error });
+
+        if (error) {
+          console.error("Edge function error:", error);
+          throw error;
+        }
         
+        if (!data?.success) {
+          const errorMessage = data?.message || 'Unbekannter Fehler beim Erstellen des Benutzers';
+          console.error("Edge function returned error:", errorMessage);
+          throw new Error(errorMessage);
+        }
+        
+        console.log("User created successfully:", data);
         toast.success('Benutzer erfolgreich erstellt');
       }
 
@@ -180,13 +233,24 @@ const UserManagement = () => {
       resetForm();
     } catch (error: any) {
       console.error('Error saving user:', error);
-      toast.error('Fehler beim Speichern des Benutzers: ' + error.message);
+      
+      // Enhanced error logging for debugging
+      if (error.message) {
+        console.error('Error message:', error.message);
+      }
+      if (error.context) {
+        console.error('Error context:', error.context);
+      }
+      
+      toast.error('Fehler beim Speichern des Benutzers: ' + (error.message || 'Unbekannter Fehler'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (user: UserWithAuth) => {
+    console.log("Editing user:", user);
+    
     setEditingUser(user);
     setFormData({
       email: user.email,
@@ -202,12 +266,16 @@ const UserManagement = () => {
     if (window.confirm('Sind Sie sicher, dass Sie das Passwort zurücksetzen möchten?')) {
       try {
         setLoading(true);
+        console.log("Resetting password for user:", userId);
+        
         const { data, error } = await supabase.functions.invoke('reset-password', {
           body: {
             user_id: userId,
             new_password: DEFAULT_PASSWORD
           }
         });
+        
+        console.log("Reset password response:", { data, error });
         
         if (error) throw error;
         if (!data?.success) throw new Error(data?.message || 'Fehler beim Zurücksetzen des Passwortes');
@@ -231,11 +299,14 @@ const UserManagement = () => {
   const handleDeleteUser = async (userId: string) => {
     try {
       setLoading(true);
+      console.log("Deleting user:", userId);
       
       // Delete user via admin API function
       const { data, error } = await supabase.functions.invoke('delete-user', {
         body: { user_id: userId }
       });
+      
+      console.log("Delete user response:", { data, error });
       
       if (error) throw error;
       if (!data?.success) throw new Error(data?.message || 'Unbekannter Fehler beim Löschen des Benutzers');
@@ -266,6 +337,7 @@ const UserManagement = () => {
             </CardDescription>
           </div>
           <Dialog open={showCreateDialog} onOpenChange={(open) => {
+            console.log("Dialog open state changed:", open);
             setShowCreateDialog(open);
             if (!open) {
               setEditingUser(null);
@@ -273,7 +345,10 @@ const UserManagement = () => {
             }
           }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={() => {
+                console.log("Creating new user dialog opened");
+                resetForm(); // CRITICAL FIX: Reset form when opening dialog
+              }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Neuer Benutzer
               </Button>
@@ -294,7 +369,10 @@ const UserManagement = () => {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) => {
+                      console.log("Email changed:", e.target.value);
+                      setFormData({ ...formData, email: e.target.value });
+                    }}
                     placeholder="benutzer@example.com"
                     disabled={!!editingUser}
                     required
@@ -307,7 +385,10 @@ const UserManagement = () => {
                     <Input
                       id="first_name"
                       value={formData.first_name}
-                      onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                      onChange={(e) => {
+                        console.log("First name changed:", e.target.value);
+                        setFormData({ ...formData, first_name: e.target.value });
+                      }}
                       placeholder="Max"
                       required
                     />
@@ -317,7 +398,10 @@ const UserManagement = () => {
                     <Input
                       id="last_name"
                       value={formData.last_name}
-                      onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                      onChange={(e) => {
+                        console.log("Last name changed:", e.target.value);
+                        setFormData({ ...formData, last_name: e.target.value });
+                      }}
                       placeholder="Mustermann"
                       required
                     />
@@ -328,12 +412,15 @@ const UserManagement = () => {
                   <Label htmlFor="company_id">Unternehmen</Label>
                   <Select 
                     value={formData.company_id} 
-                    onValueChange={(value) => setFormData({ ...formData, company_id: value === "none" ? "" : value })}
+                    onValueChange={(value) => {
+                      console.log("Company changed:", value);
+                      setFormData({ ...formData, company_id: value === "none" ? "" : value });
+                    }}
                   >
-                    <SelectTrigger className="w-full bg-white border border-gray-300 z-50">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Unternehmen auswählen" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                    <SelectContent>
                       <SelectItem value="none">Kein Unternehmen</SelectItem>
                       {companies.map((company) => (
                         <SelectItem key={company.id} value={company.id}>
@@ -346,20 +433,25 @@ const UserManagement = () => {
 
                 {!editingUser && (
                   <div className="space-y-2">
-                    <Label htmlFor="password">Standard-Passwort</Label>
+                    <Label htmlFor="password">Standard-Passwort *</Label>
                     <div className="flex space-x-2">
                       <Input
                         id="password"
                         type="text"
                         value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        readOnly
+                        onChange={(e) => {
+                          console.log("Password changed:", e.target.value ? "***" : "EMPTY");
+                          setFormData({ ...formData, password: e.target.value });
+                        }}
+                        placeholder="Passwort eingeben"
+                        required
                       />
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => copyToClipboard(formData.password)}
+                        disabled={!formData.password}
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
