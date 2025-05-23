@@ -176,9 +176,9 @@ const UserManagement = () => {
         console.log("Updating existing user:", editingUser.id);
         console.log("Company ID to update:", formData.company_id);
         
-        // Use the safe update function that bypasses RLS issues
-        const { data, error } = await supabase.rpc('safe_update_user_profile', {
-          user_id: editingUser.id,
+        // Use the safe update function
+        const { data, error } = await (supabase as any).rpc('safe_update_user_profile', {
+          user_id_param: editingUser.id,
           first_name_param: formData.first_name,
           last_name_param: formData.last_name,
           company_id_param: formData.company_id || null

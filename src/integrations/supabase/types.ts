@@ -343,6 +343,15 @@ export type Database = {
         Args: { coupon_id_param: string }
         Returns: undefined
       }
+      safe_update_user_profile: {
+        Args: {
+          user_id_param: string
+          first_name_param: string
+          last_name_param: string
+          company_id_param: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
