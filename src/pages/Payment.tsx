@@ -90,21 +90,8 @@ const Payment: React.FC = () => {
           await applyCoupon(appliedCoupon.id, user.email);
         }
         
-        // Save subscription with free status
-        const { error } = await supabase.from('subscriptions').insert({
-          user_id: user?.id,
-          email: user?.email || 'guest@example.com',
-          plan_type: currentPlan.id,
-          status: 'active',
-          amount: 0,
-          currency: 'eur',
-          coupon_code: appliedCoupon.code
-        });
-
-        if (error) throw error;
-
         toast.success('Kostenloses Paket aktiviert!');
-        navigate('/auth?tab=register&plan=' + currentPlan.id);
+        navigate('/auth?tab=register&plan=' + currentPlan.id + '&payment=success');
         return;
       }
 

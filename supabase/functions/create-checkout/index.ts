@@ -23,13 +23,27 @@ serve(async (req) => {
     );
 
     // Get authenticated user
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
-    
-    if (!user?.email) {
-      throw new Error("User not authenticated or email not available");
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.log("No authorization header found");
+      // For now, continue without user - we'll use a default email
+    }
+
+    let user = null;
+    let userEmail = "guest@example.com"; // Default for non-authenticated users
+
+    if (authHeader) {
+      try {
+        const token = authHeader.replace("Bearer ", "");
+        const { data } = await supabaseClient.auth.getUser(token);
+        user = data.user;
+        if (user?.email) {
+          userEmail = user.email;
+        }
+        console.log("User authenticated:", user?.email);
+      } catch (authError) {
+        console.log("Auth error, proceeding as guest:", authError);
+      }
     }
 
     // Initialize Stripe
@@ -49,7 +63,7 @@ serve(async (req) => {
     }
 
     // Check if customer exists
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
@@ -58,7 +72,7 @@ serve(async (req) => {
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
+      customer_email: customerId ? undefined : userEmail,
       line_items: [
         {
           price_data: {
@@ -79,7 +93,7 @@ serve(async (req) => {
       metadata: {
         plan: plan,
         coupon_code: coupon_code || "",
-        user_id: user.id,
+        user_id: user?.id || "guest",
       },
     });
 
