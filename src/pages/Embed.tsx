@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import PropertyGrid from '@/components/embed/PropertyGrid';
@@ -36,9 +37,9 @@ export default function Embed() {
   // Optimized height calculation and communication with parent
   useEffect(() => {
     const sendHeightToParent = () => {
-      // Minimal padding - only 20px total (10px top + 10px bottom)
+      // Minimaler Abstand - nur 10px total (5px oben + 5px unten)
       const contentHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-      const paddedHeight = contentHeight + 20;
+      const paddedHeight = contentHeight + 10;
       
       window.parent.postMessage({ 
         type: 'resize-iframe', 
@@ -49,7 +50,7 @@ export default function Embed() {
 
     // Send initial height after content is rendered
     if (!loading) {
-      const timer = setTimeout(sendHeightToParent, 100);
+      const timer = setTimeout(sendHeightToParent, 50);
       return () => clearTimeout(timer);
     }
 
@@ -160,9 +161,9 @@ export default function Embed() {
     fetchProperties();
   }, [companyId]);
 
-  // Minimal padding - just enough to prevent cutoff
+  // Sehr minimaler Abstand - nur 5px oben und unten
   return (
-    <div className="w-full bg-white py-2">
+    <div className="w-full bg-white py-1">
       <PropertyGrid properties={properties} loading={loading} error={error} />
     </div>
   );

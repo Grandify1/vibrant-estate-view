@@ -2,7 +2,7 @@
 /**
  * ImmoUpload Widget - Production Version
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 4.2 - Fixed Spacing Issues
+ * Version 4.3 - Ultra Minimal Spacing
  */
 (function() {
   // Globales Objekt für das Widget erstellen
@@ -50,10 +50,12 @@
       }
     }
     
-    // Container-Style setzen mit minimalem Overflow-Handling
+    // Container-Style setzen mit ultra-minimalem Overflow-Handling
     container.style.overflow = 'visible';
     container.style.position = 'relative';
-    container.style.minHeight = '200px';
+    container.style.margin = '0';
+    container.style.padding = '0';
+    container.style.minHeight = '100px';
     
     // CSS für Hover-Effekte einfügen
     const styleTag = document.createElement('style');
@@ -75,6 +77,12 @@
       .immo-widget-iframe {
         border: none !important;
         overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .immo-widget-container {
+        margin: 0 !important;
+        padding: 0 !important;
       }
     `;
     document.head.appendChild(styleTag);
@@ -88,12 +96,14 @@
       iframeUrl += `${separator}company=${script.getAttribute('data-company')}`;
     }
     
-    // Iframe erstellen mit optimierter Höhenbehandlung
+    // Iframe erstellen mit ultra-minimaler Höhenbehandlung
     const iframe = document.createElement('iframe');
     iframe.src = iframeUrl;
     iframe.style.width = widgetWidth;
     iframe.style.border = 'none';
-    iframe.style.minHeight = '200px';
+    iframe.style.margin = '0';
+    iframe.style.padding = '0';
+    iframe.style.minHeight = '100px';
     iframe.style.height = 'auto';
     iframe.style.maxWidth = '100%';
     iframe.style.overflow = 'visible';
@@ -120,11 +130,11 @@
       // Erste Höhenanpassung nach kurzer Verzögerung
       setTimeout(() => {
         adjustIframeHeight(iframe);
-      }, 200);
+      }, 100);
     });
   }
   
-  // Optimierte Funktion zur Höhenanpassung des Iframes
+  // Ultra-optimierte Funktion zur Höhenanpassung des Iframes
   function adjustIframeHeight(iframe) {
     try {
       // Prüfe ob iframe und contentWindow verfügbar sind
@@ -156,7 +166,7 @@
     initWidget();
   }
   
-  // Optimierte Event-Handler für Nachrichtenaustausch
+  // Ultra-optimierte Event-Handler für Nachrichtenaustausch
   window.addEventListener('message', function(e) {
     // Erweiterte Sicherheits-Checks
     const allowedOrigins = [
@@ -177,17 +187,18 @@
       return;
     }
     
-    // Behandlung von Resize-Events für das iframe mit minimaler Höhenbehandlung
+    // Behandlung von Resize-Events für das iframe mit ultra-minimaler Höhenbehandlung
     if (e.data && e.data.type === 'resize-iframe') {
       const iframe = document.getElementById('immo-widget-iframe');
       if (iframe && e.data.height) {
-        // Mindesthöhe von 200px und minimal Padding
-        const newHeight = Math.max(e.data.height, 200);
+        // Mindesthöhe von 100px und kein zusätzliches Padding
+        const newHeight = Math.max(e.data.height, 100);
         iframe.style.height = newHeight + 'px';
         
-        // Container-Höhe ebenfalls anpassen
+        // Container-Höhe ebenfalls anpassen ohne zusätzliches Padding
         const container = iframe.parentElement;
         if (container) {
+          container.style.height = newHeight + 'px';
           container.style.minHeight = newHeight + 'px';
         }
       }
@@ -217,5 +228,5 @@
   
   // Widget als initialisiert markieren
   window.ImmoWidget.initialized = true;
-  window.ImmoWidget.version = '4.2';
+  window.ImmoWidget.version = '4.3';
 })();
