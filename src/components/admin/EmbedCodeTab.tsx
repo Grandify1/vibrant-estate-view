@@ -18,8 +18,8 @@ const EmbedCodeTab: React.FC = () => {
   const baseUrl = window.location.origin;
   const widgetUrl = `${baseUrl}/embed${companyParam}`;
   
-  // Das Embed-Skript für den Einzeiler (mit Container-Element)
-  const singleScriptCode = `<!-- Immobilien-Widget Start -->
+  // Das Auto-Resize Embed-Skript
+  const singleScriptCode = `<!-- Immobilien-Widget mit Auto-Resize Start -->
 <div id="immo-widget-container" class="immo-widget-container"></div>
 <script src="${baseUrl}/widget.js" data-target="immo-widget" data-url="${widgetUrl}"></script>
 <!-- Immobilien-Widget Ende -->`;
@@ -41,14 +41,14 @@ const EmbedCodeTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="bg-gray-50 p-6 rounded-lg">
-        <h2 className="text-xl font-semibold mb-4">Website-Integration</h2>
+        <h2 className="text-xl font-semibold mb-4">Website-Integration mit Auto-Resize</h2>
         <p className="text-gray-700 mb-4">
-          Fügen Sie den folgenden Code an der Stelle ein, an der die Immobilien angezeigt werden sollen.
+          Das Widget passt sich automatisch an die Anzahl der Immobilien an - kein manueller Aufwand nötig!
         </p>
         
         <Tabs value={embedTab} onValueChange={setEmbedTab} className="mt-6">
           <TabsList className="grid w-full grid-cols-1 mb-4">
-            <TabsTrigger value="single-script">Einzeiler-Script</TabsTrigger>
+            <TabsTrigger value="single-script">Auto-Resize Widget</TabsTrigger>
           </TabsList>
           
           <TabsContent value="single-script">
@@ -70,13 +70,24 @@ const EmbedCodeTab: React.FC = () => {
       </div>
       
       <div className="bg-gray-50 p-6 rounded-lg">
-        <h3 className="text-lg font-semibold mb-2">Hinweise</h3>
+        <h3 className="text-lg font-semibold mb-2">Vorteile des Auto-Resize Systems</h3>
         <ul className="list-disc list-inside space-y-2 text-gray-700">
-          <li>Der Code erstellt ein responsives Widget, das sich automatisch an Ihre Website anpasst.</li>
-          <li>Die Immobilien werden dynamisch aus Ihrem Konto geladen.</li>
-          <li>Nur aktive Immobilien Ihres Unternehmens werden im Widget angezeigt.</li>
-          <li>Alle Designänderungen im Admin-Bereich werden automatisch im Widget übernommen.</li>
-          <li>Wenn Besucher auf eine Immobilie klicken, öffnet sich die Detailansicht in einem neuen Tab auf Ihrer Website.</li>
+          <li><strong>Dynamische Höhe:</strong> Widget passt sich automatisch an 0-X Immobilien an</li>
+          <li><strong>Kein Whitespace:</strong> Keine leeren Bereiche unter den Immobilien</li>
+          <li><strong>Keine abgeschnittenen Karten:</strong> Alle Immobilien werden vollständig angezeigt</li>
+          <li><strong>Responsive Design:</strong> Funktioniert auf allen Geräten perfekt</li>
+          <li><strong>Smooth Transitions:</strong> Sanfte Übergänge bei Größenänderungen</li>
+          <li><strong>Echte Content-Höhe:</strong> Berechnet die tatsächliche Höhe des Inhalts</li>
+        </ul>
+      </div>
+      
+      <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+        <h3 className="text-lg font-semibold mb-2 text-blue-800">Technische Details</h3>
+        <ul className="list-disc list-inside space-y-2 text-blue-700">
+          <li>Das Widget verwendet PostMessage API für sichere Cross-Origin-Kommunikation</li>
+          <li>Die Höhe wird automatisch berechnet und an das Parent-Window gesendet</li>
+          <li>Reagiert auf Fenster-Größenänderungen und passt sich entsprechend an</li>
+          <li>Minimaler JavaScript-Overhead für optimale Performance</li>
         </ul>
       </div>
     </div>

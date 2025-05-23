@@ -34,60 +34,41 @@ export default function Embed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Optimized height calculation and communication with parent
+  // PostMessage Auto-Resize System
   useEffect(() => {
-    const sendHeightToParent = () => {
-      // Warte kurz, damit das Layout gerendert ist
+    const calculateAndSendHeight = () => {
+      // Warte bis Layout gerendert ist
       setTimeout(() => {
-        const contentHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+        // Berechne die tatsächliche Content-Höhe
+        const contentHeight = Math.max(
+          document.body.scrollHeight,
+          document.body.offsetHeight,
+          document.documentElement.scrollHeight,
+          document.documentElement.offsetHeight
+        );
         
-        // Berechne die Anzahl der Reihen basierend auf der Bildschirmbreite und Anzahl Properties
-        const screenWidth = window.innerWidth;
-        let cardsPerRow = 1;
+        console.log('Calculated content height:', contentHeight);
         
-        if (screenWidth >= 1024) cardsPerRow = 3; // lg
-        else if (screenWidth >= 640) cardsPerRow = 2; // sm
-        
-        const numberOfRows = Math.ceil(properties.length / cardsPerRow);
-        
-        // Geschätzte Kartenhöhe: 280px pro Karte + 12px gap zwischen Reihen + padding
-        const estimatedCardHeight = 280;
-        const gapBetweenRows = 12;
-        const basePadding = 16; // 8px oben + 8px unten
-        
-        const estimatedHeight = (numberOfRows * estimatedCardHeight) + ((numberOfRows - 1) * gapBetweenRows) + basePadding;
-        
-        // Verwende die größere der beiden Höhen, aber füge einen kleinen Puffer hinzu
-        const finalHeight = Math.max(contentHeight, estimatedHeight) + 20;
-        
-        window.parent.postMessage({ 
-          type: 'resize-iframe', 
-          height: finalHeight,
+        // Sende Höhe an Parent Window mit Buffer
+        window.parent.postMessage({
+          type: 'RESIZE_IFRAME',
+          height: contentHeight + 20, // 20px Buffer
           source: 'immo-embed'
         }, '*');
       }, 100);
     };
 
-    // Send initial height after content is rendered
-    if (!loading && properties.length > 0) {
-      sendHeightToParent();
+    // Nach dem Laden der Properties
+    if (!loading) {
+      calculateAndSendHeight();
     }
 
-    // Listen for resize events
-    window.addEventListener('resize', sendHeightToParent);
+    // Bei Window Resize
+    window.addEventListener('resize', calculateAndSendHeight);
     
-    // Listen for postMessage requests from parent
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === 'request-height') {
-        sendHeightToParent();
-      }
-    };
-    
-    window.addEventListener('message', handleMessage);
-    
+    // Cleanup
     return () => {
-      window.removeEventListener('resize', sendHeightToParent);
-      window.removeEventListener('message', handleMessage);
+      window.removeEventListener('resize', calculateAndSendHeight);
     };
   }, [loading, properties.length]);
 
@@ -181,7 +162,7 @@ export default function Embed() {
   }, [companyId]);
 
   return (
-    <div className="w-full bg-white py-2">
+    <div className="w-full bg-white py-1">
       <PropertyGrid properties={properties} loading={loading} error={error} />
     </div>
   );
