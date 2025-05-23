@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,8 @@ import {
   ArrowRight,
   Flag,
   Smartphone,
-  Mail
+  Mail,
+  CheckCircle
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -23,6 +25,7 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [pricingPeriod, setPricingPeriod] = useState('monthly');
 
   const content = {
     de: {
@@ -309,7 +312,6 @@ const LandingPage = () => {
     }
   };
 
-  // KORRIGIERT: Zeige die Flagge der AKTUELLEN Sprache an
   const currentFlag = language === 'de' ? '🇩🇪' : '🇺🇸';
 
   return (
@@ -347,7 +349,7 @@ const LandingPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4 bg-gradient-to-b from-blue-50 to-white">
         <div className="container mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 text-estate-dark leading-tight">
             {currentContent.hero.title}
@@ -357,14 +359,25 @@ const LandingPage = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/payment">
-              <Button size="lg" className="text-lg px-8 py-3">
+              <Button size="lg" className="text-lg px-8 py-6 bg-estate hover:bg-estate-dark">
                 {currentContent.hero.cta}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-3">
+            <Button variant="outline" size="lg" className="text-lg px-8 py-6">
               {currentContent.hero.demo}
             </Button>
+          </div>
+          
+          <div className="mt-12 relative">
+            <div className="relative w-full max-w-5xl mx-auto">
+              <img 
+                src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80" 
+                alt="Immoupload Dashboard Preview" 
+                className="w-full h-auto rounded-lg shadow-2xl border border-gray-200"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent rounded-lg"></div>
+            </div>
           </div>
         </div>
       </section>
@@ -383,9 +396,9 @@ const LandingPage = () => {
           
           <div className="grid md:grid-cols-3 gap-8">
             {currentContent.features.items.map((feature, index) => (
-              <Card key={index} className="text-center border-0 shadow-lg">
+              <Card key={index} className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow">
                 <CardHeader>
-                  <div className="mx-auto w-16 h-16 bg-estate text-white rounded-full flex items-center justify-center mb-4">
+                  <div className="mx-auto w-16 h-16 bg-estate/10 text-estate rounded-full flex items-center justify-center mb-4">
                     <feature.icon className="h-8 w-8" />
                   </div>
                   <CardTitle className="text-xl">{feature.title}</CardTitle>
@@ -399,7 +412,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Functions Section */}
+      {/* Functions Section with Image */}
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -408,16 +421,25 @@ const LandingPage = () => {
             </h2>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {currentContent.functions.items.map((func, index) => (
-              <div key={index} className="text-center">
-                <div className="mx-auto w-20 h-20 bg-estate/10 rounded-full flex items-center justify-center mb-6">
-                  <func.icon className="h-10 w-10 text-estate" />
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <img 
+                src="https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" 
+                alt="Immoupload Features" 
+                className="w-full h-auto rounded-lg shadow-lg"
+              />
+            </div>
+            <div className="grid md:grid-cols-2 gap-8">
+              {currentContent.functions.items.map((func, index) => (
+                <div key={index} className="flex flex-col">
+                  <div className="mb-4 w-12 h-12 bg-estate/10 rounded-full flex items-center justify-center">
+                    <func.icon className="h-6 w-6 text-estate" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{func.title}</h3>
+                  <p className="text-gray-600">{func.description}</p>
                 </div>
-                <h3 className="text-xl font-semibold mb-4">{func.title}</h3>
-                <p className="text-gray-600">{func.description}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -429,40 +451,69 @@ const LandingPage = () => {
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-estate-dark">
               {currentContent.pricing.title}
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 mb-8">
               {currentContent.pricing.subtitle}
             </p>
+            
+            <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg mb-8">
+              <button
+                onClick={() => setPricingPeriod('monthly')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  pricingPeriod === 'monthly'
+                    ? 'bg-white shadow-sm text-estate-dark'
+                    : 'text-gray-600 hover:text-estate'
+                }`}
+              >
+                {currentContent.pricing.monthly}
+              </button>
+              <button
+                onClick={() => setPricingPeriod('yearly')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  pricingPeriod === 'yearly'
+                    ? 'bg-white shadow-sm text-estate-dark'
+                    : 'text-gray-600 hover:text-estate'
+                }`}
+              >
+                {currentContent.pricing.yearly}
+                <span className="ml-2 text-xs bg-estate-accent/20 text-estate-accent px-2 py-0.5 rounded">
+                  {currentContent.pricing.yearlyDiscount}
+                </span>
+              </button>
+            </div>
           </div>
           
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {currentContent.pricing.plans.map((plan, index) => (
-              <Card key={index} className={`relative ${plan.popular ? 'border-estate shadow-xl scale-105' : ''}`}>
+              <Card key={index} className={`relative overflow-hidden ${plan.popular ? 'border-estate shadow-xl' : 'border-gray-200'}`}>
                 {plan.popular && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-estate">
-                    Popular
-                  </Badge>
+                  <div className="absolute top-0 right-0">
+                    <div className="bg-estate text-white text-xs font-bold px-3 py-1 transform rotate-0 origin-top-right">
+                      Popular
+                    </div>
+                  </div>
                 )}
-                <CardHeader className="text-center">
+                <CardHeader className={`${plan.popular ? 'bg-estate/5' : ''} pb-8 border-b`}>
                   <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <div className="text-4xl font-bold">
-                    {plan.price}
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold">{plan.price}</span>
                     <span className="text-lg font-normal text-gray-500">{plan.period}</span>
                   </div>
-                  <CardDescription>{plan.description}</CardDescription>
+                  <CardDescription className="mt-2">{plan.description}</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3 mb-6">
+                <CardContent className="pt-8">
+                  <ul className="space-y-4 mb-8">
                     {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center">
-                        <Check className="h-5 w-5 text-green-500 mr-3" />
+                      <li key={i} className="flex items-start">
+                        <CheckCircle className="h-5 w-5 text-estate mr-3 shrink-0" />
                         <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
-                  <Link to="/payment">
+                  <Link to="/payment" className="block mt-6">
                     <Button 
-                      className={`w-full ${plan.popular ? 'bg-estate hover:bg-estate/90' : ''}`}
+                      className={`w-full py-6 ${plan.popular ? 'bg-estate hover:bg-estate-dark' : ''}`}
                       variant={plan.popular ? 'default' : 'outline'}
+                      size="lg"
                     >
                       {plan.cta}
                     </Button>
@@ -475,7 +526,7 @@ const LandingPage = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20">
+      <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-estate-dark">
@@ -523,14 +574,14 @@ const LandingPage = () => {
       {/* CTA Section */}
       <section className="py-20 bg-estate text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
             {currentContent.cta.title}
           </h2>
-          <p className="text-xl mb-8 max-w-3xl mx-auto">
+          <p className="text-xl mb-8 max-w-3xl mx-auto opacity-90">
             {currentContent.cta.subtitle}
           </p>
           <Link to="/payment">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
+            <Button size="lg" variant="secondary" className="text-lg px-8 py-6 bg-white text-estate-dark hover:bg-gray-100">
               {currentContent.cta.button}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
@@ -539,11 +590,39 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-estate-text py-8">
+      <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4">
-          <div className="border-t border-gray-700 pt-8 flex justify-between items-center">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div>
+              <div className="flex items-center gap-2 font-bold text-xl text-white mb-4">
+                <span className="bg-estate text-white py-1 px-2 rounded mr-1">Immo</span>
+                Upload
+              </div>
+              <p className="text-gray-400">
+                Die einfachste Lösung für Immobilienmakler, um Ihre Immobilien online zu präsentieren.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Navigation</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Home</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Kontakt</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>info@immoupload.com</li>
+                <li>+49 123 456789</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400">© {new Date().getFullYear()} immoupload.com. {currentContent.footer.copyright}</p>
-            <div className="flex gap-4">
+            <div className="flex gap-4 mt-4 md:mt-0">
               <button 
                 onClick={() => handleLegalNavigation('legal')}
                 className="text-gray-400 hover:text-white transition-colors"
@@ -565,3 +644,4 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+
