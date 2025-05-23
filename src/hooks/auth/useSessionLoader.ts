@@ -11,9 +11,9 @@ export const useSessionLoader = (
   useEffect(() => {
     console.log("useSessionLoader: Setting up auth state listener");
     
-    // Set up auth state listener
+    // Set up auth state listener FIRST (wichtige Reihenfolge!)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
         
         if (session?.user) {
@@ -27,23 +27,27 @@ export const useSessionLoader = (
               company_id: null
             };
             
-            // Try to fetch company_id from profile
-            try {
-              const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('company_id')
-                .eq('id', session.user.id)
-                .maybeSingle();
-                
-              if (!profileError && profile?.company_id) {
-                console.log("Found company_id in profile:", profile.company_id);
-                basicAuthUser.company_id = profile.company_id;
-              } else {
-                console.log("No company_id found in profile or error:", profileError);
+            // WICHTIG: Verwenden von setTimeout, um Deadlock zu verhindern
+            setTimeout(async () => {
+              try {
+                // Try to fetch company_id from profile
+                const { data: profile, error: profileError } = await supabase
+                  .from('profiles')
+                  .select('company_id')
+                  .eq('id', session.user.id)
+                  .maybeSingle();
+                  
+                if (!profileError && profile?.company_id) {
+                  console.log("Found company_id in profile:", profile.company_id);
+                  basicAuthUser.company_id = profile.company_id;
+                  setUser({...basicAuthUser});
+                } else {
+                  console.log("No company_id found in profile or error:", profileError);
+                }
+              } catch (profileFetchError) {
+                console.log("Error fetching profile, continuing without company_id:", profileFetchError);
               }
-            } catch (profileFetchError) {
-              console.log("Error fetching profile, continuing without company_id:", profileFetchError);
-            }
+            }, 0);
             
             console.log("Setting authenticated user:", basicAuthUser);
             setUser(basicAuthUser);
@@ -71,7 +75,7 @@ export const useSessionLoader = (
       }
     );
 
-    // Check for existing session
+    // THEN check for existing session
     const checkSession = async () => {
       try {
         console.log("useSessionLoader: Checking for existing session");
@@ -94,23 +98,27 @@ export const useSessionLoader = (
               company_id: null
             };
             
-            // Try to fetch company_id from profile
-            try {
-              const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('company_id')
-                .eq('id', session.user.id)
-                .maybeSingle();
-                
-              if (!profileError && profile?.company_id) {
-                console.log("Found company_id in existing session profile:", profile.company_id);
-                basicAuthUser.company_id = profile.company_id;
-              } else {
-                console.log("No company_id found in existing session profile or error:", profileError);
+            // WICHTIG: Verwenden von setTimeout, um Deadlock zu verhindern
+            setTimeout(async () => {
+              try {
+                // Try to fetch company_id from profile
+                const { data: profile, error: profileError } = await supabase
+                  .from('profiles')
+                  .select('company_id')
+                  .eq('id', session.user.id)
+                  .maybeSingle();
+                  
+                if (!profileError && profile?.company_id) {
+                  console.log("Found company_id in existing session profile:", profile.company_id);
+                  basicAuthUser.company_id = profile.company_id;
+                  setUser({...basicAuthUser});
+                } else {
+                  console.log("No company_id found in existing session profile or error:", profileError);
+                }
+              } catch (profileFetchError) {
+                console.log("Error fetching existing session profile, continuing without company_id:", profileFetchError);
               }
-            } catch (profileFetchError) {
-              console.log("Error fetching existing session profile, continuing without company_id:", profileFetchError);
-            }
+            }, 0);
             
             console.log("Found existing session with profile:", basicAuthUser);
             setUser(basicAuthUser);
