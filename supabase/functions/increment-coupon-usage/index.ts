@@ -13,21 +13,24 @@ serve(async (req) => {
   }
 
   try {
-    const { coupon_id } = await req.json();
+    const body = await req.json();
+    const { coupon_id } = body;
 
-    const supabase = createClient(
+    if (!coupon_id) {
+      throw new Error("Coupon ID is required");
+    }
+
+    // Create Supabase client with service role key
+    const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
 
-    const { error } = await supabase
-      .from("coupons")
-      .update({ 
-        current_uses: supabase.raw("current_uses + 1"),
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", coupon_id);
+    // Update coupon usage
+    const { error } = await supabaseClient.rpc('increment_coupon_usage', { 
+      coupon_id_param: coupon_id 
+    });
 
     if (error) throw error;
 
@@ -36,7 +39,8 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

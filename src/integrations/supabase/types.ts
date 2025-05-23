@@ -89,6 +89,77 @@ export type Database = {
         }
         Relationships: []
       }
+      coupon_usage: {
+        Row: {
+          coupon_id: string | null
+          id: string
+          used_at: string
+          user_email: string
+        }
+        Insert: {
+          coupon_id?: string | null
+          id?: string
+          used_at?: string
+          user_email: string
+        }
+        Update: {
+          coupon_id?: string | null
+          id?: string
+          used_at?: string
+          user_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_usage_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          active: boolean | null
+          code: string
+          created_at: string
+          current_uses: number | null
+          discount_type: string
+          discount_value: number | null
+          id: string
+          max_uses: number | null
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          code: string
+          created_at?: string
+          current_uses?: number | null
+          discount_type: string
+          discount_value?: number | null
+          id?: string
+          max_uses?: number | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          code?: string
+          created_at?: string
+          current_uses?: number | null
+          discount_type?: string
+          discount_value?: number | null
+          id?: string
+          max_uses?: number | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company_id: string | null
@@ -195,6 +266,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          coupon_code: string | null
+          created_at: string
+          currency: string | null
+          email: string
+          id: string
+          plan_type: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          coupon_code?: string | null
+          created_at?: string
+          currency?: string | null
+          email: string
+          id?: string
+          plan_type: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          coupon_code?: string | null
+          created_at?: string
+          currency?: string | null
+          email?: string
+          id?: string
+          plan_type?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

@@ -14,7 +14,13 @@ export const useLoginSignup = () => {
       
       if (error) {
         console.error("Login Fehler:", error);
-        toast.error("Login Fehler: " + error.message);
+        
+        // Benutzerfreundlichere Fehlermeldungen
+        if (error.message.includes('Email not confirmed')) {
+          toast.error("Bitte bestätigen Sie Ihre E-Mail-Adresse. Prüfen Sie Ihren Posteingang.");
+        } else {
+          toast.error("Login Fehler: " + error.message);
+        }
         return false;
       }
       
@@ -31,7 +37,7 @@ export const useLoginSignup = () => {
   // Register with Supabase - no email confirmation
   const signup = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
-      // Register without email confirmation
+      // Register with email confirmation disabled
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -39,7 +45,8 @@ export const useLoginSignup = () => {
           data: {
             first_name: firstName,
             last_name: lastName
-          }
+          },
+          emailRedirectTo: window.location.origin + "/auth?tab=login"
         }
       });
       
@@ -48,14 +55,21 @@ export const useLoginSignup = () => {
         return false;
       }
       
-      // Automatically login
-      const loginResult = await login(email, password);
-      
-      if (loginResult) {
-        toast.success("Registrierung erfolgreich! Sie sind jetzt angemeldet.");
-        return true;
+      // Check if email confirmation is required
+      if (data.user && data.session) {
+        // No email confirmation required, automatically login
+        const loginResult = await login(email, password);
+        
+        if (loginResult) {
+          toast.success("Registrierung erfolgreich! Sie sind jetzt angemeldet.");
+          return true;
+        } else {
+          toast.info("Registrierung erfolgreich, aber automatischer Login fehlgeschlagen.");
+          return true;
+        }
       } else {
-        toast.info("Registrierung erfolgreich, aber automatischer Login fehlgeschlagen.");
+        // Email confirmation required
+        toast.info("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail-Adresse, um fortzufahren.");
         return true;
       }
     } catch (error) {

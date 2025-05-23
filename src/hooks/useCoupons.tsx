@@ -11,34 +11,62 @@ export const useCoupons = () => {
     setLoading(true);
     
     try {
-      // For now, we'll use a hardcoded validation for the freetest100 coupon
-      // This will be replaced once the database tables are created
-      if (code.toLowerCase() === 'freetest100') {
-        // Check if user already used this coupon (simplified check for now)
-        if (userEmail) {
-          // In a real implementation, this would check the coupon_usage table
-          const existingUsage = localStorage.getItem(`coupon_used_${code}_${userEmail}`);
-          if (existingUsage) {
-            return { valid: false, message: 'Sie haben diesen Coupon bereits verwendet' };
-          }
-        }
-
-        const coupon: Coupon = {
-          id: 'freetest100-id',
-          code: 'freetest100',
-          discount_type: 'free',
-          discount_value: 0,
-          max_uses: 1000,
-          current_uses: 0,
-          valid_from: new Date().toISOString(),
-          valid_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
-          active: true
-        };
-
-        return { valid: true, coupon };
+      // Fetch coupon from database
+      const { data: couponData, error: couponError } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('code', code.toLowerCase())
+        .eq('active', true)
+        .single();
+      
+      if (couponError || !couponData) {
+        console.log('Coupon not found or error:', couponError);
+        return { valid: false, message: 'Ungültiger Coupon-Code' };
       }
-
-      return { valid: false, message: 'Coupon-Code ungültig' };
+      
+      // Check if coupon is valid (dates)
+      const now = new Date();
+      if (couponData.valid_from && new Date(couponData.valid_from) > now) {
+        return { valid: false, message: 'Coupon ist noch nicht gültig' };
+      }
+      
+      if (couponData.valid_until && new Date(couponData.valid_until) < now) {
+        return { valid: false, message: 'Coupon ist abgelaufen' };
+      }
+      
+      // Check usage limits
+      if (couponData.max_uses && couponData.current_uses >= couponData.max_uses) {
+        return { valid: false, message: 'Coupon wurde zu oft verwendet' };
+      }
+      
+      // Check if user already used this coupon
+      if (userEmail) {
+        const { data: usageData, error: usageError } = await supabase
+          .from('coupon_usage')
+          .select('*')
+          .eq('coupon_id', couponData.id)
+          .eq('user_email', userEmail)
+          .maybeSingle();
+          
+        if (usageData) {
+          return { valid: false, message: 'Sie haben diesen Coupon bereits verwendet' };
+        }
+      }
+      
+      const coupon: Coupon = {
+        id: couponData.id,
+        code: couponData.code,
+        discount_type: couponData.discount_type,
+        discount_value: couponData.discount_value,
+        max_uses: couponData.max_uses,
+        current_uses: couponData.current_uses,
+        valid_from: couponData.valid_from,
+        valid_until: couponData.valid_until,
+        active: couponData.active
+      };
+      
+      return { valid: true, coupon };
+      
     } catch (error) {
       console.error('Error validating coupon:', error);
       return { valid: false, message: 'Fehler beim Validieren des Coupons' };
@@ -49,14 +77,29 @@ export const useCoupons = () => {
 
   const applyCoupon = async (couponId: string, userEmail: string) => {
     try {
-      // For now, store coupon usage in localStorage
-      // This will be replaced with proper database storage once tables are created
-      if (couponId === 'freetest100-id') {
-        localStorage.setItem(`coupon_used_freetest100_${userEmail}`, 'true');
-        return true;
+      // Insert coupon usage record
+      const { error: usageError } = await supabase
+        .from('coupon_usage')
+        .insert({
+          coupon_id: couponId,
+          user_email: userEmail
+        });
+        
+      if (usageError) {
+        console.error('Error recording coupon usage:', usageError);
+        return false;
       }
-
-      return false;
+      
+      // Increment usage counter
+      const { error: updateError } = await supabase.functions.invoke('increment-coupon-usage', {
+        body: { coupon_id: couponId }
+      });
+      
+      if (updateError) {
+        console.error('Error incrementing coupon usage:', updateError);
+      }
+      
+      return true;
     } catch (error) {
       console.error('Error applying coupon:', error);
       toast.error('Fehler beim Anwenden des Coupons');

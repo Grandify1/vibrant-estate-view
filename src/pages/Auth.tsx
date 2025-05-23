@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,10 +40,19 @@ const AuthPage: React.FC = () => {
     console.log("Auth: Auth Status:", { isAuthenticated, loadingAuth, user });
     
     if (!loadingAuth && isAuthenticated) {
-      console.log("Auth: Authentifiziert, leite zur Admin-Seite weiter");
-      navigate('/admin');
+      console.log("Auth: Authentifiziert, leite weiter...");
+      
+      // Wenn Payment Success oder kein Plan, dann zur Admin-Seite
+      if (paymentSuccess || !selectedPlan) {
+        console.log("Auth: Zur Admin-Seite weiterleiten");
+        navigate('/admin');
+      } else {
+        // Wenn Plan ausgewählt aber noch nicht bezahlt, zur Payment-Seite
+        console.log("Auth: Zur Payment-Seite weiterleiten");
+        navigate(`/payment?plan=${selectedPlan}`);
+      }
     }
-  }, [isAuthenticated, loadingAuth, navigate, user]);
+  }, [isAuthenticated, loadingAuth, navigate, user, paymentSuccess, selectedPlan]);
   
   if (loadingAuth) {
     return (
@@ -55,20 +65,20 @@ const AuthPage: React.FC = () => {
     );
   }
   
-  // Wenn der Benutzer bereits authentifiziert ist und kein Unternehmen hat, zur Unternehmenseinrichtung weiterleiten
-  if (isAuthenticated && user && !user.company_id) {
-    return <Navigate to="/company-setup" />;
-  }
-  
-  // Wenn der Benutzer authentifiziert ist und ein Unternehmen hat, zur Admin-Seite weiterleiten
-  if (isAuthenticated && user && user.company_id) {
-    return <Navigate to="/admin" />;
+  // Wenn der Benutzer bereits authentifiziert ist
+  if (isAuthenticated) {
+    return <div className="flex items-center justify-center min-h-screen flex-col">
+      <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+      <div className="text-sm text-gray-500">
+        Sie werden weitergeleitet...
+      </div>
+    </div>;
   }
   
   // Show success message for payment
   useEffect(() => {
     if (paymentSuccess) {
-      toast.success('Zahlung erfolgreich! Bitte schließen Sie die Registrierung ab.');
+      toast.success('Zahlung erfolgreich! Vielen Dank für deine Anmeldung.');
     }
   }, [paymentSuccess]);
   
@@ -83,11 +93,7 @@ const AuthPage: React.FC = () => {
       
       if (success) {
         toast.success("Erfolgreich angemeldet!");
-        // If there's a selected plan, redirect to payment
-        if (selectedPlan) {
-          navigate(`/payment?plan=${selectedPlan}`);
-        }
-        // Otherwise redirect happens automatically through useEffect
+        // Redirect will happen automatically in the useEffect
       }
     } catch (error) {
       console.error("Auth: Login Fehler:", error);
@@ -114,11 +120,7 @@ const AuthPage: React.FC = () => {
       
       if (success) {
         toast.success("Registrierung erfolgreich!");
-        // If there's a selected plan but no payment success, redirect to payment
-        if (selectedPlan && !paymentSuccess) {
-          navigate(`/payment?plan=${selectedPlan}`);
-        }
-        // Otherwise redirect happens automatically through useEffect
+        // Redirect happens automatically in useEffect
       }
     } catch (error) {
       console.error("Auth: Registrierung Fehler:", error);

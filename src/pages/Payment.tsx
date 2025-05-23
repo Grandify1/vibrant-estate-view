@@ -90,8 +90,31 @@ const Payment: React.FC = () => {
           await applyCoupon(appliedCoupon.id, user.email);
         }
         
+        // Wenn der Benutzer bereits eingeloggt ist, erstelle einen Subscription-Eintrag
+        if (user?.id) {
+          const { error } = await supabase.from('subscriptions').insert({
+            user_id: user.id,
+            email: user.email || 'guest@example.com',
+            plan_type: currentPlan.id,
+            status: 'active',
+            amount: 0,
+            currency: 'eur',
+            coupon_code: appliedCoupon.code
+          });
+          
+          if (error) {
+            console.error('Error creating subscription record:', error);
+          }
+        }
+        
         toast.success('Kostenloses Paket aktiviert!');
-        navigate('/auth?tab=register&plan=' + currentPlan.id + '&payment=success');
+        
+        // Wenn Benutzer eingeloggt ist, direkt zum Admin Dashboard, sonst zum Register
+        if (user?.id) {
+          navigate('/admin');
+        } else {
+          navigate('/auth?tab=register&plan=' + currentPlan.id + '&payment=success');
+        }
         return;
       }
 
@@ -103,10 +126,15 @@ const Payment: React.FC = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Payment error details:', error);
+        throw error;
+      }
 
-      if (data.url) {
+      if (data?.url) {
         window.open(data.url, '_blank');
+      } else {
+        throw new Error('Keine Checkout-URL erhalten');
       }
     } catch (error) {
       console.error('Payment error:', error);
