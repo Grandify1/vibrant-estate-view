@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -194,17 +193,13 @@ const UserManagement = ({ selectedCompany }: UserManagementProps) => {
     try {
       console.log("Updating existing user:", editingUser.id);
       
-      // Update existing user profile
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: editingUser.id,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          company_id: formData.company_id || null
-        }, {
-          onConflict: 'id'
-        });
+      // Use the safe RPC function instead of direct table access
+      const { data, error } = await supabase.rpc('safe_update_user_profile', {
+        user_id_param: editingUser.id,
+        first_name_param: formData.first_name,
+        last_name_param: formData.last_name,
+        company_id_param: formData.company_id || null
+      });
 
       if (error) throw error;
       toast.success('Benutzer erfolgreich aktualisiert');
@@ -231,14 +226,13 @@ const UserManagement = ({ selectedCompany }: UserManagementProps) => {
     try {
       console.log("Assigning user to company:", userId, selectedCompany.id);
       
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: userId,
-          company_id: selectedCompany.id
-        }, {
-          onConflict: 'id'
-        });
+      // Use the safe RPC function instead of direct table access
+      const { data, error } = await supabase.rpc('safe_update_user_profile', {
+        user_id_param: userId,
+        first_name_param: '', // Keep existing first name
+        last_name_param: '', // Keep existing last name  
+        company_id_param: selectedCompany.id
+      });
 
       if (error) throw error;
       toast.success(`Benutzer erfolgreich zu ${selectedCompany.name} hinzugefügt`);
