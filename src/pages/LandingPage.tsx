@@ -1,36 +1,321 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { 
-  Check, 
-  Code, 
-  FileText, 
+  Upload, 
+  Eye, 
+  Share2, 
+  Building2, 
   Users, 
-  Star, 
-  CircleCheck,
+  Zap, 
+  Check, 
+  Star,
   ArrowRight,
-  Award,
-  ShieldCheck,
-  Rocket,
   Flag
 } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguage } from '../context/LanguageContext';
 
-const LandingPage: React.FC = () => {
-  const { language, setLanguage, t } = useLanguage();
+const LandingPage = () => {
+  const navigate = useNavigate();
+  const { language, setLanguage } = useLanguage();
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
+  const content = {
+    de: {
+      hero: {
+        title: "Die einfachste Art, Immobilien zu präsentieren",
+        subtitle: "Laden Sie Ihre Immobilienfotos hoch und erhalten Sie sofort eine professionelle, teilbare Präsentation",
+        cta: "Kostenlos starten",
+        demo: "Demo ansehen"
+      },
+      features: {
+        title: "Warum ImmoUpload wählen?",
+        subtitle: "Alles was Sie brauchen, um Ihre Immobilien professionell zu präsentieren",
+        items: [
+          {
+            icon: Upload,
+            title: "Einfacher Upload",
+            description: "Ziehen Sie Ihre Fotos einfach per Drag & Drop in unseren Editor"
+          },
+          {
+            icon: Eye,
+            title: "Sofortige Vorschau",
+            description: "Sehen Sie sofort, wie Ihre Immobilie präsentiert wird"
+          },
+          {
+            icon: Share2,
+            title: "Einfaches Teilen",
+            description: "Teilen Sie Ihre Präsentation mit einem einzigen Link"
+          }
+        ]
+      },
+      benefits: {
+        title: "Perfekt für Immobilienprofis",
+        items: [
+          {
+            icon: Building2,
+            title: "Für Makler",
+            description: "Erstellen Sie beeindruckende Exposés in Minuten, nicht Stunden"
+          },
+          {
+            icon: Users,
+            title: "Für Vermieter",
+            description: "Präsentieren Sie Ihre Immobilie professionell an potenzielle Mieter"
+          },
+          {
+            icon: Zap,
+            title: "Für Entwickler",
+            description: "Showcase neue Projekte mit hochwertigen Präsentationen"
+          }
+        ]
+      },
+      pricing: {
+        title: "Transparente Preise",
+        subtitle: "Wählen Sie den Plan, der zu Ihnen passt",
+        monthly: "Monatlich",
+        yearly: "Jährlich",
+        yearlyDiscount: "2 Monate gratis",
+        plans: [
+          {
+            name: "Starter",
+            price: "0",
+            period: "kostenlos",
+            description: "Perfekt zum Ausprobieren",
+            features: [
+              "Bis zu 3 Immobilien",
+              "10 Fotos pro Immobilie", 
+              "Basic Präsentation",
+              "Community Support"
+            ],
+            cta: "Kostenlos starten",
+            popular: false
+          },
+          {
+            name: "Professional",
+            price: "29",
+            period: "/Monat",
+            description: "Für professionelle Makler",
+            features: [
+              "Unbegrenzte Immobilien",
+              "Unbegrenzte Fotos",
+              "Premium Vorlagen",
+              "Custom Branding",
+              "Priorität Support",
+              "Analytics Dashboard"
+            ],
+            cta: "Jetzt starten",
+            popular: true
+          },
+          {
+            name: "Enterprise",
+            price: "99",
+            period: "/Monat",
+            description: "Für große Unternehmen",
+            features: [
+              "Alles aus Professional",
+              "Team Management",
+              "API Zugang",
+              "Custom Integration",
+              "Dedicated Support",
+              "SLA Garantie"
+            ],
+            cta: "Kontakt aufnehmen",
+            popular: false
+          }
+        ]
+      },
+      testimonials: {
+        title: "Was unsere Kunden sagen",
+        items: [
+          {
+            name: "Sarah Weber",
+            role: "Immobilienmaklerin",
+            content: "ImmoUpload hat meine Art zu arbeiten völlig verändert. Ich kann jetzt in Minuten professionelle Exposés erstellen.",
+            rating: 5
+          },
+          {
+            name: "Michael Schmidt",
+            role: "Vermieter",
+            content: "Die Präsentationen sehen so professionell aus. Ich bekomme viel mehr Anfragen für meine Wohnungen.",
+            rating: 5
+          },
+          {
+            name: "Lisa Mueller",
+            role: "Projektentwicklerin",
+            content: "Perfect für unsere neuen Projekte. Die Investoren sind begeistert von den Präsentationen.",
+            rating: 5
+          }
+        ]
+      },
+      footer: {
+        copyright: "Alle Rechte vorbehalten.",
+        links: {
+          legal: "Impressum",
+          privacy: "Datenschutz"
+        }
+      }
+    },
+    en: {
+      hero: {
+        title: "The easiest way to present real estate",
+        subtitle: "Upload your property photos and instantly get a professional, shareable presentation",
+        cta: "Start for free",
+        demo: "View demo"
+      },
+      features: {
+        title: "Why choose ImmoUpload?",
+        subtitle: "Everything you need to present your properties professionally",
+        items: [
+          {
+            icon: Upload,
+            title: "Easy Upload",
+            description: "Simply drag & drop your photos into our editor"
+          },
+          {
+            icon: Eye,
+            title: "Instant Preview",
+            description: "See immediately how your property will be presented"
+          },
+          {
+            icon: Share2,
+            title: "Easy Sharing",
+            description: "Share your presentation with a single link"
+          }
+        ]
+      },
+      benefits: {
+        title: "Perfect for real estate professionals",
+        items: [
+          {
+            icon: Building2,
+            title: "For Agents",
+            description: "Create stunning listings in minutes, not hours"
+          },
+          {
+            icon: Users,
+            title: "For Landlords",
+            description: "Present your property professionally to potential tenants"
+          },
+          {
+            icon: Zap,
+            title: "For Developers",
+            description: "Showcase new projects with high-quality presentations"
+          }
+        ]
+      },
+      pricing: {
+        title: "Transparent pricing",
+        subtitle: "Choose the plan that fits you",
+        monthly: "Monthly",
+        yearly: "Yearly",
+        yearlyDiscount: "2 months free",
+        plans: [
+          {
+            name: "Starter",
+            price: "0",
+            period: "free",
+            description: "Perfect for trying out",
+            features: [
+              "Up to 3 properties",
+              "10 photos per property",
+              "Basic presentation",
+              "Community support"
+            ],
+            cta: "Start for free",
+            popular: false
+          },
+          {
+            name: "Professional",
+            price: "29",
+            period: "/month",
+            description: "For professional agents",
+            features: [
+              "Unlimited properties",
+              "Unlimited photos",
+              "Premium templates",
+              "Custom branding",
+              "Priority support",
+              "Analytics dashboard"
+            ],
+            cta: "Get started",
+            popular: true
+          },
+          {
+            name: "Enterprise",
+            price: "99",
+            period: "/month",
+            description: "For large companies",
+            features: [
+              "Everything in Professional",
+              "Team management",
+              "API access",
+              "Custom integration",
+              "Dedicated support",
+              "SLA guarantee"
+            ],
+            cta: "Contact us",
+            popular: false
+          }
+        ]
+      },
+      testimonials: {
+        title: "What our customers say",
+        items: [
+          {
+            name: "Sarah Weber",
+            role: "Real Estate Agent",
+            content: "ImmoUpload has completely changed the way I work. I can now create professional listings in minutes.",
+            rating: 5
+          },
+          {
+            name: "Michael Schmidt",
+            role: "Landlord",
+            content: "The presentations look so professional. I get much more inquiries for my apartments.",
+            rating: 5
+          },
+          {
+            name: "Lisa Mueller",
+            role: "Project Developer",
+            content: "Perfect for our new projects. Investors are thrilled with the presentations.",
+            rating: 5
+          }
+        ]
+      },
+      footer: {
+        copyright: "All rights reserved.",
+        links: {
+          legal: "Legal Notice",
+          privacy: "Privacy Policy"
+        }
+      }
     }
   };
 
-  const switchLanguage = (lang: 'de' | 'en') => {
-    setLanguage(lang);
+  const currentContent = content[language];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTestimonial((prev) => 
+        (prev + 1) % currentContent.testimonials.items.length
+      );
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [currentContent.testimonials.items.length]);
+
+  const switchLanguage = () => {
+    const newLanguage = language === 'de' ? 'en' : 'de';
+    setLanguage(newLanguage);
+  };
+
+  const handleLegalNavigation = (type: 'legal' | 'privacy') => {
+    if (language === 'de') {
+      navigate(type === 'legal' ? '/impressum' : '/datenschutz');
+    } else {
+      navigate(type === 'legal' ? '/legal-notice' : '/privacy-policy');
+    }
   };
 
   return (
@@ -43,559 +328,243 @@ const LandingPage: React.FC = () => {
             Upload
           </div>
           
-          <nav className="hidden md:flex gap-6">
-            <button 
-              onClick={() => scrollToSection('applications')}
-              className="text-sm text-gray-700 hover:text-estate transition-colors"
-            >
-              {t('nav.application')}
-            </button>
-            <button 
-              onClick={() => scrollToSection('features')}
-              className="text-sm text-gray-700 hover:text-estate transition-colors"
-            >
-              {t('nav.features')}
-            </button>
-            <button 
-              onClick={() => scrollToSection('pricing')}
-              className="text-sm text-gray-700 hover:text-estate transition-colors"
-            >
-              {t('nav.pricing')}
-            </button>
-          </nav>
-          
           <div className="flex items-center gap-4">
-            <div className="relative flex items-center">
-              <button 
-                className="flex items-center gap-1 text-sm text-gray-700 hover:text-estate transition-colors"
-                onClick={() => switchLanguage(language === 'de' ? 'en' : 'de')}
-              >
-                <Flag className="h-4 w-4" />
-                <span>{language === 'de' ? 'DE' : 'EN'}</span>
-              </button>
-            </div>
-            <Link to="/auth" className="text-sm font-medium text-gray-700 hover:text-estate transition-colors">
-              {t('nav.login')}
-            </Link>
-            <Button asChild>
-              <Link to="/auth">{t('nav.start')}</Link>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full" 
+              onClick={switchLanguage}
+              title={language === 'de' ? 'Switch to English' : 'Zu Deutsch wechseln'}
+            >
+              <Flag className="h-4 w-4" />
             </Button>
+            <Link to="/admin">
+              <Button variant="outline" size="sm">
+                {language === 'de' ? 'Anmelden' : 'Login'}
+              </Button>
+            </Link>
+            <Link to="/payment">
+              <Button size="sm">
+                {currentContent.hero.cta}
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Enhanced Hero Section */}
-      <section className="relative py-16 md:py-24 overflow-hidden">
-        {/* Background with gradient overlay */}
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1773&q=80')] bg-cover bg-center">
-          <div className="absolute inset-0 bg-gradient-to-r from-estate-dark/90 to-estate/70"></div>
-        </div>
-        
-        <div className="container relative z-10">
-          <div className="flex flex-col items-center text-center">
-            <div className="text-white max-w-3xl mx-auto">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                {t('hero.title')} <span className="text-estate-accent">professionell</span>
-              </h1>
-              <p className="text-xl mb-8 text-white/90">
-                {t('hero.subtitle')}
-              </p>
-              
-              <div className="mb-10">
-                <Button asChild size="sm" className="bg-white hover:bg-white/90 text-estate-dark">
-                  <Link to="/auth">{t('hero.cta')}</Link>
-                </Button>
-              </div>
-              
-              {/* Key benefits */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto">
-                <div className="flex items-start">
-                  <div className="mr-3 p-2 rounded-full bg-estate-accent/20">
-                    <Rocket className="h-5 w-5 text-estate-accent" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold">{t('features.integration')}</h3>
-                    <p className="text-sm text-white/80">{t('features.integration.desc')}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <div className="mr-3 p-2 rounded-full bg-estate-accent/20">
-                    <ShieldCheck className="h-5 w-5 text-estate-accent" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold">{t('features.notech')}</h3>
-                    <p className="text-sm text-white/80">{t('features.notech.desc')}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <div className="mr-3 p-2 rounded-full bg-estate-accent/20">
-                    <Award className="h-5 w-5 text-estate-accent" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold">{t('features.professional')}</h3>
-                    <p className="text-sm text-white/80">{t('features.professional.desc')}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Trust element */}
-          <div className="mt-8 md:mt-16 p-4 bg-white/10 backdrop-blur-sm rounded-xl max-w-4xl mx-auto">
-            <div className="flex flex-col md:flex-row items-center justify-between">
-              <p className="text-white font-medium mb-3 md:mb-0">{t('trust.rating')}</p>
-              <div className="flex items-center">
-                <span className="text-xl font-bold mr-2 text-white">{t('trust.excellent')}</span>
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="h-6 w-6 fill-estate-accent text-estate-accent" />
-                  ))}
-                </div>
-                <span className="ml-3 text-white font-medium">5.0 aus 5</span>
-              </div>
-              <p className="text-white/80 text-sm ml-2 hidden md:block">{t('trust.based')}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Redesigned Applications Section with Images - BUTTONS REMOVED */}
-      <section id="applications" className="py-20 bg-white">
-        <div className="container">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-estate-dark">
-            {t('applications.title').split(' ')[0]} <span className="text-estate">{t('applications.title').split(' ').slice(1).join(' ')}</span>
-          </h2>
-          
-          <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-10">
-            {/* Card 1 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
-              <div className="h-56 bg-[url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3')] bg-cover bg-center"></div>
-              <div className="p-8">
-                <div className="w-12 h-12 bg-estate-light/20 rounded-full flex items-center justify-center mb-4">
-                  <Code className="text-estate" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-estate-dark">{t('applications.card1.title')}</h3>
-                <p className="text-gray-600 mb-6">
-                  {t('applications.card1.desc')}
-                </p>
-                <ul className="space-y-2">
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span className="text-gray-700">{t('applications.card1.point1')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('applications.card1.point2')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('applications.card1.point3')}</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            
-            {/* Card 2 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
-              <div className="h-56 bg-[url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3')] bg-cover bg-center"></div>
-              <div className="p-8">
-                <div className="w-12 h-12 bg-estate-light/20 rounded-full flex items-center justify-center mb-4">
-                  <FileText className="text-estate" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-estate-dark">{t('applications.card2.title')}</h3>
-                <p className="text-gray-600 mb-6">
-                  {t('applications.card2.desc')}
-                </p>
-                <ul className="space-y-2">
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span className="text-gray-700">{t('applications.card2.point1')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('applications.card2.point2')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('applications.card2.point3')}</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            
-            {/* Card 3 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
-              <div className="h-56 bg-[url('https://images.unsplash.com/photo-1605810230434-7631ac76ec81?ixlib=rb-4.0.3')] bg-cover bg-center"></div>
-              <div className="p-8">
-                <div className="w-12 h-12 bg-estate-light/20 rounded-full flex items-center justify-center mb-4">
-                  <Users className="text-estate" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-estate-dark">{t('applications.card3.title')}</h3>
-                <p className="text-gray-600 mb-6">
-                  {t('applications.card3.desc')}
-                </p>
-                <ul className="space-y-2">
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('applications.card3.point1')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('applications.card3.point2')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('applications.card3.point3')}</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
+      {/* Hero Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto text-center">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 text-estate-dark leading-tight">
+            {currentContent.hero.title}
+          </h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            {currentContent.hero.subtitle}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/payment">
+              <Button size="lg" className="text-lg px-8 py-3">
+                {currentContent.hero.cta}
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Button variant="outline" size="lg" className="text-lg px-8 py-3">
+              {currentContent.hero.demo}
+            </Button>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-estate-gray">
-        <div className="container">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-estate-dark">
-            {t('featuressection.title').split('–')[0]} <span className="text-estate">{t('featuressection.title').split('–')[1]}</span>
-          </h2>
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-estate-dark">
+              {currentContent.features.title}
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              {currentContent.features.subtitle}
+            </p>
+          </div>
           
-          <div className="grid md:grid-cols-3 gap-10 max-w-5xl mx-auto">
-            <div className="bg-white rounded-lg p-8 shadow-md">
-              <div className="w-12 h-12 bg-estate-light/20 rounded-full flex items-center justify-center mb-6 mx-auto">
-                <CircleCheck className="text-estate h-6 w-6" />
+          <div className="grid md:grid-cols-3 gap-8">
+            {currentContent.features.items.map((feature, index) => (
+              <Card key={index} className="text-center border-0 shadow-lg">
+                <CardHeader>
+                  <div className="mx-auto w-16 h-16 bg-estate text-white rounded-full flex items-center justify-center mb-4">
+                    <feature.icon className="h-8 w-8" />
+                  </div>
+                  <CardTitle className="text-xl">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">{feature.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-estate-dark">
+              {currentContent.benefits.title}
+            </h2>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {currentContent.benefits.items.map((benefit, index) => (
+              <div key={index} className="text-center">
+                <div className="mx-auto w-20 h-20 bg-estate/10 rounded-full flex items-center justify-center mb-6">
+                  <benefit.icon className="h-10 w-10 text-estate" />
+                </div>
+                <h3 className="text-xl font-semibold mb-4">{benefit.title}</h3>
+                <p className="text-gray-600">{benefit.description}</p>
               </div>
-              <h3 className="text-xl font-bold mb-4 text-center text-estate-dark">{t('applications.card1.title')}</h3>
-              <ul className="space-y-3">
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>{t('applications.card1.point1')}</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>{t('applications.card1.point2')}</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>{t('applications.card1.point3')}</span>
-                </li>
-              </ul>
-            </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-estate-dark">
+              {currentContent.pricing.title}
+            </h2>
+            <p className="text-xl text-gray-600">
+              {currentContent.pricing.subtitle}
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {currentContent.pricing.plans.map((plan, index) => (
+              <Card key={index} className={`relative ${plan.popular ? 'border-estate shadow-xl scale-105' : ''}`}>
+                {plan.popular && (
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-estate">
+                    Popular
+                  </Badge>
+                )}
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                  <div className="text-4xl font-bold">
+                    €{plan.price}
+                    <span className="text-lg font-normal text-gray-500">{plan.period}</span>
+                  </div>
+                  <CardDescription>{plan.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3 mb-6">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-center">
+                        <Check className="h-5 w-5 text-green-500 mr-3" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link to="/payment">
+                    <Button 
+                      className={`w-full ${plan.popular ? 'bg-estate hover:bg-estate/90' : ''}`}
+                      variant={plan.popular ? 'default' : 'outline'}
+                    >
+                      {plan.cta}
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-estate-dark">
+              {currentContent.testimonials.title}
+            </h2>
+          </div>
+          
+          <div className="max-w-4xl mx-auto">
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-8 text-center">
+                <div className="flex justify-center mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                  ))}
+                </div>
+                <blockquote className="text-xl italic mb-6">
+                  "{currentContent.testimonials.items[currentTestimonial].content}"
+                </blockquote>
+                <div>
+                  <div className="font-semibold">
+                    {currentContent.testimonials.items[currentTestimonial].name}
+                  </div>
+                  <div className="text-gray-600">
+                    {currentContent.testimonials.items[currentTestimonial].role}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             
-            <div className="bg-white rounded-lg p-8 shadow-md">
-              <div className="w-12 h-12 bg-estate-light/20 rounded-full flex items-center justify-center mb-6 mx-auto">
-                <CircleCheck className="text-estate h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-bold mb-4 text-center text-estate-dark">{t('applications.card2.title')}</h3>
-              <ul className="space-y-3">
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>{t('applications.card2.point1')}</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>{t('applications.card2.point2')}</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>{t('applications.card2.point3')}</span>
-                </li>
-              </ul>
-            </div>
-            
-            <div className="bg-white rounded-lg p-8 shadow-md">
-              <div className="w-12 h-12 bg-estate-light/20 rounded-full flex items-center justify-center mb-6 mx-auto">
-                <CircleCheck className="text-estate h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-bold mb-4 text-center text-estate-dark">{t('applications.card3.title')}</h3>
-              <ul className="space-y-3">
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>{t('applications.card3.point1')}</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>{t('applications.card3.point2')}</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                  <span>{t('applications.card3.point3')}</span>
-                </li>
-              </ul>
+            <div className="flex justify-center mt-6 space-x-2">
+              {currentContent.testimonials.items.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentTestimonial(index)}
+                  className={`w-3 h-3 rounded-full ${
+                    index === currentTestimonial ? 'bg-estate' : 'bg-gray-300'
+                  }`}
+                />
+              ))}
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-estate text-white">
-        <div className="container text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('cta.title')}</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
-            {t('cta.subtitle')}
+      <section className="py-20 bg-estate text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            {language === 'de' ? 'Bereit anzufangen?' : 'Ready to get started?'}
+          </h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto">
+            {language === 'de' 
+              ? 'Erstellen Sie noch heute Ihre erste professionelle Immobilienpräsentation.'
+              : 'Create your first professional real estate presentation today.'
+            }
           </p>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="bg-white text-estate hover:bg-estate hover:text-white border-white"
-            asChild
-          >
-            <Link to="/auth">{t('cta.button')}</Link>
-          </Button>
+          <Link to="/payment">
+            <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
+              {currentContent.hero.cta}
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
         </div>
       </section>
 
-      {/* How it works Section */}
-      <section id="how-it-works" className="py-20">
-        <div className="container">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-estate-dark">
-            {t('how.title').split(' ')[0]} <span className="text-estate">{t('how.title').split(' ').slice(1).join(' ')}</span>
-          </h2>
-          
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Step 1 */}
-            <div className="relative">
-              <div className="absolute -left-4 top-0 w-12 h-12 bg-estate rounded-full flex items-center justify-center text-white font-bold text-xl">
-                1
-              </div>
-              <div className="bg-white rounded-lg p-8 pl-10 shadow-md ml-6">
-                <h3 className="text-xl font-bold mb-4 text-estate-dark">{t('how.step1.title')}</h3>
-                <p className="text-gray-600">
-                  {t('how.step1.desc')}
-                </p>
-              </div>
-              <div className="hidden md:block absolute -right-5 top-1/2 transform -translate-y-1/2 z-10">
-                <ArrowRight className="text-estate h-6 w-6" />
-              </div>
-            </div>
-            
-            {/* Step 2 */}
-            <div className="relative">
-              <div className="absolute -left-4 top-0 w-12 h-12 bg-estate rounded-full flex items-center justify-center text-white font-bold text-xl">
-                2
-              </div>
-              <div className="bg-white rounded-lg p-8 pl-10 shadow-md ml-6">
-                <h3 className="text-xl font-bold mb-4 text-estate-dark">{t('how.step2.title')}</h3>
-                <p className="text-gray-600">
-                  {t('how.step2.desc')}
-                </p>
-              </div>
-              <div className="hidden md:block absolute -right-5 top-1/2 transform -translate-y-1/2 z-10">
-                <ArrowRight className="text-estate h-6 w-6" />
-              </div>
-            </div>
-            
-            {/* Step 3 */}
-            <div className="relative">
-              <div className="absolute -left-4 top-0 w-12 h-12 bg-estate rounded-full flex items-center justify-center text-white font-bold text-xl">
-                3
-              </div>
-              <div className="bg-white rounded-lg p-8 pl-10 shadow-md ml-6">
-                <h3 className="text-xl font-bold mb-4 text-estate-dark">{t('how.step3.title')}</h3>
-                <p className="text-gray-600">
-                  {t('how.step3.desc')}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section id="faq" className="py-20 bg-estate-gray">
-        <div className="container">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-estate-dark">
-            {t('faq.title').split(' ')[0]} <span className="text-estate">{t('faq.title').split(' ').slice(1).join(' ')}</span>
-          </h2>
-          
-          <div className="max-w-3xl mx-auto space-y-6">
-            {/* FAQ Item 1 */}
-            <div className="bg-white rounded-lg p-6 shadow-md">
-              <h3 className="text-xl font-bold mb-2 text-estate-dark">{t('faq.q1')}</h3>
-              <p className="text-gray-600">
-                {t('faq.a1')}
-              </p>
-            </div>
-            
-            {/* FAQ Item 2 */}
-            <div className="bg-white rounded-lg p-6 shadow-md">
-              <h3 className="text-xl font-bold mb-2 text-estate-dark">{t('faq.q2')}</h3>
-              <p className="text-gray-600">
-                {t('faq.a2')}
-              </p>
-            </div>
-            
-            {/* FAQ Item 3 */}
-            <div className="bg-white rounded-lg p-6 shadow-md">
-              <h3 className="text-xl font-bold mb-2 text-estate-dark">{t('faq.q3')}</h3>
-              <p className="text-gray-600">
-                {t('faq.a3')}
-              </p>
-            </div>
-            
-            {/* FAQ Item 4 */}
-            <div className="bg-white rounded-lg p-6 shadow-md">
-              <h3 className="text-xl font-bold mb-2 text-estate-dark">{t('faq.q4')}</h3>
-              <p className="text-gray-600">
-                {t('faq.a4')}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* Updated Pricing Section */}
-      <section id="pricing" className="py-20">
-        <div className="container">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-estate-dark">
-            {t('pricing.title').split(' ')[0]} <span className="text-estate">{t('pricing.title').split(' ').slice(1).join(' ')}</span>
-          </h2>
-          
-          <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
-            {/* Starter Plan - Updated price and features */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
-              <div className="p-8">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-2xl font-bold text-estate-dark">{t('pricing.starter')}</h3>
-                  <span className="bg-estate-light/20 text-estate px-3 py-1 rounded-full text-sm font-medium">{t('pricing.recommended')}</span>
-                </div>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">€19</span>
-                  <span className="text-gray-500">{t('pricing.month')}</span>
-                </div>
-                <p className="text-gray-600 mb-6">{t('pricing.starter.desc')}</p>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('pricing.starter.feature1')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('pricing.starter.feature2')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('pricing.starter.feature3')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('pricing.starter.feature4')}</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="px-8 pb-8">
-                <Button className="w-full" variant="outline" asChild>
-                  <Link to="/payment?plan=starter">{t('cta.button')}</Link>
-                </Button>
-              </div>
-            </div>
-            
-            {/* Professional Plan - Updated price and features */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-estate">
-              <div className="bg-estate text-white p-3 text-center font-medium">
-                {t('pricing.pro.reco')}
-              </div>
-              <div className="p-8">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-2xl font-bold text-estate-dark">{t('pricing.pro')}</h3>
-                  <span className="bg-estate text-white px-3 py-1 rounded-full text-sm font-medium">{t('pricing.pro.popular')}</span>
-                </div>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">€39</span>
-                  <span className="text-gray-500">{t('pricing.month')}</span>
-                </div>
-                <p className="text-gray-600 mb-6">{t('pricing.pro.desc')}</p>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('pricing.pro.feature1')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('pricing.pro.feature2')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('pricing.pro.feature3')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('pricing.pro.feature4')}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <Check className="text-estate mr-2 mt-1 flex-shrink-0" />
-                    <span>{t('pricing.pro.feature5')}</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="px-8 pb-8">
-                <Button className="w-full" asChild>
-                  <Link to="/payment?plan=professional">{t('cta.button')}</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="py-20 bg-gradient-to-br from-estate to-estate-dark text-white">
-        <div className="container text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">{t('finalcta.title')}</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
-            {t('finalcta.subtitle')}
-          </p>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="bg-white text-estate hover:bg-estate-light hover:text-white border-white"
-            asChild
-          >
-            <Link to="/auth">{t('cta.button')}</Link>
-          </Button>
-        </div>
-      </section>
-
-      {/* Footer - Removed Ressourcen section */}
-      <footer className="bg-estate-text py-12">
-        <div className="container">
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-2 font-bold text-xl text-white mb-4">
-                <span className="bg-white text-estate py-1 px-2 rounded mr-1">Immo</span>
-                <span>Upload</span>
-              </div>
-              <p className="text-gray-300">
-                {t('footer.desc')}
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="text-white font-bold mb-4">{t('footer.product')}</h4>
-              <ul className="space-y-2 text-gray-300">
-                <li><a href="#applications" className="hover:text-white transition-colors">{t('footer.applications')}</a></li>
-                <li><a href="#features" className="hover:text-white transition-colors">{t('footer.features')}</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">{t('footer.pricing')}</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="text-white font-bold mb-4">{t('footer.contact')}</h4>
-              <ul className="space-y-2 text-gray-300">
-                <li><a href="mailto:info@immoupload.com" className="hover:text-white transition-colors">info@immoupload.com</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">{t('footer.support')}</a></li>
-              </ul>
-            </div>
-          </div>
-          
+      {/* Footer */}
+      <footer className="bg-estate-text py-8">
+        <div className="container mx-auto px-4">
           <div className="border-t border-gray-700 pt-8 flex justify-between items-center">
-            <p className="text-gray-400">© {new Date().getFullYear()} immoupload.com. {t('footer.rights')}</p>
+            <p className="text-gray-400">© {new Date().getFullYear()} immoupload.com. {currentContent.footer.copyright}</p>
             <div className="flex gap-4">
-              <Link to="/impressum" className="text-gray-400 hover:text-white transition-colors">{t('footer.imprint')}</Link>
-              <Link to="/datenschutz" className="text-gray-400 hover:text-white transition-colors">{t('footer.privacy')}</Link>
+              <button 
+                onClick={() => handleLegalNavigation('legal')}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                {currentContent.footer.links.legal}
+              </button>
+              <button 
+                onClick={() => handleLegalNavigation('privacy')}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                {currentContent.footer.links.privacy}
+              </button>
             </div>
           </div>
         </div>

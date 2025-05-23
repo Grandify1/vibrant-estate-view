@@ -1,27 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Edit, Copy, Key, Loader2, Trash2 } from 'lucide-react';
+import { Plus, Edit, Copy, Key, Loader2, Trash2, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-interface Profile {
-  id: string;
-  first_name?: string;
-  last_name?: string;
-  company_id?: string;
-  created_at: string;
-  companies?: {
-    name: string;
-  };
-}
 
 interface UserWithAuth {
   id: string;
@@ -49,10 +38,13 @@ interface UserForm {
 const UserManagement = () => {
   const [users, setUsers] = useState<UserWithAuth[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
   const [companiesLoading, setCompaniesLoading] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithAuth | null>(null);
+  const [companySearch, setCompanySearch] = useState('');
+  const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
   const [formData, setFormData] = useState<UserForm>({
     email: '',
     first_name: '',
@@ -69,43 +61,31 @@ const UserManagement = () => {
     loadCompanies();
   }, []);
 
+  useEffect(() => {
+    // Filter companies based on search
+    if (companySearch.trim() === '') {
+      setFilteredCompanies(companies);
+    } else {
+      const filtered = companies.filter(company =>
+        company.name.toLowerCase().includes(companySearch.toLowerCase())
+      );
+      setFilteredCompanies(filtered);
+    }
+  }, [companySearch, companies]);
+
   const loadUsers = async () => {
     setLoading(true);
     try {
-      console.log("Loading users...");
+      console.log("Loading all users from auth...");
       
-      // Get profiles with company information
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          company_id,
-          created_at,
-          companies (
-            name
-          )
-        `)
-        .order('created_at', { ascending: false });
+      const { data: users, error } = await supabase.rpc('get_all_users_with_profiles');
 
-      console.log("Profiles response:", { profiles, profilesError });
+      console.log("Users response:", { users, error });
 
-      if (profilesError) throw profilesError;
+      if (error) throw error;
 
-      // Since we can't access auth.users directly, we'll work with profiles only
-      const mergedUsers: UserWithAuth[] = (profiles || []).map((profile: any) => ({
-        id: profile.id,
-        email: `user-${profile.id.slice(0, 8)}@example.com`, // Fallback email display
-        first_name: profile.first_name || '',
-        last_name: profile.last_name || '',
-        company_id: profile.company_id || '',
-        company_name: profile.companies?.name || '',
-        created_at: profile.created_at
-      }));
-
-      console.log("Final merged users:", mergedUsers);
-      setUsers(mergedUsers);
+      console.log("Final users:", users);
+      setUsers(users || []);
     } catch (error) {
       console.error('Error loading users:', error);
       toast.error('Fehler beim Laden der Benutzer');
@@ -125,8 +105,6 @@ const UserManagement = () => {
         .order('name');
 
       console.log("Companies response:", { data, error });
-      console.log("Companies data type:", typeof data, Array.isArray(data));
-      console.log("Companies length:", data?.length);
 
       if (error) {
         console.error("Companies error:", error);
@@ -136,14 +114,17 @@ const UserManagement = () => {
       if (data && Array.isArray(data)) {
         console.log("Setting companies:", data);
         setCompanies(data);
+        setFilteredCompanies(data);
       } else {
         console.warn("Companies data is not an array or is null:", data);
         setCompanies([]);
+        setFilteredCompanies([]);
       }
     } catch (error) {
       console.error('Error loading companies:', error);
       toast.error('Fehler beim Laden der Unternehmen');
       setCompanies([]);
+      setFilteredCompanies([]);
     } finally {
       setCompaniesLoading(false);
     }
@@ -158,6 +139,7 @@ const UserManagement = () => {
       company_id: '',
       password: DEFAULT_PASSWORD
     });
+    setCompanySearch('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -196,12 +178,14 @@ const UserManagement = () => {
         // Update existing user profile
         const { error } = await supabase
           .from('profiles')
-          .update({
+          .upsert({
+            id: editingUser.id,
             first_name: formData.first_name,
             last_name: formData.last_name,
             company_id: formData.company_id || null
-          })
-          .eq('id', editingUser.id);
+          }, {
+            onConflict: 'id'
+          });
 
         if (error) throw error;
         toast.success('Benutzer erfolgreich aktualisiert');
@@ -275,7 +259,20 @@ const UserManagement = () => {
       company_id: user.company_id || '',
       password: DEFAULT_PASSWORD
     });
+    setCompanySearch(user.company_name || '');
     setShowCreateDialog(true);
+  };
+
+  const handleCompanySelect = (company: Company) => {
+    setFormData({ ...formData, company_id: company.id });
+    setCompanySearch(company.name);
+    setShowCompanyDropdown(false);
+  };
+
+  const clearCompanySelection = () => {
+    setFormData({ ...formData, company_id: '' });
+    setCompanySearch('');
+    setShowCompanyDropdown(false);
   };
 
   const handleResetPassword = async (userId: string) => {
@@ -342,11 +339,6 @@ const UserManagement = () => {
     toast.success('In Zwischenablage kopiert');
   };
 
-  // Debug companies state
-  console.log("Current companies state:", companies);
-  console.log("Companies loading state:", companiesLoading);
-  console.log("Form data company_id:", formData.company_id);
-
   return (
     <Card>
       <CardHeader>
@@ -354,7 +346,7 @@ const UserManagement = () => {
           <div>
             <CardTitle>Benutzer verwalten</CardTitle>
             <CardDescription>
-              Alle Benutzer im System verwalten und Unternehmen zuordnen
+              Alle Benutzer aus der Authentifizierung verwalten und Unternehmen zuordnen
             </CardDescription>
           </div>
           <Dialog open={showCreateDialog} onOpenChange={(open) => {
@@ -430,45 +422,64 @@ const UserManagement = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="company_id">Unternehmen</Label>
+                  <Label htmlFor="company_search">Unternehmen</Label>
                   {companiesLoading ? (
                     <div className="flex items-center space-x-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Lade Unternehmen...</span>
                     </div>
                   ) : (
-                    <Select 
-                      value={formData.company_id} 
-                      onValueChange={(value) => {
-                        console.log("Company dropdown value changed:", value);
-                        console.log("Available companies:", companies);
-                        setFormData({ ...formData, company_id: value === "none" ? "" : value });
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Unternehmen auswählen" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Kein Unternehmen</SelectItem>
-                        {companies.length === 0 ? (
-                          <SelectItem value="no-companies" disabled>
-                            Keine Unternehmen verfügbar
-                          </SelectItem>
-                        ) : (
-                          companies.map((company) => {
-                            console.log("Rendering company option:", company);
-                            return (
-                              <SelectItem key={company.id} value={company.id}>
-                                {company.name}
-                              </SelectItem>
-                            );
-                          })
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <div className="relative">
+                      <div className="relative">
+                        <Input
+                          id="company_search"
+                          type="text"
+                          value={companySearch}
+                          onChange={(e) => {
+                            console.log("Company search changed:", e.target.value);
+                            setCompanySearch(e.target.value);
+                            setShowCompanyDropdown(true);
+                          }}
+                          onFocus={() => setShowCompanyDropdown(true)}
+                          placeholder="Unternehmen suchen..."
+                          className="pr-10"
+                        />
+                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      </div>
+                      
+                      {showCompanyDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {filteredCompanies.length === 0 ? (
+                            <div className="px-3 py-2 text-gray-500">
+                              {companySearch.trim() === '' ? 'Tippen Sie, um zu suchen...' : 'Keine Unternehmen gefunden'}
+                            </div>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={clearCompanySelection}
+                                className="w-full px-3 py-2 text-left hover:bg-gray-100 text-gray-600 border-b"
+                              >
+                                Kein Unternehmen
+                              </button>
+                              {filteredCompanies.map((company) => (
+                                <button
+                                  key={company.id}
+                                  type="button"
+                                  onClick={() => handleCompanySelect(company)}
+                                  className="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                                >
+                                  {company.name}
+                                </button>
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   )}
                   <div className="text-xs text-gray-500">
-                    Debug: {companies.length} Unternehmen geladen
+                    {formData.company_id ? `Ausgewählt: ${companySearch}` : 'Kein Unternehmen ausgewählt'}
                   </div>
                 </div>
 
@@ -537,7 +548,10 @@ const UserManagement = () => {
                   <TableCell>
                     <div>
                       <div className="font-semibold">
-                        {user.first_name} {user.last_name}
+                        {user.first_name && user.last_name ? 
+                          `${user.first_name} ${user.last_name}` : 
+                          <span className="text-gray-400">Name nicht gesetzt</span>
+                        }
                       </div>
                     </div>
                   </TableCell>

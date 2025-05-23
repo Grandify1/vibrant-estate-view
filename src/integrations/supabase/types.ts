@@ -327,6 +327,18 @@ export type Database = {
         Args: { profile_company_id: string }
         Returns: boolean
       }
+      get_all_users_with_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          email: string
+          created_at: string
+          first_name: string
+          last_name: string
+          company_id: string
+          company_name: string
+        }[]
+      }
       increment_coupon_usage: {
         Args: { coupon_id_param: string }
         Returns: undefined
