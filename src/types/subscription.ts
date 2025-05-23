@@ -19,6 +19,8 @@ export interface Coupon {
   code: string;
   discount_type: 'percentage' | 'fixed' | 'free';
   discount_value: number;
+  description?: string;
+  usage_type?: 'single_use' | 'single_use_per_email' | 'time_based' | 'unlimited';
   max_uses?: number;
   current_uses: number;
   valid_from: string;

@@ -124,11 +124,13 @@ export type Database = {
           code: string
           created_at: string
           current_uses: number | null
+          description: string | null
           discount_type: string
           discount_value: number | null
           id: string
           max_uses: number | null
           updated_at: string
+          usage_type: string | null
           valid_from: string | null
           valid_until: string | null
         }
@@ -137,11 +139,13 @@ export type Database = {
           code: string
           created_at?: string
           current_uses?: number | null
+          description?: string | null
           discount_type: string
           discount_value?: number | null
           id?: string
           max_uses?: number | null
           updated_at?: string
+          usage_type?: string | null
           valid_from?: string | null
           valid_until?: string | null
         }
@@ -150,11 +154,13 @@ export type Database = {
           code?: string
           created_at?: string
           current_uses?: number | null
+          description?: string | null
           discount_type?: string
           discount_value?: number | null
           id?: string
           max_uses?: number | null
           updated_at?: string
+          usage_type?: string | null
           valid_from?: string | null
           valid_until?: string | null
         }

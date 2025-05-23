@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,14 +48,18 @@ const AuthPage: React.FC = () => {
     if (!loadingAuth && isAuthenticated) {
       console.log("Auth: Authentifiziert, leite weiter...");
       
-      // Wenn Payment Success oder kein Plan, dann zur Admin-Seite
-      if (paymentSuccess || !selectedPlan) {
-        console.log("Auth: Zur Admin-Seite weiterleiten");
+      // Wenn Payment Success, dann zur Admin-Seite
+      if (paymentSuccess) {
+        console.log("Auth: Zur Admin-Seite weiterleiten (Payment Success)");
         navigate('/admin');
-      } else {
+      } else if (selectedPlan) {
         // Wenn Plan ausgewählt aber noch nicht bezahlt, zur Payment-Seite
-        console.log("Auth: Zur Payment-Seite weiterleiten");
+        console.log("Auth: Zur Payment-Seite weiterleiten (Plan ausgewählt)");
         navigate(`/payment?plan=${selectedPlan}`);
+      } else {
+        // Neue Registrierung ohne Plan - zur Payment-Seite mit Starter Plan
+        console.log("Auth: Neue Registrierung - zur Payment-Seite mit Starter Plan");
+        navigate('/payment?plan=starter');
       }
     }
   }, [isAuthenticated, loadingAuth, navigate, user, paymentSuccess, selectedPlan]);
