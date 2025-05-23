@@ -9,6 +9,7 @@ import PropertyListWrapper from "@/components/admin/PropertyListWrapper";
 import AgentTab from "@/components/admin/AgentTab";
 import EmbedCodeTab from "@/components/admin/EmbedCodeTab";
 import SettingsTab from "@/components/admin/SettingsTab";
+import AdminTab from "@/components/admin/AdminTab";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -26,13 +27,16 @@ const PropertyTab = () => {
 };
 
 export default function Admin() {
-  const { isAuthenticated, loadingAuth, company } = useAuth();
+  const { isAuthenticated, loadingAuth, company, user } = useAuth();
   const [activeTab, setActiveTab] = useState("properties");
   const navigate = useNavigate();
   const location = useLocation();
   const [authTimeout, setAuthTimeout] = useState(false);
   const [userChangedTab, setUserChangedTab] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  
+  // Check if user is admin
+  const isAdmin = user?.email === 'dustin.althaus@me.com';
   
   // Check for redirects from location state
   useEffect(() => {
@@ -153,6 +157,7 @@ export default function Admin() {
               <TabsTrigger value="agents">Makler</TabsTrigger>
               <TabsTrigger value="embedcode">Embed-Code</TabsTrigger>
               <TabsTrigger value="settings">Einstellungen</TabsTrigger>
+              {isAdmin && <TabsTrigger value="admin">Admin</TabsTrigger>}
             </TabsList>
             
             <TabsContent value="properties">
@@ -170,6 +175,12 @@ export default function Admin() {
             <TabsContent value="settings">
               <SettingsTab />
             </TabsContent>
+
+            {isAdmin && (
+              <TabsContent value="admin">
+                <AdminTab />
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </div>

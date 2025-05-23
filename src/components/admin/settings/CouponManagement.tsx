@@ -57,8 +57,9 @@ const CouponManagement = () => {
       return;
     }
 
-    if (formData.discount_value <= 0) {
-      toast.error('Rabattwert muss größer als 0 sein');
+    // Nur bei aktiven Coupons und nicht "free" Typ validieren
+    if (formData.active && formData.discount_type !== 'free' && formData.discount_value <= 0) {
+      toast.error('Rabattwert muss bei aktiven Coupons größer als 0 sein');
       return;
     }
 
@@ -137,7 +138,7 @@ const CouponManagement = () => {
                 Neuer Coupon
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingCoupon ? 'Coupon bearbeiten' : 'Neuen Coupon erstellen'}
@@ -160,9 +161,18 @@ const CouponManagement = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="discount_type">Rabatt-Typ *</Label>
-                    <Select value={formData.discount_type} onValueChange={(value: any) => setFormData({ ...formData, discount_type: value })}>
+                    <Select 
+                      value={formData.discount_type} 
+                      onValueChange={(value: 'percentage' | 'fixed' | 'free') => {
+                        setFormData({ 
+                          ...formData, 
+                          discount_type: value,
+                          discount_value: value === 'free' ? 0 : formData.discount_value
+                        });
+                      }}
+                    >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Wählen Sie den Rabatt-Typ" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="percentage">Prozent</SelectItem>
@@ -186,14 +196,19 @@ const CouponManagement = () => {
                       value={formData.discount_value}
                       onChange={(e) => setFormData({ ...formData, discount_value: parseFloat(e.target.value) || 0 })}
                       disabled={formData.discount_type === 'free'}
-                      required
+                      required={formData.discount_type !== 'free'}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="usage_type">Nutzungstyp</Label>
-                    <Select value={formData.usage_type} onValueChange={(value: any) => setFormData({ ...formData, usage_type: value })}>
+                    <Select 
+                      value={formData.usage_type} 
+                      onValueChange={(value: 'single_use' | 'single_use_per_email' | 'time_based' | 'unlimited') => 
+                        setFormData({ ...formData, usage_type: value })
+                      }
+                    >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Wählen Sie den Nutzungstyp" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="unlimited">Unbegrenzt</SelectItem>
