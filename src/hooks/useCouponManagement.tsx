@@ -43,7 +43,7 @@ export const useCouponManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCoupons(data || []);
+      setCoupons(data as CouponWithUsage[] || []);
     } catch (error) {
       console.error('Error loading coupons:', error);
       toast.error('Fehler beim Laden der Coupons');

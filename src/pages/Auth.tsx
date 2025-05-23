@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +19,7 @@ const AuthPage: React.FC = () => {
   const urlTab = searchParams.get('tab');
   const selectedPlan = searchParams.get('plan');
   const paymentSuccess = searchParams.get('payment') === 'success';
+  const isNewRegistration = searchParams.get('new_registration') === 'true';
   
   const [activeTab, setActiveTab] = useState<string>(urlTab || 'login');
   
@@ -43,7 +45,7 @@ const AuthPage: React.FC = () => {
   
   // Verbesserte Weiterleitung mit Logs - MOVED TO TOP
   useEffect(() => {
-    console.log("Auth: Auth Status:", { isAuthenticated, loadingAuth, user });
+    console.log("Auth: Auth Status:", { isAuthenticated, loadingAuth, user, isNewRegistration, selectedPlan, paymentSuccess });
     
     if (!loadingAuth && isAuthenticated) {
       console.log("Auth: Authentifiziert, leite weiter...");
@@ -52,17 +54,24 @@ const AuthPage: React.FC = () => {
       if (paymentSuccess) {
         console.log("Auth: Zur Admin-Seite weiterleiten (Payment Success)");
         navigate('/admin');
-      } else if (selectedPlan) {
-        // Wenn Plan ausgewählt aber noch nicht bezahlt, zur Payment-Seite
-        console.log("Auth: Zur Payment-Seite weiterleiten (Plan ausgewählt)");
+      } 
+      // Nur für neue Registrierungen: zur Payment-Seite weiterleiten
+      else if (isNewRegistration && selectedPlan) {
+        console.log("Auth: Zur Payment-Seite weiterleiten (Neue Registrierung mit Plan)");
         navigate(`/payment?plan=${selectedPlan}`);
-      } else {
-        // Neue Registrierung ohne Plan - zur Payment-Seite mit Starter Plan
-        console.log("Auth: Neue Registrierung - zur Payment-Seite mit Starter Plan");
+      }
+      // Nur für neue Registrierungen ohne Plan: Starter Plan setzen
+      else if (isNewRegistration) {
+        console.log("Auth: Neue Registrierung ohne Plan - zur Payment-Seite mit Starter Plan");
         navigate('/payment?plan=starter');
       }
+      // Bestehende Benutzer direkt zum Dashboard weiterleiten
+      else {
+        console.log("Auth: Bestehender Benutzer - direkt zur Admin-Seite");
+        navigate('/admin');
+      }
     }
-  }, [isAuthenticated, loadingAuth, navigate, user, paymentSuccess, selectedPlan]);
+  }, [isAuthenticated, loadingAuth, navigate, user, paymentSuccess, selectedPlan, isNewRegistration]);
   
   // NOW the conditional returns come AFTER all hooks
   if (loadingAuth) {
@@ -124,7 +133,8 @@ const AuthPage: React.FC = () => {
       
       if (success) {
         toast.success("Registrierung erfolgreich!");
-        // Redirect happens automatically in useEffect
+        // Markiere als neue Registrierung für die Weiterleitung zur Payment-Seite
+        navigate(`/auth?new_registration=true${selectedPlan ? `&plan=${selectedPlan}` : ''}`);
       }
     } catch (error) {
       console.error("Auth: Registrierung Fehler:", error);
