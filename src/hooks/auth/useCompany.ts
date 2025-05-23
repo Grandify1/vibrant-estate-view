@@ -32,14 +32,17 @@ export const useCompany = (user: AuthUser | null) => {
         return;
       }
       
-      if (profileData?.company_id) {
-        console.log("Found company_id in profile:", profileData.company_id);
+      // Parse the JSON response and type it correctly
+      const profile = profileData as { company_id?: string } | null;
+      
+      if (profile?.company_id) {
+        console.log("Found company_id in profile:", profile.company_id);
         
         // Fetch company data
         const { data: companyData, error: companyError } = await supabase
           .from('companies')
           .select('*')
-          .eq('id', profileData.company_id)
+          .eq('id', profile.company_id)
           .maybeSingle();
           
         if (companyError) {
@@ -53,9 +56,9 @@ export const useCompany = (user: AuthUser | null) => {
           setCompany(companyData);
           
           // Update the user object with company_id
-          user.company_id = profileData.company_id;
+          user.company_id = profile.company_id;
         } else {
-          console.warn("No company found with ID:", profileData.company_id);
+          console.warn("No company found with ID:", profile.company_id);
         }
       } else {
         console.log("User has no company assigned in profile");
@@ -117,8 +120,11 @@ export const useCompany = (user: AuthUser | null) => {
         toast.warning("Unternehmen erstellt, aber Profil konnte nicht aktualisiert werden");
         // Don't return null here, we already created the company
       } else {
-        // Update user object with company_id
-        user.company_id = newCompany.id;
+        // Parse the JSON response and update user object with company_id
+        const profile = profileData as { company_id?: string } | null;
+        if (profile?.company_id) {
+          user.company_id = profile.company_id;
+        }
       }
       
       // Step 3: Update local state
