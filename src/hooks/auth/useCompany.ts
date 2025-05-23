@@ -15,47 +15,19 @@ export const useCompany = (user: AuthUser | null) => {
     try {
       setLoadingCompany(true);
       
-      console.log("useCompany: Loading company for user:", user.id, "with company_id:", user.company_id);
+      console.log("useCompany: Loading company for user:", user.id);
       
-      // If we already have company_id from the user object, use it directly
-      if (user.company_id) {
-        console.log("Using company_id from user object:", user.company_id);
-        
-        // Fetch company data
-        const { data: companyData, error: companyError } = await supabase
-          .from('companies')
-          .select('*')
-          .eq('id', user.company_id)
-          .maybeSingle();
-          
-        if (companyError) {
-          console.error("Error fetching company:", companyError);
-          setLoadingCompany(false);
-          return;
-        }
-          
-        if (companyData) {
-          console.log("Company data loaded successfully:", companyData);
-          setCompany(companyData);
-        } else {
-          console.warn("No company found with ID:", user.company_id);
-        }
-        
-        setLoadingCompany(false);
-        return;
-      }
-      
-      // If we don't have a company_id in user object, check the profile
-      console.log("No company_id in user object, checking profile");
-      
+      // Use the safe RPC function to get profile data
       const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .maybeSingle();
+        .rpc('safe_update_user_profile', {
+          user_id_param: user.id,
+          first_name_param: user.first_name || '',
+          last_name_param: user.last_name || '',
+          company_id_param: null // Don't update company_id, just get current data
+        });
       
       if (profileError) {
-        console.error("Error fetching profile:", profileError);
+        console.error("Error fetching profile via RPC:", profileError);
         setLoadingCompany(false);
         return;
       }
@@ -79,6 +51,9 @@ export const useCompany = (user: AuthUser | null) => {
         if (companyData) {
           console.log("Company data loaded successfully:", companyData);
           setCompany(companyData);
+          
+          // Update the user object with company_id
+          user.company_id = profileData.company_id;
         } else {
           console.warn("No company found with ID:", profileData.company_id);
         }
@@ -128,20 +103,22 @@ export const useCompany = (user: AuthUser | null) => {
       
       console.log("Company created successfully:", newCompany.id);
       
-      // Step 2: Update user profile with company_id
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          company_id: newCompany.id,
-          first_name: user.first_name || null,
-          last_name: user.last_name || null
+      // Step 2: Update user profile with company_id using RPC function
+      const { data: profileData, error: profileError } = await supabase
+        .rpc('safe_update_user_profile', {
+          user_id_param: user.id,
+          first_name_param: user.first_name || '',
+          last_name_param: user.last_name || '',
+          company_id_param: newCompany.id
         });
         
       if (profileError) {
         console.error("Fehler bei der Profilaktualisierung:", profileError);
         toast.warning("Unternehmen erstellt, aber Profil konnte nicht aktualisiert werden");
         // Don't return null here, we already created the company
+      } else {
+        // Update user object with company_id
+        user.company_id = newCompany.id;
       }
       
       // Step 3: Update local state

@@ -309,9 +309,8 @@ const LandingPage = () => {
     }
   };
 
-  // Fix the flag assignment - show current language flag, switch to other language
-  const languageFlag = language === 'de' ? '🇩🇪' : '🇺🇸';
-  const switchToFlag = language === 'de' ? '🇺🇸' : '🇩🇪';
+  // KORRIGIERT: Zeige die Flagge der AKTUELLEN Sprache an
+  const currentFlag = language === 'de' ? '🇩🇪' : '🇺🇸';
 
   return (
     <div className="min-h-screen bg-white">
@@ -331,7 +330,7 @@ const LandingPage = () => {
               onClick={switchLanguage}
               title={language === 'de' ? 'Switch to English' : 'Zu Deutsch wechseln'}
             >
-              <span className="text-lg">{switchToFlag}</span>
+              <span className="text-lg">{currentFlag}</span>
             </Button>
             <Link to="/admin">
               <Button variant="outline" size="sm">
