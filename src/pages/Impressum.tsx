@@ -1,14 +1,26 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Flag } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ImpressumProps {
   language: 'de' | 'en';
 }
 
 const Impressum: React.FC<ImpressumProps> = ({ language }) => {
+  const { setLanguage } = useLanguage();
+
+  const switchLanguage = () => {
+    if (language === 'de') {
+      setLanguage('en');
+      window.location.href = '/legal-notice';
+    } else {
+      setLanguage('de');
+      window.location.href = '/impressum';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
@@ -22,6 +34,15 @@ const Impressum: React.FC<ImpressumProps> = ({ language }) => {
           </div>
           
           <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full" 
+              onClick={switchLanguage}
+              title={language === 'de' ? 'Switch to English' : 'Zu Deutsch wechseln'}
+            >
+              <Flag className="h-4 w-4" />
+            </Button>
             <Link to="/">
               <Button variant="outline" size="sm" className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
@@ -215,10 +236,10 @@ const Impressum: React.FC<ImpressumProps> = ({ language }) => {
           <div className="border-t border-gray-700 pt-8 flex justify-between items-center">
             <p className="text-gray-400">© {new Date().getFullYear()} immoupload.com. {language === 'de' ? 'Alle Rechte vorbehalten.' : 'All rights reserved.'}</p>
             <div className="flex gap-4">
-              <Link to="/impressum" className="text-gray-400 hover:text-white transition-colors">
+              <Link to={language === 'de' ? "/impressum" : "/legal-notice"} className="text-gray-400 hover:text-white transition-colors">
                 {language === 'de' ? 'Impressum' : 'Legal Notice'}
               </Link>
-              <Link to="/datenschutz" className="text-gray-400 hover:text-white transition-colors">
+              <Link to={language === 'de' ? "/datenschutz" : "/privacy-policy"} className="text-gray-400 hover:text-white transition-colors">
                 {language === 'de' ? 'Datenschutz' : 'Privacy Policy'}
               </Link>
             </div>
