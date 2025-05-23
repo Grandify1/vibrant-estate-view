@@ -34,27 +34,39 @@ export default function Embed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Send height to parent window
+  // Enhanced height calculation and communication with parent
   useEffect(() => {
     const sendHeightToParent = () => {
-      const height = document.body.scrollHeight;
-      window.parent.postMessage({ type: 'resize-iframe', height }, '*');
+      // Add padding to ensure cards are not cut off
+      const contentHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+      const paddedHeight = contentHeight + 40; // Add 40px padding
+      
+      window.parent.postMessage({ 
+        type: 'resize-iframe', 
+        height: paddedHeight,
+        source: 'immo-embed'
+      }, '*');
     };
 
-    // Send initial height
-    sendHeightToParent();
+    // Send initial height after a short delay
+    const initialTimer = setTimeout(sendHeightToParent, 300);
     
-    // Send height after properties load
+    // Send height when content changes
     if (!loading) {
-      setTimeout(sendHeightToParent, 100);
-      setTimeout(sendHeightToParent, 500); // For images that might load later
-      setTimeout(sendHeightToParent, 1500); // Final adjustment after everything settles
+      const contentTimer = setTimeout(sendHeightToParent, 100);
+      const finalTimer = setTimeout(sendHeightToParent, 800);
+      
+      return () => {
+        clearTimeout(initialTimer);
+        clearTimeout(contentTimer);
+        clearTimeout(finalTimer);
+      };
     }
 
     // Listen for resize events
     window.addEventListener('resize', sendHeightToParent);
     
-    // Listen for postMessage requests
+    // Listen for postMessage requests from parent
     const handleMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === 'request-height') {
         sendHeightToParent();
@@ -64,6 +76,7 @@ export default function Embed() {
     window.addEventListener('message', handleMessage);
     
     return () => {
+      clearTimeout(initialTimer);
       window.removeEventListener('resize', sendHeightToParent);
       window.removeEventListener('message', handleMessage);
     };
@@ -158,9 +171,9 @@ export default function Embed() {
     fetchProperties();
   }, [companyId]);
 
-  // Render only the grid in the embed view
+  // Render with improved padding and spacing
   return (
-    <div className="w-full bg-white py-2">
+    <div className="w-full bg-white py-4 px-2 min-h-[200px]">
       <PropertyGrid properties={properties} loading={loading} error={error} />
     </div>
   );

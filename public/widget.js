@@ -2,7 +2,7 @@
 /**
  * ImmoUpload Widget - Production Version
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 4.0 - Production Ready (Debug-free)
+ * Version 4.1 - Improved Height Handling
  */
 (function() {
   // Globales Objekt für das Widget erstellen
@@ -50,9 +50,10 @@
       }
     }
     
-    // Container-Style setzen
-    container.style.overflow = 'hidden';
+    // Container-Style setzen mit verbessertem Overflow-Handling
+    container.style.overflow = 'visible';
     container.style.position = 'relative';
+    container.style.minHeight = '300px';
     
     // CSS für Hover-Effekte einfügen
     const styleTag = document.createElement('style');
@@ -71,6 +72,10 @@
         font-size: 0.75rem;
         font-weight: 500;
       }
+      .immo-widget-iframe {
+        border: none !important;
+        overflow: visible !important;
+      }
     `;
     document.head.appendChild(styleTag);
     
@@ -83,14 +88,15 @@
       iframeUrl += `${separator}company=${script.getAttribute('data-company')}`;
     }
     
-    // Iframe erstellen
+    // Iframe erstellen mit verbesserter Höhenbehandlung
     const iframe = document.createElement('iframe');
     iframe.src = iframeUrl;
     iframe.style.width = widgetWidth;
     iframe.style.border = 'none';
-    iframe.style.minHeight = '350px';
+    iframe.style.minHeight = '300px';
     iframe.style.height = 'auto';
     iframe.style.maxWidth = '100%';
+    iframe.style.overflow = 'visible';
     iframe.id = 'immo-widget-iframe';
     iframe.className = 'immo-widget-iframe';
     iframe.setAttribute('scrolling', 'no');
@@ -115,20 +121,22 @@
       setTimeout(() => {
         adjustIframeHeight(iframe);
         
-        // Periodische Höhenanpassung
+        // Regelmäßige Höhenprüfung in den ersten Sekunden
+        let checkCount = 0;
         const heightInterval = setInterval(() => {
           adjustIframeHeight(iframe);
-        }, 3000);
-        
-        // Clean up interval nach 30 Sekunden
-        setTimeout(() => {
-          clearInterval(heightInterval);
-        }, 30000);
-      }, 1500);
+          checkCount++;
+          
+          // Stoppe nach 10 Checks oder 15 Sekunden
+          if (checkCount >= 10) {
+            clearInterval(heightInterval);
+          }
+        }, 1500);
+      }, 500);
     });
   }
   
-  // Funktion zur Höhenanpassung des Iframes - sicherheitsorientiert
+  // Verbesserte Funktion zur Höhenanpassung des Iframes
   function adjustIframeHeight(iframe) {
     try {
       // Prüfe ob iframe und contentWindow verfügbar sind
@@ -136,46 +144,7 @@
         return;
       }
       
-      // Versuche Zugriff auf das iframe-Dokument
-      let iframeDoc;
-      try {
-        iframeDoc = iframe.contentWindow.document;
-        
-        if (!iframeDoc || !iframeDoc.body) {
-          // Post-Message als Alternative verwenden
-          try {
-            iframe.contentWindow.postMessage({ 
-              type: 'request-height',
-              source: 'immo-widget',
-              timestamp: new Date().toISOString()
-            }, '*');
-          } catch (postMessageError) {
-            // Silent fail
-          }
-          
-          return;
-        }
-      } catch (accessError) {
-        // Post-Message als Alternative verwenden
-        try {
-          iframe.contentWindow.postMessage({ 
-            type: 'request-height',
-            source: 'immo-widget',
-            timestamp: new Date().toISOString()
-          }, '*');
-        } catch (postMessageError) {
-          // Silent fail
-        }
-        
-        return;
-      }
-      
-      const height = iframeDoc.body.scrollHeight;
-      if (height && height > 100) {
-        iframe.style.height = height + 'px';
-      }
-    } catch (e) {
-      // Post-Message als Fallback verwenden
+      // Post-Message verwenden für Cross-Origin-Kommunikation
       try {
         iframe.contentWindow.postMessage({ 
           type: 'request-height',
@@ -185,6 +154,8 @@
       } catch (postMessageError) {
         // Silent fail
       }
+    } catch (e) {
+      // Silent fail
     }
   }
   
@@ -197,7 +168,7 @@
     initWidget();
   }
   
-  // Globale Event-Handler für Nachrichtenaustausch
+  // Verbesserte Globale Event-Handler für Nachrichtenaustausch
   window.addEventListener('message', function(e) {
     // Erweiterte Sicherheits-Checks
     const allowedOrigins = [
@@ -211,17 +182,26 @@
     // Prüfen, ob die Ursprungs-Domain erlaubt ist
     const originAllowed = allowedOrigins.some(origin => e.origin.includes(origin)) || 
                          e.origin.includes('localhost') || 
-                         e.origin.includes('127.0.0.1');
+                         e.origin.includes('127.0.0.1') ||
+                         e.origin.includes('lovableproject.com');
     
     if (!originAllowed) {
       return;
     }
     
-    // Behandlung von Resize-Events für das iframe
+    // Behandlung von Resize-Events für das iframe mit verbesserter Höhenbehandlung
     if (e.data && e.data.type === 'resize-iframe') {
       const iframe = document.getElementById('immo-widget-iframe');
       if (iframe && e.data.height) {
-        iframe.style.height = e.data.height + 'px';
+        // Mindesthöhe von 250px garantieren und etwas Padding hinzufügen
+        const newHeight = Math.max(e.data.height, 250);
+        iframe.style.height = newHeight + 'px';
+        
+        // Container-Höhe ebenfalls anpassen
+        const container = iframe.parentElement;
+        if (container) {
+          container.style.minHeight = newHeight + 'px';
+        }
       }
     }
     
@@ -232,11 +212,11 @@
       }
     }
     
-    // Debug-Response senden
-    if (e.data && e.data.type === 'request-height') {
+    // Height-Response verarbeiten
+    if (e.data && e.data.type === 'height-response') {
       try {
         e.source.postMessage({
-          type: 'height-response',
+          type: 'height-received',
           height: document.body.scrollHeight,
           source: 'immo-widget-parent',
           timestamp: new Date().toISOString()
@@ -247,12 +227,7 @@
     }
   });
   
-  // Empty fallback functions to prevent errors
-  window.drawHighlights = window.drawHighlights || function() {
-    // Leere Fallback-Funktion, um Fehler zu vermeiden
-  };
-  
   // Widget als initialisiert markieren
   window.ImmoWidget.initialized = true;
-  window.ImmoWidget.version = '4.0';
+  window.ImmoWidget.version = '4.1';
 })();
