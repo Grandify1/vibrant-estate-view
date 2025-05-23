@@ -47,6 +47,12 @@ interface UserForm {
   password: string;
 }
 
+interface AuthUser {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
 const UserManagement = () => {
   const [users, setUsers] = useState<UserWithAuth[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -71,71 +77,72 @@ const UserManagement = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      // First, get all users from auth.users via admin API
-      const { data: authUsers, error: authError } = await supabase.rpc('get_all_users');
+      // Try to get all users directly by calling the function via SQL
+      const { data: authUsersData, error: authError } = await supabase
+        .from('profiles')
+        .select('*')
+        .limit(0); // This will fail but we use it to test if we can access auth users
+
+      // Since we can't access auth.users directly, let's try a different approach
+      // We'll use the admin API if possible, otherwise fall back to profiles only
+      let authUsers: AuthUser[] = [];
       
-      if (authError) {
-        console.error('Error loading auth users:', authError);
-        // Fallback to profiles if RPC call fails (requires admin privileges)
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            first_name,
-            last_name,
-            company_id,
-            created_at,
-            companies (
-              name
-            )
-          `)
-          .order('created_at', { ascending: false });
-
-        if (profilesError) throw profilesError;
-
-        // Transform the data to include company name at top level
-        const transformedUsers: UserWithAuth[] = (profiles || []).map((profile: any) => ({
-          id: profile.id,
-          email: profile.id, // In this case, use ID as email as fallback
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          company_id: profile.company_id,
-          company_name: profile.companies?.name,
-          created_at: profile.created_at
-        }));
-
-        setUsers(transformedUsers);
-      } else {
-        // Get profiles to merge with auth users
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, first_name, last_name, company_id, created_at');
-
-        if (profilesError) throw profilesError;
-
-        // Create a map of profiles by ID for easy lookup
-        const profileMap = new Map();
-        profiles?.forEach(profile => {
-          profileMap.set(profile.id, profile);
-        });
-
-        // Get companies for profile company_ids
-        const companyIds = profiles
-          ?.map(profile => profile.company_id)
-          .filter(id => id) || [];
+      try {
+        // Try to call the RPC function if it exists
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_all_users');
         
+        if (!rpcError && Array.isArray(rpcData)) {
+          authUsers = rpcData;
+        }
+      } catch (error) {
+        console.log('RPC call failed, falling back to profiles only');
+      }
+
+      // Get profiles to merge with auth users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          company_id,
+          created_at,
+          companies (
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of profiles by ID for easy lookup
+      const profileMap = new Map();
+      (profiles || []).forEach((profile: any) => {
+        profileMap.set(profile.id, profile);
+      });
+
+      // Get companies for profile company_ids
+      const companyIds = (profiles || [])
+        .map((profile: any) => profile.company_id)
+        .filter(id => id);
+      
+      let companyMap = new Map();
+      if (companyIds.length > 0) {
         const { data: companyData } = await supabase
           .from('companies')
           .select('id, name')
           .in('id', companyIds);
 
-        const companyMap = new Map();
-        companyData?.forEach(company => {
+        (companyData || []).forEach((company: any) => {
           companyMap.set(company.id, company);
         });
+      }
 
+      let mergedUsers: UserWithAuth[] = [];
+
+      if (authUsers.length > 0) {
         // Merge auth users with profiles
-        const mergedUsers: UserWithAuth[] = authUsers.map((user: any) => {
+        mergedUsers = authUsers.map((user: AuthUser) => {
           const profile = profileMap.get(user.id);
           const company = profile?.company_id ? companyMap.get(profile.company_id) : null;
           
@@ -149,9 +156,20 @@ const UserManagement = () => {
             created_at: user.created_at || (profile?.created_at || new Date().toISOString())
           };
         });
-
-        setUsers(mergedUsers);
+      } else {
+        // Fall back to profiles only
+        mergedUsers = (profiles || []).map((profile: any) => ({
+          id: profile.id,
+          email: profile.id, // Use ID as fallback for email
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
+          company_id: profile.company_id || '',
+          company_name: profile.companies?.name || '',
+          created_at: profile.created_at
+        }));
       }
+
+      setUsers(mergedUsers);
     } catch (error) {
       console.error('Error loading users:', error);
       toast.error('Fehler beim Laden der Benutzer');
@@ -380,12 +398,12 @@ const UserManagement = () => {
                   <Label htmlFor="company_id">Unternehmen</Label>
                   <Select 
                     value={formData.company_id} 
-                    onValueChange={(value) => setFormData({ ...formData, company_id: value })}
+                    onValueChange={(value) => setFormData({ ...formData, company_id: value === "none" ? "" : value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white">
                       <SelectValue placeholder="Unternehmen auswählen" />
                     </SelectTrigger>
-                    <SelectContent position="popper" className="bg-white">
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
                       <SelectItem value="none">Kein Unternehmen</SelectItem>
                       {companies.map((company) => (
                         <SelectItem key={company.id} value={company.id}>
