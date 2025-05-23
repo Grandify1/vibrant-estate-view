@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/hooks/useAuth';
+import { useLocation } from 'react-router-dom';
 import CompanyManagement from './admin/CompanyManagement';
 import UserManagement from './admin/UserManagement';
 import CouponManagement from './settings/CouponManagement';
@@ -9,9 +10,30 @@ import CouponManagement from './settings/CouponManagement';
 const AdminTab = () => {
   const { user } = useAuth();
   const [activeSubTab, setActiveSubTab] = useState("companies");
+  const location = useLocation();
   
   // Check if user is admin
   const isAdmin = user?.email === 'dustin.althaus@me.com';
+  
+  // Get selected company from navigation state
+  const [selectedCompany, setSelectedCompany] = useState<{id: string, name: string} | null>(null);
+  
+  // Effect to handle routing state for sub-tab navigation
+  useEffect(() => {
+    if (location.state?.adminSubTab) {
+      setActiveSubTab(location.state.adminSubTab);
+      
+      if (location.state.selectedCompanyId && location.state.selectedCompanyName) {
+        setSelectedCompany({
+          id: location.state.selectedCompanyId,
+          name: location.state.selectedCompanyName
+        });
+      }
+      
+      // Clear the state to prevent unexpected redirects on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   if (!isAdmin) {
     return (
@@ -39,7 +61,7 @@ const AdminTab = () => {
         </TabsContent>
         
         <TabsContent value="users" className="mt-6">
-          <UserManagement />
+          <UserManagement selectedCompany={selectedCompany} />
         </TabsContent>
         
         <TabsContent value="coupons" className="mt-6">

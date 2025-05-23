@@ -19,7 +19,51 @@ export const useSessionLoader = (
       
       console.log('Attempting to fetch profile for user:', userId);
       
-      // Try to get existing profile first
+      // For admin user, try to assign to first company without checking profile
+      if (email === 'dustin.althaus@me.com') {
+        console.log("Admin user detected, fetching company directly");
+        try {
+          const { data: companies, error: companiesError } = await supabase
+            .from('companies')
+            .select('id, name')
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          if (!companiesError && companies && companies.length > 0) {
+            console.log("Admin assigned to company:", companies[0].id, companies[0].name);
+            
+            // Try to update the profile with the company ID
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .upsert({
+                id: userId,
+                first_name: metadata?.first_name || "Admin",
+                last_name: metadata?.last_name || "User",
+                company_id: companies[0].id
+              });
+              
+            if (updateError) {
+              console.log("Could not update profile:", updateError);
+            }
+            
+            // Set user data with company ID
+            setUser({
+              id: userId,
+              email: email,
+              first_name: metadata?.first_name || "Admin",
+              last_name: metadata?.last_name || "User",
+              company_id: companies[0].id
+            });
+            return;
+          } else {
+            console.log("No companies found or error:", companiesError);
+          }
+        } catch (companyError) {
+          console.log("Admin company fetch error:", companyError);
+        }
+      }
+      
+      // Try to get existing profile (for non-admin or as fallback)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')

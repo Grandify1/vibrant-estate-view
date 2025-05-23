@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Edit, Users, Loader2, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface Company {
   id: string;
@@ -39,6 +40,8 @@ const CompanyManagement = () => {
     phone: '',
     address: ''
   });
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadCompanies();
@@ -169,9 +172,16 @@ const CompanyManagement = () => {
   };
 
   const handleViewUsers = (companyId: string, companyName: string) => {
-    // Navigate to the users tab with a filter for this company
-    // This is a placeholder - implement actual navigation as needed
-    toast.info(`Benutzer für ${companyName} werden angezeigt`);
+    // Navigate to the users tab in admin view with a filter for this company
+    // Set this company as state and switch to users tab
+    navigate('/admin', { 
+      state: { 
+        activeTab: 'admin',
+        adminSubTab: 'users',
+        selectedCompanyId: companyId,
+        selectedCompanyName: companyName
+      }
+    });
   };
 
   return (
