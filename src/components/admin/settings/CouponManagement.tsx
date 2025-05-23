@@ -57,7 +57,7 @@ const CouponManagement = () => {
       return;
     }
 
-    // Nur bei aktiven Coupons und nicht "free" Typ validieren
+    // Modify validation to allow deactivated coupons with zero value
     if (formData.active && formData.discount_type !== 'free' && formData.discount_value <= 0) {
       toast.error('Rabattwert muss bei aktiven Coupons größer als 0 sein');
       return;
@@ -174,7 +174,7 @@ const CouponManagement = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="Wählen Sie den Rabatt-Typ" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper" className="bg-white">
                         <SelectItem value="percentage">Prozent</SelectItem>
                         <SelectItem value="fixed">Festbetrag (€)</SelectItem>
                         <SelectItem value="free">Kostenlos</SelectItem>
@@ -210,7 +210,7 @@ const CouponManagement = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="Wählen Sie den Nutzungstyp" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper" className="bg-white">
                         <SelectItem value="unlimited">Unbegrenzt</SelectItem>
                         <SelectItem value="single_use">Einmalige Nutzung</SelectItem>
                         <SelectItem value="single_use_per_email">Einmal pro E-Mail</SelectItem>
