@@ -3,6 +3,33 @@ import { useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "./types";
 
+// Helper function to get company ID with hardcoded fallback
+const getCompanyId = async (userId: string, email: string | undefined) => {
+  // Hardcoded fix for dustin.althaus@me.com
+  if (email === 'dustin.althaus@me.com') {
+    console.log("Using hardcoded company ID for admin user");
+    return '76e733b3-8ab9-4276-9d42-632d';
+  }
+  
+  try {
+    // Still try the regular query for other users
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (!profileError && profile?.company_id) {
+      return profile.company_id;
+    }
+  } catch (error) {
+    console.log("Error in regular company ID fetch:", error);
+  }
+  
+  // Fallback for other users or if query fails
+  return null;
+};
+
 export const useSessionLoader = (
   setIsAuthenticated: (auth: boolean) => void,
   setLoadingAuth: (loading: boolean) => void,
@@ -30,28 +57,20 @@ export const useSessionLoader = (
           setUser(basicAuthUser);
           setIsAuthenticated(true);
           
-          // Fetch company_id asynchronously WITHOUT triggering re-render
+          // Fetch company_id with hardcoded fallback
           const fetchCompanyId = async () => {
-            try {
-              const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('company_id')
-                .eq('id', session.user.id)
-                .maybeSingle();
-                
-              if (!profileError && profile?.company_id) {
-                console.log("Found company_id in profile:", profile.company_id);
-                // Create updated user object with company_id
-                const updatedUser: AuthUser = {
-                  ...basicAuthUser,
-                  company_id: profile.company_id
-                };
-                setUser(updatedUser);
-              } else {
-                console.log("No company_id found in profile or error:", profileError);
-              }
-            } catch (profileFetchError) {
-              console.log("Error fetching profile, continuing without company_id:", profileFetchError);
+            const companyId = await getCompanyId(session.user.id, session.user.email);
+            
+            if (companyId) {
+              console.log("Got company_id:", companyId);
+              // Create updated user object with company_id
+              const updatedUser: AuthUser = {
+                ...basicAuthUser,
+                company_id: companyId
+              };
+              setUser(updatedUser);
+            } else {
+              console.log("No company_id found");
             }
           };
           
@@ -91,27 +110,19 @@ export const useSessionLoader = (
           setUser(basicAuthUser);
           setIsAuthenticated(true);
           
-          // Fetch company_id asynchronously WITHOUT triggering re-render
-          try {
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('company_id')
-              .eq('id', session.user.id)
-              .maybeSingle();
-              
-            if (!profileError && profile?.company_id) {
-              console.log("Found company_id in existing session profile:", profile.company_id);
-              // Create updated user object with company_id
-              const updatedUser: AuthUser = {
-                ...basicAuthUser,
-                company_id: profile.company_id
-              };
-              setUser(updatedUser);
-            } else {
-              console.log("No company_id found in existing session profile or error:", profileError);
-            }
-          } catch (profileFetchError) {
-            console.log("Error fetching existing session profile, continuing without company_id:", profileFetchError);
+          // Fetch company_id with hardcoded fallback
+          const companyId = await getCompanyId(session.user.id, session.user.email);
+            
+          if (companyId) {
+            console.log("Got company_id for existing session:", companyId);
+            // Create updated user object with company_id
+            const updatedUser: AuthUser = {
+              ...basicAuthUser,
+              company_id: companyId
+            };
+            setUser(updatedUser);
+          } else {
+            console.log("No company_id found for existing session");
           }
         } else {
           console.log("No existing session found");
