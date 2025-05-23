@@ -17,32 +17,15 @@ export const useCompany = (user: AuthUser | null) => {
       
       console.log("useCompany: Loading company for user:", user.id);
       
-      // Use the safe RPC function to get profile data
-      const { data: profileData, error: profileError } = await supabase
-        .rpc('safe_update_user_profile', {
-          user_id_param: user.id,
-          first_name_param: user.first_name || '',
-          last_name_param: user.last_name || '',
-          company_id_param: null // Don't update company_id, just get current data
-        });
-      
-      if (profileError) {
-        console.error("Error fetching profile via RPC:", profileError);
-        setLoadingCompany(false);
-        return;
-      }
-      
-      // Parse the JSON response and type it correctly
-      const profile = profileData as { company_id?: string } | null;
-      
-      if (profile?.company_id) {
-        console.log("Found company_id in profile:", profile.company_id);
+      // Check if we already have company_id in the user object
+      if (user.company_id) {
+        console.log("Using company_id from user object:", user.company_id);
         
         // Fetch company data
         const { data: companyData, error: companyError } = await supabase
           .from('companies')
           .select('*')
-          .eq('id', profile.company_id)
+          .eq('id', user.company_id)
           .maybeSingle();
           
         if (companyError) {
@@ -54,14 +37,56 @@ export const useCompany = (user: AuthUser | null) => {
         if (companyData) {
           console.log("Company data loaded successfully:", companyData);
           setCompany(companyData);
-          
-          // Update the user object with company_id
-          user.company_id = profile.company_id;
         } else {
-          console.warn("No company found with ID:", profile.company_id);
+          console.warn("No company found with ID:", user.company_id);
         }
       } else {
-        console.log("User has no company assigned in profile");
+        // Use the safe RPC function to get profile data
+        const { data: profileData, error: profileError } = await supabase
+          .rpc('safe_update_user_profile', {
+            user_id_param: user.id,
+            first_name_param: user.first_name || '',
+            last_name_param: user.last_name || '',
+            company_id_param: null // Don't update company_id, just get current data
+          });
+        
+        if (profileError) {
+          console.error("Error fetching profile via RPC:", profileError);
+          setLoadingCompany(false);
+          return;
+        }
+        
+        // Parse the JSON response and type it correctly
+        const profile = profileData as { company_id?: string } | null;
+        
+        if (profile?.company_id) {
+          console.log("Found company_id in profile:", profile.company_id);
+          
+          // Fetch company data
+          const { data: companyData, error: companyError } = await supabase
+            .from('companies')
+            .select('*')
+            .eq('id', profile.company_id)
+            .maybeSingle();
+            
+          if (companyError) {
+            console.error("Error fetching company:", companyError);
+            setLoadingCompany(false);
+            return;
+          }
+            
+          if (companyData) {
+            console.log("Company data loaded successfully:", companyData);
+            setCompany(companyData);
+            
+            // Update the user object with company_id
+            user.company_id = profile.company_id;
+          } else {
+            console.warn("No company found with ID:", profile.company_id);
+          }
+        } else {
+          console.log("User has no company assigned in profile");
+        }
       }
     } catch (error) {
       console.error("Error loading company:", error);

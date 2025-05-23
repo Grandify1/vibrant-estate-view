@@ -1,189 +1,208 @@
 
-import { useState, useEffect, createContext, useContext, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Agent, initialAgent } from "@/types/agent";
-import { useAuth } from "./useAuth";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { Agent, initialAgent } from '@/types/agent';
+import { useAuth } from './useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-interface AgentsContextType {
+type AgentsContextType = {
   agents: Agent[];
-  addAgent: (agent: Omit<Agent, "id" | "created_at" | "updated_at">) => Promise<Agent | null>;
-  updateAgent: (id: string, agent: Partial<Agent>) => Promise<void>;
-  deleteAgent: (id: string) => Promise<void>;
-  getAgent: (id: string) => Agent | undefined;
   loading: boolean;
-  lastError: string | null;
-}
+  addAgent: (agent: Omit<Agent, 'id' | 'created_at' | 'updated_at'>) => Promise<Agent | null>;
+  updateAgent: (id: string, updates: Partial<Omit<Agent, 'id' | 'created_at' | 'updated_at'>>) => Promise<boolean>;
+  deleteAgent: (id: string) => Promise<boolean>;
+};
 
-const AgentsContext = createContext<AgentsContextType | undefined>(undefined);
-
-export function AgentsProvider({ children }: { children: ReactNode }) {
+export const useAgents = (): AgentsContextType => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastError, setLastError] = useState<string | null>(null);
   const { company } = useAuth();
-  
-  // Makler aus Supabase laden
-  const fetchAgents = async () => {
-    if (!company) {
+
+  // Load agents when company changes
+  useEffect(() => {
+    if (!company?.id) {
       setAgents([]);
       setLoading(false);
       return;
     }
-    
+
+    loadAgents();
+  }, [company?.id]);
+
+  // Load agents from database
+  const loadAgents = async () => {
+    if (!company?.id) return;
+
     try {
       setLoading(true);
-      setLastError(null);
-      
-      const { data, error } = await supabase
+      console.log("Loading agents for company:", company.id);
+
+      // Fetch agents data
+      const { data: agentsData, error } = await supabase
         .from('agents')
         .select('*')
         .eq('company_id', company.id)
         .order('created_at', { ascending: false });
-      
+
       if (error) {
-        console.error('Error fetching agents:', error);
-        setLastError(`Fehler beim Laden der Makler: ${error.message}`);
-        toast.error("Fehler beim Laden der Makler");
+        console.error("Error fetching agents:", error);
+        setLoading(false);
         return;
       }
-      
-      setAgents(data as Agent[]);
-    } catch (error: any) {
-      console.error('Error in fetchAgents:', error);
-      setLastError(`Fehler beim Laden der Makler: ${error.message}`);
-      toast.error("Fehler beim Laden der Makler");
+
+      console.log("Agents loaded:", agentsData?.length || 0);
+      setAgents(agentsData || []);
+    } catch (error) {
+      console.error("Error loading agents:", error);
     } finally {
       setLoading(false);
     }
   };
-  
-  // Beim Laden der Komponente oder Änderung des Unternehmens Makler laden
-  useEffect(() => {
-    fetchAgents();
-  }, [company]);
-  
-  // Neuen Makler hinzufügen
-  const addAgent = async (agentData: Omit<Agent, "id" | "created_at" | "updated_at">): Promise<Agent | null> => {
-    if (!company) {
-      toast.error("Sie müssen einem Unternehmen angehören, um Makler hinzuzufügen");
+
+  // Add new agent
+  const addAgent = async (agent: Omit<Agent, 'id' | 'created_at' | 'updated_at'>): Promise<Agent | null> => {
+    if (!company?.id) {
+      toast.error("Kein Unternehmen zugeordnet");
       return null;
     }
-    
+
     try {
+      console.log("Adding agent to company:", company.id, agent);
+
+      // Ensure company_id is set
+      const newAgent = {
+        ...agent,
+        company_id: company.id
+      };
+
       const { data, error } = await supabase
         .from('agents')
-        .insert({
-          ...agentData,
-          company_id: company.id
-        })
-        .select()
-        .single();
-      
+        .insert(newAgent)
+        .select();
+
       if (error) {
         console.error("Error adding agent:", error);
-        setLastError(`Fehler beim Hinzufügen des Maklers: ${error.message}`);
-        toast.error("Fehler beim Hinzufügen des Maklers");
+        toast.error(`Fehler beim Erstellen des Maklers: ${error.message}`);
         return null;
       }
-      
-      const newAgent = data as Agent;
-      setAgents(prev => [newAgent, ...prev]);
-      toast.success("Makler erfolgreich hinzugefügt");
-      setLastError(null);
-      
-      return newAgent;
+
+      if (!data || data.length === 0) {
+        toast.error("Fehler beim Erstellen des Maklers");
+        return null;
+      }
+
+      // Update local state
+      const createdAgent = data[0] as Agent;
+      setAgents(prevAgents => [createdAgent, ...prevAgents]);
+      toast.success("Makler erfolgreich erstellt!");
+      return createdAgent;
     } catch (error: any) {
-      console.error("Error in addAgent:", error);
-      setLastError(`Fehler beim Hinzufügen des Maklers: ${error.message}`);
-      toast.error("Fehler beim Hinzufügen des Maklers");
+      console.error("Unexpected error adding agent:", error);
+      toast.error(`Ein unerwarteter Fehler ist aufgetreten: ${error.message}`);
       return null;
     }
   };
-  
-  // Makler aktualisieren
-  const updateAgent = async (id: string, agentData: Partial<Agent>) => {
+
+  // Update existing agent
+  const updateAgent = async (
+    id: string,
+    updates: Partial<Omit<Agent, 'id' | 'created_at' | 'updated_at'>>
+  ): Promise<boolean> => {
     try {
-      const { error } = await supabase
+      console.log("Updating agent:", id, updates);
+
+      const { data, error } = await supabase
         .from('agents')
-        .update(agentData)
-        .eq('id', id);
-      
+        .update(updates)
+        .eq('id', id)
+        .select();
+
       if (error) {
         console.error("Error updating agent:", error);
-        setLastError(`Fehler beim Aktualisieren des Maklers: ${error.message}`);
-        toast.error("Fehler beim Aktualisieren des Maklers");
-        return;
+        toast.error(`Fehler beim Aktualisieren des Maklers: ${error.message}`);
+        return false;
       }
-      
-      // Lokale Zustandsaktualisierung
-      setAgents(prev => 
-        prev.map(agent => 
-          agent.id === id ? { ...agent, ...agentData } : agent
+
+      if (!data || data.length === 0) {
+        toast.error("Fehler beim Aktualisieren des Maklers");
+        return false;
+      }
+
+      // Update local state
+      const updatedAgent = data[0] as Agent;
+      setAgents(prevAgents => 
+        prevAgents.map(agent => 
+          agent.id === id ? updatedAgent : agent
         )
       );
       
-      toast.success("Makler erfolgreich aktualisiert");
-      setLastError(null);
+      toast.success("Makler erfolgreich aktualisiert!");
+      return true;
     } catch (error: any) {
-      console.error("Error in updateAgent:", error);
-      setLastError(`Fehler beim Aktualisieren des Maklers: ${error.message}`);
-      toast.error("Fehler beim Aktualisieren des Maklers");
+      console.error("Unexpected error updating agent:", error);
+      toast.error(`Ein unerwarteter Fehler ist aufgetreten: ${error.message}`);
+      return false;
     }
   };
-  
-  // Makler löschen
-  const deleteAgent = async (id: string) => {
+
+  // Delete agent
+  const deleteAgent = async (id: string): Promise<boolean> => {
     try {
+      console.log("Deleting agent:", id);
+
       const { error } = await supabase
         .from('agents')
         .delete()
         .eq('id', id);
-      
+
       if (error) {
         console.error("Error deleting agent:", error);
-        setLastError(`Fehler beim Löschen des Maklers: ${error.message}`);
-        toast.error("Fehler beim Löschen des Maklers");
-        return;
+        toast.error(`Fehler beim Löschen des Maklers: ${error.message}`);
+        return false;
       }
+
+      // Update local state
+      setAgents(prevAgents => 
+        prevAgents.filter(agent => agent.id !== id)
+      );
       
-      // Lokale Zustandsaktualisierung
-      setAgents(prev => prev.filter(agent => agent.id !== id));
-      toast.success("Makler erfolgreich gelöscht");
-      setLastError(null);
+      toast.success("Makler erfolgreich gelöscht!");
+      return true;
     } catch (error: any) {
-      console.error("Error in deleteAgent:", error);
-      setLastError(`Fehler beim Löschen des Maklers: ${error.message}`);
-      toast.error("Fehler beim Löschen des Maklers");
+      console.error("Unexpected error deleting agent:", error);
+      toast.error(`Ein unerwarteter Fehler ist aufgetreten: ${error.message}`);
+      return false;
     }
   };
-  
-  // Makler nach ID abrufen
-  const getAgent = (id: string) => {
-    return agents.find(agent => agent.id === id);
+
+  return {
+    agents,
+    loading,
+    addAgent,
+    updateAgent,
+    deleteAgent
   };
+};
+
+export function AgentsProvider({ children }: { children: React.ReactNode }) {
+  const agents = useAgents();
   
   return (
-    <AgentsContext.Provider
-      value={{
-        agents,
-        addAgent,
-        updateAgent,
-        deleteAgent,
-        getAgent,
-        loading,
-        lastError
-      }}
-    >
+    <AgentsContext.Provider value={agents}>
       {children}
     </AgentsContext.Provider>
   );
 }
 
-export function useAgents() {
+// Create context for agents
+import { createContext, useContext } from 'react';
+
+const AgentsContext = createContext<AgentsContextType | undefined>(undefined);
+
+export const useAgentsContext = () => {
   const context = useContext(AgentsContext);
-  if (!context) {
-    throw new Error("useAgents must be used within an AgentsProvider");
+  if (context === undefined) {
+    throw new Error("useAgentsContext must be used within an AgentsProvider");
   }
   return context;
-}
+};
