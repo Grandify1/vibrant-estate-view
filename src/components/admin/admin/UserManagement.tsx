@@ -47,12 +47,6 @@ interface UserForm {
   password: string;
 }
 
-interface AuthUser {
-  id: string;
-  email: string;
-  created_at: string;
-}
-
 const UserManagement = () => {
   const [users, setUsers] = useState<UserWithAuth[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -77,28 +71,7 @@ const UserManagement = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      // Try to get all users directly by calling the function via SQL
-      const { data: authUsersData, error: authError } = await supabase
-        .from('profiles')
-        .select('*')
-        .limit(0); // This will fail but we use it to test if we can access auth users
-
-      // Since we can't access auth.users directly, let's try a different approach
-      // We'll use the admin API if possible, otherwise fall back to profiles only
-      let authUsers: AuthUser[] = [];
-      
-      try {
-        // Try to call the RPC function if it exists
-        const { data: rpcData, error: rpcError } = await supabase.rpc('get_all_users');
-        
-        if (!rpcError && Array.isArray(rpcData)) {
-          authUsers = rpcData;
-        }
-      } catch (error) {
-        console.log('RPC call failed, falling back to profiles only');
-      }
-
-      // Get profiles to merge with auth users
+      // Get profiles with company information
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -115,59 +88,16 @@ const UserManagement = () => {
 
       if (profilesError) throw profilesError;
 
-      // Create a map of profiles by ID for easy lookup
-      const profileMap = new Map();
-      (profiles || []).forEach((profile: any) => {
-        profileMap.set(profile.id, profile);
-      });
-
-      // Get companies for profile company_ids
-      const companyIds = (profiles || [])
-        .map((profile: any) => profile.company_id)
-        .filter(id => id);
-      
-      let companyMap = new Map();
-      if (companyIds.length > 0) {
-        const { data: companyData } = await supabase
-          .from('companies')
-          .select('id, name')
-          .in('id', companyIds);
-
-        (companyData || []).forEach((company: any) => {
-          companyMap.set(company.id, company);
-        });
-      }
-
-      let mergedUsers: UserWithAuth[] = [];
-
-      if (authUsers.length > 0) {
-        // Merge auth users with profiles
-        mergedUsers = authUsers.map((user: AuthUser) => {
-          const profile = profileMap.get(user.id);
-          const company = profile?.company_id ? companyMap.get(profile.company_id) : null;
-          
-          return {
-            id: user.id,
-            email: user.email,
-            first_name: profile?.first_name || '',
-            last_name: profile?.last_name || '',
-            company_id: profile?.company_id || '',
-            company_name: company?.name || '',
-            created_at: user.created_at || (profile?.created_at || new Date().toISOString())
-          };
-        });
-      } else {
-        // Fall back to profiles only
-        mergedUsers = (profiles || []).map((profile: any) => ({
-          id: profile.id,
-          email: profile.id, // Use ID as fallback for email
-          first_name: profile.first_name || '',
-          last_name: profile.last_name || '',
-          company_id: profile.company_id || '',
-          company_name: profile.companies?.name || '',
-          created_at: profile.created_at
-        }));
-      }
+      // Since we can't access auth.users directly, we'll work with profiles only
+      const mergedUsers: UserWithAuth[] = (profiles || []).map((profile: any) => ({
+        id: profile.id,
+        email: `user-${profile.id.slice(0, 8)}@example.com`, // Fallback email display
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        company_id: profile.company_id || '',
+        company_name: profile.companies?.name || '',
+        created_at: profile.created_at
+      }));
 
       setUsers(mergedUsers);
     } catch (error) {
@@ -400,7 +330,7 @@ const UserManagement = () => {
                     value={formData.company_id} 
                     onValueChange={(value) => setFormData({ ...formData, company_id: value === "none" ? "" : value })}
                   >
-                    <SelectTrigger className="bg-white">
+                    <SelectTrigger className="w-full bg-white border border-gray-300 z-50">
                       <SelectValue placeholder="Unternehmen auswählen" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
