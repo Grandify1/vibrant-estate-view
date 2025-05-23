@@ -2,7 +2,7 @@
 /**
  * ImmoUpload Widget - Vereinfachte Version
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 3.1
+ * Version 3.2
  */
 (function() {
   // Globales Objekt für das Widget erstellen
@@ -17,8 +17,8 @@
     return scripts[scripts.length - 1];
   })();
   
-  // Verwende die korrekte Basis-URL für das Widget
-  const baseUrl = 'https://immoupload.lovable.app';
+  // KORRIGIERTE BASE URL FÜR PRODUCTION
+  const baseUrl = 'https://immoupload.com';
   
   // Konfigurationsoptionen
   const widgetHeight = script.getAttribute('data-height') || 'auto';
@@ -146,6 +146,7 @@
   window.addEventListener('message', function(e) {
     // Sicherheits-Check - erlauben Sie auch die Produktions-Domain
     const allowedOrigins = [
+      'https://immoupload.com',
       'https://immoupload.lovable.app',
       'https://kmzlkfwxeghvlgtilzjh.supabase.co',
       'https://as-immobilien.info'
