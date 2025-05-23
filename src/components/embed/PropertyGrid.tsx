@@ -29,7 +29,7 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error 
   
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[300px] py-12">
+      <div className="flex justify-center items-center min-h-[200px] py-8">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -37,7 +37,7 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error 
   
   if (error) {
     return (
-      <div className="text-center py-12 px-4">
+      <div className="text-center py-8 px-4">
         <div className="text-red-500 font-medium">Fehler beim Laden der Daten</div>
         <p className="text-gray-600 mt-2">{error}</p>
       </div>
@@ -46,7 +46,7 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error 
   
   if (properties.length === 0) {
     return (
-      <div className="text-center py-12 px-4">
+      <div className="text-center py-8 px-4">
         <h3 className="text-lg font-medium text-gray-700">Keine Immobilien gefunden</h3>
         <p className="text-gray-500 mt-2">
           Derzeit sind keine aktiven Immobilienangebote verfügbar.
@@ -64,8 +64,8 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error 
   }
   
   return (
-    <div className="w-full px-2 py-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="w-full px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {properties.map(property => (
           <a 
             key={property.id} 

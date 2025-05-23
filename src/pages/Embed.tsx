@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import PropertyGrid from '@/components/embed/PropertyGrid';
@@ -34,12 +33,12 @@ export default function Embed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Enhanced height calculation and communication with parent
+  // Optimized height calculation and communication with parent
   useEffect(() => {
     const sendHeightToParent = () => {
-      // Add padding to ensure cards are not cut off
+      // Minimal padding - only 20px total (10px top + 10px bottom)
       const contentHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-      const paddedHeight = contentHeight + 40; // Add 40px padding
+      const paddedHeight = contentHeight + 20;
       
       window.parent.postMessage({ 
         type: 'resize-iframe', 
@@ -48,19 +47,10 @@ export default function Embed() {
       }, '*');
     };
 
-    // Send initial height after a short delay
-    const initialTimer = setTimeout(sendHeightToParent, 300);
-    
-    // Send height when content changes
+    // Send initial height after content is rendered
     if (!loading) {
-      const contentTimer = setTimeout(sendHeightToParent, 100);
-      const finalTimer = setTimeout(sendHeightToParent, 800);
-      
-      return () => {
-        clearTimeout(initialTimer);
-        clearTimeout(contentTimer);
-        clearTimeout(finalTimer);
-      };
+      const timer = setTimeout(sendHeightToParent, 100);
+      return () => clearTimeout(timer);
     }
 
     // Listen for resize events
@@ -76,7 +66,6 @@ export default function Embed() {
     window.addEventListener('message', handleMessage);
     
     return () => {
-      clearTimeout(initialTimer);
       window.removeEventListener('resize', sendHeightToParent);
       window.removeEventListener('message', handleMessage);
     };
@@ -171,9 +160,9 @@ export default function Embed() {
     fetchProperties();
   }, [companyId]);
 
-  // Render with improved padding and spacing
+  // Minimal padding - just enough to prevent cutoff
   return (
-    <div className="w-full bg-white py-4 px-2 min-h-[200px]">
+    <div className="w-full bg-white py-2">
       <PropertyGrid properties={properties} loading={loading} error={error} />
     </div>
   );
