@@ -19,7 +19,8 @@ const EmbedCodeTab: React.FC = () => {
   const widgetUrl = `${baseUrl}/embed${companyParam}`;
   
   // Das Embed-Skript für den Einzeiler
-  const singleScriptCode = `<script src="${baseUrl}/widget.js" data-target="immo-widget" data-url="${widgetUrl}"></script>`;
+  const singleScriptCode = `<script src="${baseUrl}/widget.js" data-target="immo-widget" data-url="${widgetUrl}"></script>
+<div id="immo-widget-container"></div>`;
   
   // Funktion zum Kopieren des Codes
   const copyCode = (code: string) => {

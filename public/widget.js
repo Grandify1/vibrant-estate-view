@@ -2,7 +2,7 @@
 /**
  * ImmoUpload Widget - Vereinfachte Version
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 3.4 - Mit erweiterten Debugging-Features
+ * Version 3.5 - Mit korrigierter Base URL und fehlerbehebung
  */
 (function() {
   // Globales Objekt für das Widget erstellen
@@ -17,8 +17,8 @@
     return scripts[scripts.length - 1];
   })();
   
-  // KORREKTE BASE URL FÜR PRODUCTION
-  const baseUrl = 'https://immoupload.com';
+  // KORREKTE BASE URL FÜR PRODUCTION - Verwende die aktuelle Domain
+  const baseUrl = window.location.origin;
   
   // Konfigurationsoptionen
   const widgetHeight = script.getAttribute('data-height') || 'auto';
@@ -112,8 +112,8 @@
     
     debug('Styles hinzugefügt');
     
-    // Iframe URL zusammenstellen
-    const iframeUrl = baseUrl + '/embed';
+    // Iframe URL zusammenstellen - lese aus data-url Attribut
+    let iframeUrl = script.getAttribute('data-url') || (baseUrl + '/embed');
     debug('Iframe URL erstellt:', iframeUrl);
     
     // Teste Erreichbarkeit der URL
@@ -301,7 +301,8 @@
       'https://immoupload.com',
       'https://immoupload.lovable.app',
       'https://kmzlkfwxeghvlgtilzjh.supabase.co',
-      'https://as-immobilien.info'
+      'https://as-immobilien.info',
+      window.location.origin
     ];
     
     // Prüfen, ob die Ursprungs-Domain erlaubt ist
@@ -349,7 +350,7 @@
     }
   });
   
-  // Fix für drawHighlights-Fehler
+  // Empty fallback functions to prevent errors
   window.drawHighlights = window.drawHighlights || function() {
     debug('drawHighlights-Fallback aufgerufen');
     // Leere Fallback-Funktion, um Fehler zu vermeiden
@@ -380,6 +381,6 @@
   // Widget als initialisiert markieren
   debug('Widget wurde erfolgreich initialisiert');
   window.ImmoWidget.initialized = true;
-  window.ImmoWidget.version = '3.4';
+  window.ImmoWidget.version = '3.5';
   window.ImmoWidget.debug = debug;
 })();

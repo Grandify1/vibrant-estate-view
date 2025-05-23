@@ -28,11 +28,14 @@ const safelyParseJson = <T extends unknown>(jsonValue: Json | null, fallback: T)
 
 export default function Embed() {
   const [searchParams] = useSearchParams();
-  const companyId = searchParams.get('companyId');
+  // Support both 'company' and 'companyId' parameters for backward compatibility
+  const companyId = searchParams.get('company') || searchParams.get('companyId');
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  console.log('Embed: Loading properties for company:', companyId);
 
   // Send height to parent window
   useEffect(() => {
@@ -62,6 +65,8 @@ export default function Embed() {
         setLoading(true);
         setError(null);
         
+        console.log('Embed: Fetching properties for company:', companyId);
+        
         let query = supabase
           .from('properties')
           .select('*')
@@ -73,6 +78,8 @@ export default function Embed() {
         }
           
         const { data, error } = await query;
+        
+        console.log('Embed: Properties query result:', { data, error });
         
         if (error) {
           console.error('Error fetching properties:', error);
@@ -128,6 +135,7 @@ export default function Embed() {
           };
         });
         
+        console.log('Embed: Formatted properties:', formattedData);
         setProperties(formattedData);
       } catch (error: any) {
         console.error('Error in fetchProperties:', error);
