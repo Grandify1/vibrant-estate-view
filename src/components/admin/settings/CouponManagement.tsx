@@ -126,7 +126,49 @@ const CouponManagement = () => {
     return option?.label || type;
   };
 
+  // Debugging functions for dropdowns
+  const handleDiscountTypeChange = (value: 'percentage' | 'fixed' | 'free') => {
+    console.log("=== DISCOUNT TYPE DEBUG ===");
+    console.log("Clicked discount type:", value);
+    console.log("Available options:", discountTypeOptions);
+    console.log("Current form data:", formData);
+    
+    setFormData({ 
+      ...formData, 
+      discount_type: value,
+      discount_value: value === 'free' ? 0 : formData.discount_value
+    });
+    
+    console.log("Updated form data will be:", {
+      ...formData,
+      discount_type: value,
+      discount_value: value === 'free' ? 0 : formData.discount_value
+    });
+  };
+
+  const handleUsageTypeChange = (value: 'single_use' | 'single_use_per_email' | 'time_based' | 'unlimited') => {
+    console.log("=== USAGE TYPE DEBUG ===");
+    console.log("Clicked usage type:", value);
+    console.log("Available options:", usageTypeOptions);
+    console.log("Current form data:", formData);
+    
+    setFormData({ ...formData, usage_type: value });
+    
+    console.log("Updated form data will be:", {
+      ...formData,
+      usage_type: value
+    });
+  };
+
+  const handleSelectOpen = (selectType: string) => {
+    console.log(`=== SELECT OPEN DEBUG: ${selectType} ===`);
+    console.log("Select opened:", selectType);
+    console.log("Available discount options:", discountTypeOptions);
+    console.log("Available usage options:", usageTypeOptions);
+  };
+
   // Debug dropdown options
+  console.log("=== RENDER DEBUG ===");
   console.log("Discount type options:", discountTypeOptions);
   console.log("Usage type options:", usageTypeOptions);
   console.log("Current form data:", formData);
@@ -184,33 +226,51 @@ const CouponManagement = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="discount_type">Rabatt-Typ *</Label>
-                    <Select 
-                      value={formData.discount_type} 
-                      onValueChange={(value: 'percentage' | 'fixed' | 'free') => {
-                        console.log("Discount type changed:", value);
-                        setFormData({ 
-                          ...formData, 
-                          discount_type: value,
-                          discount_value: value === 'free' ? 0 : formData.discount_value
-                        });
-                      }}
-                    >
-                      <SelectTrigger id="discount_type">
-                        <SelectValue placeholder="Wählen Sie den Rabatt-Typ" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {discountTypeOptions.map((option) => {
-                          console.log("Rendering discount type option:", option);
-                          return (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                    <div className="text-xs text-gray-500">
-                      Debug: {discountTypeOptions.length} Optionen verfügbar
+                    <div className="relative">
+                      <Select 
+                        value={formData.discount_type} 
+                        onValueChange={handleDiscountTypeChange}
+                        onOpenChange={(open) => {
+                          console.log("=== DISCOUNT TYPE SELECT OPEN/CLOSE ===");
+                          console.log("Open state:", open);
+                          if (open) handleSelectOpen('discount_type');
+                        }}
+                      >
+                        <SelectTrigger 
+                          id="discount_type" 
+                          className="w-full"
+                          onClick={() => {
+                            console.log("=== DISCOUNT TYPE TRIGGER CLICKED ===");
+                            console.log("Current value:", formData.discount_type);
+                            console.log("Options available:", discountTypeOptions);
+                          }}
+                        >
+                          <SelectValue placeholder="Wählen Sie den Rabatt-Typ">
+                            {formData.discount_type ? getDiscountTypeLabel(formData.discount_type) : "Wählen Sie den Rabatt-Typ"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="z-50 bg-white border border-gray-200 shadow-lg">
+                          {discountTypeOptions.map((option) => {
+                            console.log("Rendering discount type option:", option);
+                            return (
+                              <SelectItem 
+                                key={option.value} 
+                                value={option.value}
+                                className="cursor-pointer hover:bg-gray-100 px-3 py-2"
+                                onClick={() => {
+                                  console.log("=== DISCOUNT ITEM CLICKED ===");
+                                  console.log("Selected option:", option);
+                                }}
+                              >
+                                {option.label}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="text-xs text-blue-600 font-mono">
+                      Debug: {discountTypeOptions.length} Optionen | Aktuell: {formData.discount_type}
                     </div>
                   </div>
                 </div>
@@ -236,29 +296,51 @@ const CouponManagement = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="usage_type">Nutzungstyp</Label>
-                    <Select 
-                      value={formData.usage_type} 
-                      onValueChange={(value: 'single_use' | 'single_use_per_email' | 'time_based' | 'unlimited') => {
-                        console.log("Usage type changed:", value);
-                        setFormData({ ...formData, usage_type: value });
-                      }}
-                    >
-                      <SelectTrigger id="usage_type">
-                        <SelectValue placeholder="Wählen Sie den Nutzungstyp" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {usageTypeOptions.map((option) => {
-                          console.log("Rendering usage type option:", option);
-                          return (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                    <div className="text-xs text-gray-500">
-                      Debug: {usageTypeOptions.length} Optionen verfügbar
+                    <div className="relative">
+                      <Select 
+                        value={formData.usage_type} 
+                        onValueChange={handleUsageTypeChange}
+                        onOpenChange={(open) => {
+                          console.log("=== USAGE TYPE SELECT OPEN/CLOSE ===");
+                          console.log("Open state:", open);
+                          if (open) handleSelectOpen('usage_type');
+                        }}
+                      >
+                        <SelectTrigger 
+                          id="usage_type" 
+                          className="w-full"
+                          onClick={() => {
+                            console.log("=== USAGE TYPE TRIGGER CLICKED ===");
+                            console.log("Current value:", formData.usage_type);
+                            console.log("Options available:", usageTypeOptions);
+                          }}
+                        >
+                          <SelectValue placeholder="Wählen Sie den Nutzungstyp">
+                            {formData.usage_type ? getUsageTypeLabel(formData.usage_type) : "Wählen Sie den Nutzungstyp"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="z-50 bg-white border border-gray-200 shadow-lg">
+                          {usageTypeOptions.map((option) => {
+                            console.log("Rendering usage type option:", option);
+                            return (
+                              <SelectItem 
+                                key={option.value} 
+                                value={option.value}
+                                className="cursor-pointer hover:bg-gray-100 px-3 py-2"
+                                onClick={() => {
+                                  console.log("=== USAGE ITEM CLICKED ===");
+                                  console.log("Selected option:", option);
+                                }}
+                              >
+                                {option.label}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="text-xs text-blue-600 font-mono">
+                      Debug: {usageTypeOptions.length} Optionen | Aktuell: {formData.usage_type}
                     </div>
                   </div>
                 </div>
