@@ -41,32 +41,27 @@ export const useCompany = (user: AuthUser | null) => {
           console.warn("No company found with ID:", user.company_id);
         }
       } else {
-        // Use the safe RPC function to get profile data
+        // Try to fetch company_id from profile table directly
         const { data: profileData, error: profileError } = await supabase
-          .rpc('safe_update_user_profile', {
-            user_id_param: user.id,
-            first_name_param: user.first_name || '',
-            last_name_param: user.last_name || '',
-            company_id_param: null // Don't update company_id, just get current data
-          });
+          .from('profiles')
+          .select('company_id')
+          .eq('id', user.id)
+          .maybeSingle();
         
         if (profileError) {
-          console.error("Error fetching profile via RPC:", profileError);
+          console.error("Error fetching profile:", profileError);
           setLoadingCompany(false);
           return;
         }
         
-        // Parse the JSON response and type it correctly
-        const profile = profileData as { company_id?: string } | null;
-        
-        if (profile?.company_id) {
-          console.log("Found company_id in profile:", profile.company_id);
+        if (profileData?.company_id) {
+          console.log("Found company_id in profile:", profileData.company_id);
           
           // Fetch company data
           const { data: companyData, error: companyError } = await supabase
             .from('companies')
             .select('*')
-            .eq('id', profile.company_id)
+            .eq('id', profileData.company_id)
             .maybeSingle();
             
           if (companyError) {
@@ -80,9 +75,9 @@ export const useCompany = (user: AuthUser | null) => {
             setCompany(companyData);
             
             // Update the user object with company_id
-            user.company_id = profile.company_id;
+            user.company_id = profileData.company_id;
           } else {
-            console.warn("No company found with ID:", profile.company_id);
+            console.warn("No company found with ID:", profileData.company_id);
           }
         } else {
           console.log("User has no company assigned in profile");
@@ -111,7 +106,7 @@ export const useCompany = (user: AuthUser | null) => {
       
       console.log("Creating company with user ID:", user.id);
       
-      // Step 1: Insert company data with our open RLS policy
+      // Step 1: Insert company data
       const { data: newCompany, error: companyError } = await supabase
         .from('companies')
         .insert({
@@ -142,14 +137,27 @@ export const useCompany = (user: AuthUser | null) => {
         
       if (profileError) {
         console.error("Fehler bei der Profilaktualisierung:", profileError);
-        toast.warning("Unternehmen erstellt, aber Profil konnte nicht aktualisiert werden");
-        // Don't return null here, we already created the company
-      } else {
-        // Parse the JSON response and update user object with company_id
-        const profile = profileData as { company_id?: string } | null;
-        if (profile?.company_id) {
-          user.company_id = profile.company_id;
+        
+        // Try direct profile update as fallback
+        const { error: directUpdateError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            first_name: user.first_name || '',
+            last_name: user.last_name || '',
+            company_id: newCompany.id
+          });
+          
+        if (directUpdateError) {
+          console.error("Direct profile update also failed:", directUpdateError);
+          toast.warning("Unternehmen erstellt, aber Profil konnte nicht aktualisiert werden");
+        } else {
+          console.log("Direct profile update successful");
+          user.company_id = newCompany.id;
         }
+      } else {
+        console.log("RPC profile update successful");
+        user.company_id = newCompany.id;
       }
       
       // Step 3: Update local state
