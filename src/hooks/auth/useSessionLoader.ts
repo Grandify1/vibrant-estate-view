@@ -12,69 +12,107 @@ export const useSessionLoader = (
   // Handle profile creation or loading
   const handleProfileData = async (userId: string) => {
     try {
-      // Get user email directly
-      const { data } = await supabase.auth.getUser();
-      const email = data.user?.email || '';
+      console.log("Handling profile data for user:", userId);
       
-      const { data: profileData, error } = await supabase
+      // Get user email from session (NOT from auth.users table!)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const email = sessionData?.session?.user?.email || '';
+      
+      console.log("User email from session:", email);
+      
+      // First try to get existing profile
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
         
+      console.log("Profile query result:", { profileData, profileError });
+        
       if (profileData) {
-        console.log("Profildaten gefunden:", profileData);
+        console.log("Existing profile found:", profileData);
         
         setUser({
           id: userId,
           email: email,
           first_name: profileData.first_name,
           last_name: profileData.last_name,
-          company_id: profileData.company_id // Make sure to include company_id
+          company_id: profileData.company_id
         });
       } else {
-        if (error) {
-          console.log("Profil error:", error);
-        }
+        console.log("No profile found, creating new one...");
         
-        // Create profile if none exists
-        if (!profileData) {
-          console.log("Erstelle neues Profil für Benutzer:", userId);
-          
-          // Get user metadata from session
-          const metadata = data.user?.user_metadata;
-          
-          try {
-            // Verwende upsert anstatt insert, um Duplikate zu vermeiden
-            const { error: createError } = await supabase
-              .from('profiles')
-              .upsert({
-                id: userId,
-                first_name: metadata?.first_name || null,
-                last_name: metadata?.last_name || null
-              });
-              
-            if (createError) {
-              console.error("Fehler beim Erstellen des Profils:", createError);
-            } else {
-              console.log("Profil erfolgreich erstellt");
-              
-              // Set basic user data after creating profile
-              setUser({
-                id: userId,
-                email: email,
-                first_name: metadata?.first_name,
-                last_name: metadata?.last_name,
-                company_id: null // Initialize company_id as null for new users
-              });
-            }
-          } catch (e) {
-            console.error("Fehler beim Erstellen des Profils:", e);
+        // Get user metadata from session
+        const metadata = sessionData?.session?.user?.user_metadata;
+        console.log("User metadata:", metadata);
+        
+        try {
+          // Use UPSERT to create or update profile
+          const { data: newProfile, error: upsertError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: userId,
+              first_name: metadata?.first_name || null,
+              last_name: metadata?.last_name || null,
+              company_id: null
+            }, {
+              onConflict: 'id'
+            })
+            .select()
+            .single();
+            
+          console.log("Upsert result:", { newProfile, upsertError });
+            
+          if (upsertError) {
+            console.error("Upsert error:", upsertError);
+            // If upsert fails, still set basic user data
+            setUser({
+              id: userId,
+              email: email,
+              first_name: metadata?.first_name,
+              last_name: metadata?.last_name,
+              company_id: null
+            });
+          } else {
+            console.log("Profile successfully created/updated");
+            setUser({
+              id: userId,
+              email: email,
+              first_name: newProfile.first_name,
+              last_name: newProfile.last_name,
+              company_id: newProfile.company_id
+            });
           }
+        } catch (e) {
+          console.error("Error during profile upsert:", e);
+          // Fallback: set basic user data even if profile creation fails
+          setUser({
+            id: userId,
+            email: email,
+            first_name: metadata?.first_name,
+            last_name: metadata?.last_name,
+            company_id: null
+          });
         }
       }
     } catch (error) {
       console.error("Error handling profile data:", error);
+      // Even on error, try to set basic user data
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const email = sessionData?.session?.user?.email || '';
+        const metadata = sessionData?.session?.user?.user_metadata;
+        
+        setUser({
+          id: userId,
+          email: email,
+          first_name: metadata?.first_name,
+          last_name: metadata?.last_name,
+          company_id: null
+        });
+      } catch (fallbackError) {
+        console.error("Fallback error:", fallbackError);
+      }
     }
   };
 
@@ -95,13 +133,13 @@ export const useSessionLoader = (
         const session = sessionData?.session;
         
         if (session && mounted) {
-          console.log("Session gefunden:", session.user.id);
+          console.log("Session found:", session.user.id);
           setIsAuthenticated(true);
           
           // Load user data from profile
           await handleProfileData(session.user.id);
         } else {
-          console.log("Keine Session gefunden");
+          console.log("No session found");
           if (mounted) {
             setIsAuthenticated(false);
             setUser(null);
@@ -136,7 +174,7 @@ export const useSessionLoader = (
           authListener = data.subscription;
         }
       } catch (error) {
-        console.error("Fehler beim Laden der Session:", error);
+        console.error("Error during session check:", error);
         if (mounted) {
           setIsAuthenticated(false);
           setUser(null);

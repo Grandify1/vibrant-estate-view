@@ -77,7 +77,7 @@ const UserManagement = () => {
     try {
       console.log("Loading all users from auth...");
       
-      // Verwende die aktualisierte Funktion
+      // Use the RPC function
       const { data: users, error } = await supabase.rpc('get_all_users_with_profiles');
 
       console.log("Users response:", { users, error });
@@ -174,24 +174,24 @@ const UserManagement = () => {
     try {
       if (editingUser) {
         console.log("Updating existing user:", editingUser.id);
+        console.log("Company ID to update:", formData.company_id);
         
-        // Update existing user profile - DIREKT mit UPSERT anstatt update
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({
-            id: editingUser.id,
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            company_id: formData.company_id || null
-          }, {
-            onConflict: 'id'
-          });
+        // Use the safe update function that bypasses RLS issues
+        const { data, error } = await supabase.rpc('safe_update_user_profile', {
+          user_id: editingUser.id,
+          first_name_param: formData.first_name,
+          last_name_param: formData.last_name,
+          company_id_param: formData.company_id || null
+        });
+
+        console.log("Safe update result:", { data, error });
 
         if (error) {
-          console.error("Fehler beim Aktualisieren des Profils:", error);
+          console.error("Safe update error:", error);
           throw error;
         }
         
+        console.log("User profile updated successfully");
         toast.success('Benutzer erfolgreich aktualisiert');
       } else {
         console.log("Creating new user with payload:", {

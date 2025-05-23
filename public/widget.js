@@ -2,7 +2,7 @@
 /**
  * ImmoUpload Widget - Vereinfachte Version
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 3.3
+ * Version 3.4 - Mit erweiterten Debugging-Features
  */
 (function() {
   // Globales Objekt für das Widget erstellen
@@ -17,7 +17,7 @@
     return scripts[scripts.length - 1];
   })();
   
-  // KORRIGIERTE BASE URL FÜR PRODUCTION
+  // KORREKTE BASE URL FÜR PRODUCTION
   const baseUrl = 'https://immoupload.com';
   
   // Konfigurationsoptionen
@@ -27,16 +27,39 @@
   // Debug-Modus
   const debugMode = script.getAttribute('data-debug') === 'true';
   
-  // Debug-Funktion
+  // Erweiterte Debug-Funktion mit Backend-Logging
   function debug(message, data) {
+    const timestamp = new Date().toISOString();
+    const prefix = `[ImmoWidget ${timestamp}]`;
+    
     if (debugMode) {
-      const timestamp = new Date().toISOString();
-      const prefix = `[ImmoWidget ${timestamp}]`;
-      
       if (data) {
         console.log(prefix, message, data);
       } else {
         console.log(prefix, message);
+      }
+    }
+    
+    // Sende Debug-Informationen an Backend (nur bei kritischen Fehlern)
+    if (message.toLowerCase().includes('error') || message.toLowerCase().includes('failed')) {
+      try {
+        fetch(`${baseUrl}/api/widget-debug`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            timestamp: timestamp,
+            message: message,
+            data: data,
+            userAgent: navigator.userAgent,
+            url: window.location.href
+          })
+        }).catch(err => {
+          console.warn('Debug logging failed:', err);
+        });
+      } catch (e) {
+        // Ignoriere Fehler beim Debug-Logging
       }
     }
   }
@@ -44,6 +67,9 @@
   // Initialisierung des Widgets
   function initWidget() {
     debug('Widget Initialisierung gestartet');
+    debug('Script Source URL:', script.src);
+    debug('Base URL:', baseUrl);
+    debug('Debug Mode:', debugMode);
     
     // Container identifizieren oder erstellen
     let container = document.getElementById('immo-widget-container');
@@ -52,7 +78,9 @@
     }
     
     if (!container) {
-      console.error('ImmoUpload Widget: Container mit ID "immo-widget-container" oder Klasse "immo-widget-container" nicht gefunden.');
+      const errorMsg = 'ImmoUpload Widget: Container mit ID "immo-widget-container" oder Klasse "immo-widget-container" nicht gefunden.';
+      console.error(errorMsg);
+      debug('CRITICAL ERROR: Container not found');
       return;
     }
     
@@ -84,9 +112,25 @@
     
     debug('Styles hinzugefügt');
     
+    // Iframe URL zusammenstellen
+    const iframeUrl = baseUrl + '/embed';
+    debug('Iframe URL erstellt:', iframeUrl);
+    
+    // Teste Erreichbarkeit der URL
+    fetch(iframeUrl, { method: 'HEAD' })
+      .then(response => {
+        debug('URL Test Response Status:', response.status);
+        if (!response.ok) {
+          debug('ERROR: URL nicht erreichbar', { status: response.status, statusText: response.statusText });
+        }
+      })
+      .catch(error => {
+        debug('ERROR: URL Test fehlgeschlagen', error);
+      });
+    
     // Iframe erstellen
     const iframe = document.createElement('iframe');
-    iframe.src = baseUrl + '/embed';
+    iframe.src = iframeUrl;
     iframe.style.width = widgetWidth;
     iframe.style.border = 'none';
     iframe.style.minHeight = '350px';
@@ -98,36 +142,60 @@
     iframe.setAttribute('title', 'Immobilien Übersicht');
     iframe.setAttribute('loading', 'eager');
     
-    debug('Iframe erstellt mit URL:', iframe.src);
+    debug('Iframe erstellt mit Eigenschaften:', {
+      src: iframe.src,
+      width: iframe.style.width,
+      height: iframe.style.height,
+      id: iframe.id
+    });
     
     // Iframe zum Container hinzufügen
     container.appendChild(iframe);
+    debug('Iframe zum Container hinzugefügt');
     
-    // Nach dem Laden eine erste Höhenanpassung vornehmen
+    // Iframe Load Event Handler
     iframe.addEventListener('load', function() {
-      debug('Iframe geladen, Event wird ausgelöst');
+      debug('Iframe geladen - Load Event ausgelöst');
       
       // Event auslösen, damit die Website weiß, dass das Widget geladen wurde
-      const event = new CustomEvent('immo-widget-loaded');
+      const event = new CustomEvent('immo-widget-loaded', {
+        detail: {
+          iframeUrl: iframeUrl,
+          timestamp: new Date().toISOString()
+        }
+      });
       document.dispatchEvent(event);
+      debug('Custom Event "immo-widget-loaded" ausgelöst');
       
-      // Warten bis das iframe vollständig geladen ist
+      // Erste Höhenanpassung nach kurzer Verzögerung
       setTimeout(() => {
         adjustIframeHeight(iframe);
         debug('Erste Höhenanpassung durchgeführt');
         
-        // Periodisch die Höhe anpassen
+        // Periodische Höhenanpassung
         const heightInterval = setInterval(() => {
           adjustIframeHeight(iframe);
-        }, 2000);
+        }, 3000);
         
         // Clean up interval nach 30 Sekunden
         setTimeout(() => {
           clearInterval(heightInterval);
           debug('Automatische Höhenanpassung beendet');
         }, 30000);
-      }, 1000);
+      }, 1500);
     });
+    
+    // Iframe Error Event Handler
+    iframe.addEventListener('error', function(e) {
+      debug('ERROR: Iframe Load Error', e);
+    });
+    
+    // Timeout für iframe loading
+    setTimeout(() => {
+      if (!iframe.contentDocument && !iframe.contentWindow) {
+        debug('ERROR: Iframe failed to load within 10 seconds');
+      }
+    }, 10000);
   }
   
   // Funktion zur Höhenanpassung des Iframes - sicherheitsorientiert
@@ -147,12 +215,16 @@
         iframeDoc = iframe.contentWindow.document;
         
         if (!iframeDoc || !iframeDoc.body) {
-          debug('Iframe-Dokument oder body nicht verfügbar');
+          debug('Iframe-Dokument oder body nicht verfügbar - verwende postMessage');
           
           // Post-Message als Alternative verwenden
           try {
-            debug('Versuche Height-Request via postMessage');
-            iframe.contentWindow.postMessage({ type: 'request-height' }, '*');
+            debug('Sende Height-Request via postMessage');
+            iframe.contentWindow.postMessage({ 
+              type: 'request-height',
+              source: 'immo-widget',
+              timestamp: new Date().toISOString()
+            }, '*');
           } catch (postMessageError) {
             debug('Post-Message blockiert', postMessageError);
           }
@@ -160,12 +232,16 @@
           return;
         }
       } catch (accessError) {
-        debug('Cross-Origin-Zugriff verweigert', accessError);
+        debug('Cross-Origin-Zugriff verweigert - verwende postMessage', accessError);
         
         // Post-Message als Alternative verwenden
         try {
-          debug('Versuche Height-Request via postMessage nach Access-Error');
-          iframe.contentWindow.postMessage({ type: 'request-height' }, '*');
+          debug('Sende Height-Request via postMessage nach Access-Error');
+          iframe.contentWindow.postMessage({ 
+            type: 'request-height',
+            source: 'immo-widget',
+            timestamp: new Date().toISOString()
+          }, '*');
         } catch (postMessageError) {
           debug('Post-Message blockiert nach Access-Error', postMessageError);
         }
@@ -177,39 +253,50 @@
       if (height && height > 100) {
         debug('Neue Höhe gefunden:', height);
         iframe.style.height = height + 'px';
-        console.log('Iframe-Höhe angepasst:', height + 'px');
+        debug('Iframe-Höhe erfolgreich angepasst auf:', height + 'px');
       } else {
         debug('Ungültige Höhe gefunden:', height);
       }
     } catch (e) {
       // Cross-Origin-Fehler abfangen
-      debug('Cross-Origin-Einschränkung - automatische Größenanpassung deaktiviert', e);
+      debug('Unerwarteter Fehler bei Höhenanpassung', e);
       
-      // Post-Message als Alternative verwenden
+      // Post-Message als Fallback verwenden
       try {
-        debug('Versuche Height-Request via postMessage nach Error');
-        iframe.contentWindow.postMessage({ type: 'request-height' }, '*');
+        debug('Fallback: Height-Request via postMessage');
+        iframe.contentWindow.postMessage({ 
+          type: 'request-height',
+          source: 'immo-widget',
+          timestamp: new Date().toISOString()
+        }, '*');
       } catch (postMessageError) {
-        debug('Post-Message ebenfalls blockiert', postMessageError);
+        debug('Fallback Post-Message ebenfalls fehlgeschlagen', postMessageError);
       }
     }
   }
   
-  // Warten auf DOM Content Loaded
+  // DOM Ready Check
   if (document.readyState === 'loading') {
     debug('Dokument wird noch geladen, warte auf DOMContentLoaded');
-    document.addEventListener('DOMContentLoaded', initWidget);
+    document.addEventListener('DOMContentLoaded', function() {
+      debug('DOMContentLoaded Event empfangen');
+      initWidget();
+    });
   } else {
     debug('Dokument bereits geladen, initialisiere Widget sofort');
     initWidget();
   }
   
   // Globale Event-Handler für Nachrichtenaustausch
-  debug('Event-Listener für postMessage registrieren');
+  debug('Registriere Event-Listener für postMessage');
   window.addEventListener('message', function(e) {
-    debug('Nachricht empfangen:', e.data);
+    debug('PostMessage empfangen:', {
+      origin: e.origin,
+      data: e.data,
+      source: e.source === window ? 'self' : 'external'
+    });
     
-    // Sicherheits-Check - erlauben Sie auch die Produktions-Domain
+    // Erweiterte Sicherheits-Checks
     const allowedOrigins = [
       'https://immoupload.com',
       'https://immoupload.lovable.app',
@@ -227,14 +314,14 @@
       return;
     }
     
-    debug('Origin erlaubt:', e.origin);
+    debug('Origin erlaubt, verarbeite Nachricht:', e.origin);
     
     // Behandlung von Resize-Events für das iframe
     if (e.data && e.data.type === 'resize-iframe') {
       const iframe = document.getElementById('immo-widget-iframe');
       if (iframe && e.data.height) {
         iframe.style.height = e.data.height + 'px';
-        debug('Iframe-Höhe via Post-Message angepasst:', e.data.height);
+        debug('Iframe-Höhe via PostMessage angepasst:', e.data.height);
       }
     }
     
@@ -245,6 +332,21 @@
         window.open(e.data.url, '_blank');
       }
     }
+    
+    // Debug-Response senden
+    if (e.data && e.data.type === 'request-height') {
+      debug('Height-Request erhalten, sende Antwort zurück');
+      try {
+        e.source.postMessage({
+          type: 'height-response',
+          height: document.body.scrollHeight,
+          source: 'immo-widget-parent',
+          timestamp: new Date().toISOString()
+        }, e.origin);
+      } catch (responseError) {
+        debug('Fehler beim Senden der Height-Response', responseError);
+      }
+    }
   });
   
   // Fix für drawHighlights-Fehler
@@ -253,7 +355,31 @@
     // Leere Fallback-Funktion, um Fehler zu vermeiden
   };
   
+  // Performance Monitoring
+  window.addEventListener('load', function() {
+    debug('Window Load Event - Performance Stats:', {
+      loadTime: Date.now() - performance.timing.navigationStart,
+      domReady: performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart,
+      timestamp: new Date().toISOString()
+    });
+  });
+  
+  // Error Handling für unbehandelte Fehler
+  window.addEventListener('error', function(e) {
+    if (e.filename && e.filename.includes('widget.js')) {
+      debug('ERROR: Unbehandelter JavaScript-Fehler im Widget', {
+        message: e.message,
+        filename: e.filename,
+        lineno: e.lineno,
+        colno: e.colno,
+        error: e.error
+      });
+    }
+  });
+  
   // Widget als initialisiert markieren
   debug('Widget wurde erfolgreich initialisiert');
   window.ImmoWidget.initialized = true;
+  window.ImmoWidget.version = '3.4';
+  window.ImmoWidget.debug = debug;
 })();
