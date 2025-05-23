@@ -14,7 +14,9 @@ import {
   Check, 
   Star,
   ArrowRight,
-  Flag
+  Flag,
+  Smartphone,
+  Mail
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -26,104 +28,94 @@ const LandingPage = () => {
   const content = {
     de: {
       hero: {
-        title: "Die einfachste Art, Immobilien zu präsentieren",
-        subtitle: "Laden Sie Ihre Immobilienfotos hoch und erhalten Sie sofort eine professionelle, teilbare Präsentation",
-        cta: "Kostenlos starten",
+        title: "Immobilien präsentieren war noch nie so einfach!",
+        subtitle: "Immoupload.com – das einfachste CMS für Immobilienmakler. Professionelle, moderne Immobilien-Websites, ohne technisches Know-how.",
+        cta: "Jetzt kostenlos testen!",
         demo: "Demo ansehen"
       },
       features: {
-        title: "Warum ImmoUpload wählen?",
-        subtitle: "Alles was Sie brauchen, um Ihre Immobilien professionell zu präsentieren",
+        title: "Warum Immoupload.com?",
+        subtitle: "Alles was Sie als Immobilienmakler brauchen",
         items: [
           {
             icon: Upload,
-            title: "Einfacher Upload",
-            description: "Ziehen Sie Ihre Fotos einfach per Drag & Drop in unseren Editor"
+            title: "Einfache Integration",
+            description: "In wenigen Minuten online: Generiere deinen individuellen Code-Snippet und integriere Immoupload.com mühelos auf deiner bestehenden Website."
           },
           {
             icon: Eye,
-            title: "Sofortige Vorschau",
-            description: "Sehen Sie sofort, wie Ihre Immobilie präsentiert wird"
+            title: "Modernes, übersichtliches Design",
+            description: "Präsentiere deine Immobilien professionell und modern. Überzeuge Interessenten mit ansprechenden Exposés, Bildergalerien und Kontaktformularen."
           },
           {
             icon: Share2,
-            title: "Einfaches Teilen",
-            description: "Teilen Sie Ihre Präsentation mit einem einzigen Link"
+            title: "Faire Preise, maximale Leistung",
+            description: "Ab 19 € im Monat – bezahlbar für jeden Makler. Keine versteckten Kosten, keine hohen Einmalzahlungen wie bei anderen Lösungen."
           }
         ]
       },
-      benefits: {
-        title: "Perfekt für Immobilienprofis",
+      functions: {
+        title: "Alle Funktionen für Ihren Erfolg",
         items: [
           {
             icon: Building2,
-            title: "Für Makler",
-            description: "Erstellen Sie beeindruckende Exposés in Minuten, nicht Stunden"
+            title: "Schnelle Immobiliendaten-Pflege",
+            description: "Einfach neue Immobilien hinzufügen, bearbeiten und veröffentlichen."
           },
           {
             icon: Users,
-            title: "Für Vermieter",
-            description: "Präsentieren Sie Ihre Immobilie professionell an potenzielle Mieter"
+            title: "Dynamische Immobilienexposés",
+            description: "Automatische Erstellung attraktiver Exposés inklusive Kontaktformular."
           },
           {
-            icon: Zap,
-            title: "Für Entwickler",
-            description: "Showcase neue Projekte mit hochwertigen Präsentationen"
+            icon: Smartphone,
+            title: "Mobile optimiert",
+            description: "Perfekte Darstellung auf Smartphone, Tablet und Desktop."
+          },
+          {
+            icon: Mail,
+            title: "Direkter Kundenkontakt",
+            description: "Interessenten können direkt über das integrierte Kontaktformular anfragen."
           }
         ]
       },
       pricing: {
         title: "Transparente Preise",
-        subtitle: "Wählen Sie den Plan, der zu Ihnen passt",
+        subtitle: "Wählen Sie das Paket, das zu Ihnen passt",
         monthly: "Monatlich",
         yearly: "Jährlich",
         yearlyDiscount: "2 Monate gratis",
         plans: [
           {
             name: "Starter",
-            price: "0",
-            period: "kostenlos",
-            description: "Perfekt zum Ausprobieren",
+            price: "19",
+            period: "€/Monat",
+            description: "Ideal für kleine Maklerbüros",
             features: [
-              "Bis zu 3 Immobilien",
-              "10 Fotos pro Immobilie", 
-              "Basic Präsentation",
-              "Community Support"
+              "Bis zu 9 Immobilien",
+              "Moderne Exposés",
+              "Mobile optimiert",
+              "Kontaktformulare",
+              "E-Mail Support"
             ],
-            cta: "Kostenlos starten",
+            cta: "Jetzt kostenlos testen",
             popular: false
           },
           {
-            name: "Professional",
-            price: "29",
-            period: "/Monat",
-            description: "Für professionelle Makler",
+            name: "Pro",
+            price: "39,99",
+            period: "€/Monat",
+            description: "Für größere Büros und Agenturen",
             features: [
               "Unbegrenzte Immobilien",
-              "Unbegrenzte Fotos",
-              "Premium Vorlagen",
+              "Premium Design",
               "Custom Branding",
+              "Erweiterte Analytics",
               "Priorität Support",
-              "Analytics Dashboard"
+              "API Zugang"
             ],
-            cta: "Jetzt starten",
+            cta: "Pro starten",
             popular: true
-          },
-          {
-            name: "Enterprise",
-            price: "99",
-            period: "/Monat",
-            description: "Für große Unternehmen",
-            features: [
-              "Alles aus Professional",
-              "Team Management",
-              "API Zugang",
-              "Custom Integration",
-              "Dedicated Support",
-              "SLA Garantie"
-            ],
-            cta: "Kontakt aufnehmen",
-            popular: false
           }
         ]
       },
@@ -131,24 +123,29 @@ const LandingPage = () => {
         title: "Was unsere Kunden sagen",
         items: [
           {
-            name: "Sarah Weber",
-            role: "Immobilienmaklerin",
-            content: "ImmoUpload hat meine Art zu arbeiten völlig verändert. Ich kann jetzt in Minuten professionelle Exposés erstellen.",
+            name: "Thomas Müller",
+            role: "Immobilienmakler, München",
+            content: "Immoupload hat meine Arbeitsweise revolutioniert. Endlich kann ich mich aufs Verkaufen konzentrieren, statt auf Technik!",
+            rating: 5
+          },
+          {
+            name: "Sandra Weber",
+            role: "Geschäftsführerin, Berlin Real Estate",
+            content: "Die Integration war so einfach! In 10 Minuten war alles online und unsere Kunden sind begeistert vom modernen Design.",
             rating: 5
           },
           {
             name: "Michael Schmidt",
-            role: "Vermieter",
-            content: "Die Präsentationen sehen so professionell aus. Ich bekomme viel mehr Anfragen für meine Wohnungen.",
-            rating: 5
-          },
-          {
-            name: "Lisa Mueller",
-            role: "Projektentwicklerin",
-            content: "Perfect für unsere neuen Projekte. Die Investoren sind begeistert von den Präsentationen.",
+            role: "Freier Makler, Hamburg",
+            content: "Endlich eine bezahlbare Lösung! Für 19€ bekomme ich mehr als bei anderen Anbietern für das 10-fache.",
             rating: 5
           }
         ]
+      },
+      cta: {
+        title: "Überzeugt?",
+        subtitle: "Starte jetzt mit Immoupload.com und hebe dich von der Konkurrenz ab. Einfacher. Moderner. Besser.",
+        button: "Jetzt kostenlos testen und überzeugen lassen!"
       },
       footer: {
         copyright: "Alle Rechte vorbehalten.",
@@ -160,104 +157,94 @@ const LandingPage = () => {
     },
     en: {
       hero: {
-        title: "The easiest way to present real estate",
-        subtitle: "Upload your property photos and instantly get a professional, shareable presentation",
-        cta: "Start for free",
+        title: "Real estate presentation has never been easier!",
+        subtitle: "Immoupload.com – the simplest CMS for real estate agents. Professional, modern real estate websites, without technical know-how.",
+        cta: "Start free trial!",
         demo: "View demo"
       },
       features: {
-        title: "Why choose ImmoUpload?",
-        subtitle: "Everything you need to present your properties professionally",
+        title: "Why Immoupload.com?",
+        subtitle: "Everything you need as a real estate agent",
         items: [
           {
             icon: Upload,
-            title: "Easy Upload",
-            description: "Simply drag & drop your photos into our editor"
+            title: "Easy Integration",
+            description: "Online in minutes: Generate your individual code snippet and integrate Immoupload.com effortlessly on your existing website."
           },
           {
             icon: Eye,
-            title: "Instant Preview",
-            description: "See immediately how your property will be presented"
+            title: "Modern, Clear Design",
+            description: "Present your properties professionally and modernly. Convince prospects with appealing exposés, image galleries and contact forms."
           },
           {
             icon: Share2,
-            title: "Easy Sharing",
-            description: "Share your presentation with a single link"
+            title: "Fair Prices, Maximum Performance",
+            description: "From €19 per month – affordable for every agent. No hidden costs, no high one-time payments like other solutions."
           }
         ]
       },
-      benefits: {
-        title: "Perfect for real estate professionals",
+      functions: {
+        title: "All functions for your success",
         items: [
           {
             icon: Building2,
-            title: "For Agents",
-            description: "Create stunning listings in minutes, not hours"
+            title: "Fast Property Data Management",
+            description: "Simply add, edit and publish new properties."
           },
           {
             icon: Users,
-            title: "For Landlords",
-            description: "Present your property professionally to potential tenants"
+            title: "Dynamic Property Exposés",
+            description: "Automatic creation of attractive exposés including contact form."
           },
           {
-            icon: Zap,
-            title: "For Developers",
-            description: "Showcase new projects with high-quality presentations"
+            icon: Smartphone,
+            title: "Mobile Optimized",
+            description: "Perfect display on smartphone, tablet and desktop."
+          },
+          {
+            icon: Mail,
+            title: "Direct Customer Contact",
+            description: "Prospects can inquire directly via the integrated contact form."
           }
         ]
       },
       pricing: {
         title: "Transparent pricing",
-        subtitle: "Choose the plan that fits you",
+        subtitle: "Choose the package that fits you",
         monthly: "Monthly",
         yearly: "Yearly",
         yearlyDiscount: "2 months free",
         plans: [
           {
             name: "Starter",
-            price: "0",
-            period: "free",
-            description: "Perfect for trying out",
+            price: "19",
+            period: "€/month",
+            description: "Ideal for small real estate offices",
             features: [
-              "Up to 3 properties",
-              "10 photos per property",
-              "Basic presentation",
-              "Community support"
+              "Up to 9 properties",
+              "Modern exposés",
+              "Mobile optimized",
+              "Contact forms",
+              "Email support"
             ],
-            cta: "Start for free",
+            cta: "Start free trial",
             popular: false
           },
           {
-            name: "Professional",
-            price: "29",
-            period: "/month",
-            description: "For professional agents",
+            name: "Pro",
+            price: "39.99",
+            period: "€/month",
+            description: "For larger offices and agencies",
             features: [
               "Unlimited properties",
-              "Unlimited photos",
-              "Premium templates",
+              "Premium design",
               "Custom branding",
+              "Advanced analytics",
               "Priority support",
-              "Analytics dashboard"
+              "API access"
             ],
-            cta: "Get started",
+            cta: "Start Pro",
             popular: true
-          },
-          {
-            name: "Enterprise",
-            price: "99",
-            period: "/month",
-            description: "For large companies",
-            features: [
-              "Everything in Professional",
-              "Team management",
-              "API access",
-              "Custom integration",
-              "Dedicated support",
-              "SLA guarantee"
-            ],
-            cta: "Contact us",
-            popular: false
           }
         ]
       },
@@ -265,24 +252,29 @@ const LandingPage = () => {
         title: "What our customers say",
         items: [
           {
-            name: "Sarah Weber",
-            role: "Real Estate Agent",
-            content: "ImmoUpload has completely changed the way I work. I can now create professional listings in minutes.",
+            name: "Thomas Müller",
+            role: "Real Estate Agent, Munich",
+            content: "Immoupload has revolutionized my way of working. Finally I can focus on selling instead of technology!",
+            rating: 5
+          },
+          {
+            name: "Sandra Weber",
+            role: "CEO, Berlin Real Estate",
+            content: "The integration was so easy! Everything was online in 10 minutes and our customers love the modern design.",
             rating: 5
           },
           {
             name: "Michael Schmidt",
-            role: "Landlord",
-            content: "The presentations look so professional. I get much more inquiries for my apartments.",
-            rating: 5
-          },
-          {
-            name: "Lisa Mueller",
-            role: "Project Developer",
-            content: "Perfect for our new projects. Investors are thrilled with the presentations.",
+            role: "Freelance Agent, Hamburg",
+            content: "Finally an affordable solution! For €19 I get more than from other providers for 10 times the price.",
             rating: 5
           }
         ]
+      },
+      cta: {
+        title: "Convinced?",
+        subtitle: "Start now with Immoupload.com and stand out from the competition. Easier. More modern. Better.",
+        button: "Start free trial and get convinced!"
       },
       footer: {
         copyright: "All rights reserved.",
@@ -310,7 +302,6 @@ const LandingPage = () => {
     setLanguage(newLanguage);
   };
 
-  // Funktion für sprachbasierte Navigation zur richtigen Seite
   const handleLegalNavigation = (type: 'legal' | 'privacy') => {
     if (language === 'de') {
       navigate(type === 'legal' ? '/impressum' : '/datenschutz');
@@ -319,7 +310,6 @@ const LandingPage = () => {
     }
   };
 
-  // Füge Flaggen-Emoji ein
   const languageFlag = language === 'de' ? '🇩🇪' : '🇺🇸';
   const switchToFlag = language === 'de' ? '🇺🇸' : '🇩🇪';
 
@@ -363,7 +353,7 @@ const LandingPage = () => {
           <h1 className="text-4xl md:text-6xl font-bold mb-6 text-estate-dark leading-tight">
             {currentContent.hero.title}
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             {currentContent.hero.subtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -410,23 +400,23 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Benefits Section */}
+      {/* Functions Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-estate-dark">
-              {currentContent.benefits.title}
+              {currentContent.functions.title}
             </h2>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            {currentContent.benefits.items.map((benefit, index) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {currentContent.functions.items.map((func, index) => (
               <div key={index} className="text-center">
                 <div className="mx-auto w-20 h-20 bg-estate/10 rounded-full flex items-center justify-center mb-6">
-                  <benefit.icon className="h-10 w-10 text-estate" />
+                  <func.icon className="h-10 w-10 text-estate" />
                 </div>
-                <h3 className="text-xl font-semibold mb-4">{benefit.title}</h3>
-                <p className="text-gray-600">{benefit.description}</p>
+                <h3 className="text-xl font-semibold mb-4">{func.title}</h3>
+                <p className="text-gray-600">{func.description}</p>
               </div>
             ))}
           </div>
@@ -445,7 +435,7 @@ const LandingPage = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {currentContent.pricing.plans.map((plan, index) => (
               <Card key={index} className={`relative ${plan.popular ? 'border-estate shadow-xl scale-105' : ''}`}>
                 {plan.popular && (
@@ -456,7 +446,7 @@ const LandingPage = () => {
                 <CardHeader className="text-center">
                   <CardTitle className="text-2xl">{plan.name}</CardTitle>
                   <div className="text-4xl font-bold">
-                    €{plan.price}
+                    {plan.price}
                     <span className="text-lg font-normal text-gray-500">{plan.period}</span>
                   </div>
                   <CardDescription>{plan.description}</CardDescription>
@@ -535,17 +525,14 @@ const LandingPage = () => {
       <section className="py-20 bg-estate text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            {language === 'de' ? 'Bereit anzufangen?' : 'Ready to get started?'}
+            {currentContent.cta.title}
           </h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            {language === 'de' 
-              ? 'Erstellen Sie noch heute Ihre erste professionelle Immobilienpräsentation.'
-              : 'Create your first professional real estate presentation today.'
-            }
+          <p className="text-xl mb-8 max-w-3xl mx-auto">
+            {currentContent.cta.subtitle}
           </p>
           <Link to="/payment">
             <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
-              {currentContent.hero.cta}
+              {currentContent.cta.button}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
