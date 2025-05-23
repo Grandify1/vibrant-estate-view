@@ -78,6 +78,7 @@ const UserManagement = () => {
     try {
       console.log("Loading all users from auth...");
       
+      // Verwende die aktualisierte Funktion
       const { data: users, error } = await supabase.rpc('get_all_users_with_profiles');
 
       console.log("Users response:", { users, error });

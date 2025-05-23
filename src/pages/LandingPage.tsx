@@ -310,6 +310,7 @@ const LandingPage = () => {
     setLanguage(newLanguage);
   };
 
+  // Funktion für sprachbasierte Navigation zur richtigen Seite
   const handleLegalNavigation = (type: 'legal' | 'privacy') => {
     if (language === 'de') {
       navigate(type === 'legal' ? '/impressum' : '/datenschutz');
@@ -317,6 +318,10 @@ const LandingPage = () => {
       navigate(type === 'legal' ? '/legal-notice' : '/privacy-policy');
     }
   };
+
+  // Füge Flaggen-Emoji ein
+  const languageFlag = language === 'de' ? '🇩🇪' : '🇺🇸';
+  const switchToFlag = language === 'de' ? '🇺🇸' : '🇩🇪';
 
   return (
     <div className="min-h-screen bg-white">
@@ -336,7 +341,7 @@ const LandingPage = () => {
               onClick={switchLanguage}
               title={language === 'de' ? 'Switch to English' : 'Zu Deutsch wechseln'}
             >
-              <Flag className="h-4 w-4" />
+              <span className="text-lg">{switchToFlag}</span>
             </Button>
             <Link to="/admin">
               <Button variant="outline" size="sm">

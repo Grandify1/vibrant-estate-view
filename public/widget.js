@@ -88,22 +88,6 @@
       
       // Periodisch die Höhe anpassen
       setInterval(() => adjustIframeHeight(iframe), 1000);
-      
-      // Hinzufügen von Click-Ereignisbehandlung für Links in der Webseite
-      if (iframe.contentDocument) {
-        iframe.contentDocument.addEventListener('click', function(e) {
-          const target = e.target;
-          const link = target.closest('a');
-          
-          if (link) {
-            e.preventDefault();
-            const href = link.getAttribute('href');
-            if (href) {
-              window.open(href, '_blank');
-            }
-          }
-        });
-      }
     });
   }
   
@@ -185,6 +169,12 @@
     };
     
     return xhr;
+  };
+  
+  // Fix für drawHighlights-Fehler
+  window.drawHighlights = window.drawHighlights || function() {
+    console.log('drawHighlights-Fallback aufgerufen');
+    // Leere Fallback-Funktion, um Fehler zu vermeiden
   };
   
   // Widget als initialisiert markieren

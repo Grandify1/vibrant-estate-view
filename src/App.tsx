@@ -35,10 +35,13 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/payment" element={<Payment />} />
+                  
+                  {/* Aktualisierte Routen für Impressum und Datenschutz mit korrekter Sprachweiterleitung */}
                   <Route path="/impressum" element={<Impressum language="de" />} />
                   <Route path="/legal-notice" element={<Impressum language="en" />} />
                   <Route path="/datenschutz" element={<Datenschutz language="de" />} />
                   <Route path="/privacy-policy" element={<Datenschutz language="en" />} />
+                  
                   <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/admin/properties/new" element={<PropertyFormPage />} />
