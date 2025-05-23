@@ -1,4 +1,3 @@
-
 import { ReactNode, createContext, useEffect } from "react";
 import { useSession } from "./useSession";
 import { useLoginSignup } from "./useLoginSignup";

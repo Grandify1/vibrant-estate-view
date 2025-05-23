@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser, Company } from "./types";
@@ -59,11 +58,12 @@ export const useCompany = (user: AuthUser | null) => {
     address?: string;
     phone?: string;
     email?: string;
-  }): Promise<boolean> => {
+    website?: string;
+  }): Promise<Company | null> => {
     try {
       if (!user) {
         toast.error("Sie müssen angemeldet sein, um ein Unternehmen zu erstellen");
-        return false;
+        return null;
       }
       
       console.log("Creating company with user ID:", user.id);
@@ -83,7 +83,7 @@ export const useCompany = (user: AuthUser | null) => {
       if (companyError || !newCompany) {
         console.error("Fehler beim Erstellen des Unternehmens:", companyError);
         toast.error("Fehler beim Erstellen des Unternehmens: " + companyError.message);
-        return false;
+        return null;
       }
       
       console.log("Company created successfully:", newCompany.id);
@@ -101,17 +101,17 @@ export const useCompany = (user: AuthUser | null) => {
       if (profileError) {
         console.error("Fehler bei der Profilaktualisierung:", profileError);
         toast.warning("Unternehmen erstellt, aber Profil konnte nicht aktualisiert werden");
-        // Don't return false here, we already created the company
+        // Don't return null here, we already created the company
       }
       
       // Step 3: Update local state
       setCompany(newCompany);
       toast.success("Unternehmen erfolgreich erstellt!");
-      return true;
+      return newCompany;
     } catch (error: any) {
       console.error("Unerwarteter Fehler:", error);
       toast.error("Ein unerwarteter Fehler ist aufgetreten: " + error.message);
-      return false;
+      return null;
     }
   };
   
