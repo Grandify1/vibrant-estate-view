@@ -18,7 +18,6 @@ const safelyParseJson = <T extends unknown>(jsonValue: Json | null, fallback: T)
     try {
       return JSON.parse(jsonValue) as T;
     } catch (e) {
-      console.error('Error parsing JSON:', e);
       return fallback;
     }
   }
@@ -35,13 +34,10 @@ export default function Embed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log('Embed: Loading properties for company:', companyId);
-
   // Send height to parent window
   useEffect(() => {
     const sendHeightToParent = () => {
       const height = document.body.scrollHeight;
-      console.log('Embed: Sending height to parent:', height);
       window.parent.postMessage({ type: 'resize-iframe', height }, '*');
     };
 
@@ -61,7 +57,6 @@ export default function Embed() {
     // Listen for postMessage requests
     const handleMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === 'request-height') {
-        console.log('Embed: Received height request');
         sendHeightToParent();
       }
     };
@@ -81,8 +76,6 @@ export default function Embed() {
         setLoading(true);
         setError(null);
         
-        console.log('Embed: Fetching properties for company:', companyId);
-        
         let query = supabase
           .from('properties')
           .select('*')
@@ -95,16 +88,12 @@ export default function Embed() {
           
         const { data, error } = await query;
         
-        console.log('Embed: Properties query result:', { data, error, count: data?.length || 0 });
-        
         if (error) {
-          console.error('Error fetching properties:', error);
           setError(error.message);
           return;
         }
         
         if (!data || data.length === 0) {
-          console.log('Embed: No properties found');
           setProperties([]);
           setLoading(false);
           return;
@@ -158,10 +147,8 @@ export default function Embed() {
           };
         });
         
-        console.log('Embed: Formatted properties:', formattedData);
         setProperties(formattedData);
       } catch (error: any) {
-        console.error('Error in fetchProperties:', error);
         setError(error.message || 'Ein unbekannter Fehler ist aufgetreten');
       } finally {
         setLoading(false);

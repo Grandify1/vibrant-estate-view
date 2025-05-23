@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "./types";
@@ -16,8 +17,6 @@ export const useSessionLoader = (
       const email = sessionData?.session?.user?.email || '';
       const metadata = sessionData?.session?.user?.user_metadata || {};
       
-      console.log('Attempting to fetch profile for user:', userId);
-      
       // Try to get existing profile first (this will work for all users including admin)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -26,11 +25,8 @@ export const useSessionLoader = (
         .maybeSingle();
         
       if (profileError) {
-        console.error("Profile fetch error:", profileError.message);
-        
         // Special case for the admin user - don't throw, try to create a profile
         if (email === 'dustin.althaus@me.com') {
-          console.log("Admin user detected, attempting to create profile");
           await createAdminProfile(userId, email, metadata);
           return;
         }
@@ -39,7 +35,6 @@ export const useSessionLoader = (
       }
         
       if (profileData) {
-        console.log("Profile found:", profileData);
         // Profile exists, use it
         setUser({
           id: userId,
@@ -52,14 +47,12 @@ export const useSessionLoader = (
       }
 
       // No profile exists, create one
-      console.log("No profile found, creating new one");
       const firstName = metadata?.first_name || null;
       const lastName = metadata?.last_name || null;
       
       // For admin, try to assign to first company (Grandify)
       let companyId = null;
       if (email === 'dustin.althaus@me.com') {
-        console.log("Admin user detected, fetching Grandify company");
         try {
           const { data: companies, error: companiesError } = await supabase
             .from('companies')
@@ -69,7 +62,6 @@ export const useSessionLoader = (
           
           if (!companiesError && companies) {
             companyId = companies.id;
-            console.log("Admin user assigned to Grandify company:", companyId);
           } else {
             // Fallback: get first company
             const { data: fallbackCompanies } = await supabase
@@ -80,18 +72,15 @@ export const useSessionLoader = (
             
             if (fallbackCompanies && fallbackCompanies.length > 0) {
               companyId = fallbackCompanies[0].id;
-              console.log("Admin user assigned to first company:", companyId, fallbackCompanies[0].name);
             }
           }
         } catch (companyError) {
-          console.error("Could not fetch companies:", companyError);
+          // Silent fail
         }
       }
       
       // Try to create profile with direct insert
       try {
-        console.log("Creating profile with data:", { id: userId, first_name: firstName, last_name: lastName, company_id: companyId });
-        
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert({
@@ -104,7 +93,6 @@ export const useSessionLoader = (
           .single();
           
         if (createError) {
-          console.error("Could not create profile:", createError);
           // Try RPC for admin user
           if (email === 'dustin.althaus@me.com') {
             await createAdminProfile(userId, email, metadata);
@@ -120,7 +108,6 @@ export const useSessionLoader = (
             company_id: companyId
           });
         } else {
-          console.log("Profile created successfully:", newProfile);
           setUser({
             id: userId,
             email: email,
@@ -130,8 +117,6 @@ export const useSessionLoader = (
           });
         }
       } catch (createException) {
-        console.error("Exception creating profile, using fallback:", createException);
-        
         // Try RPC for admin user
         if (email === 'dustin.althaus@me.com') {
           await createAdminProfile(userId, email, metadata);
@@ -148,7 +133,6 @@ export const useSessionLoader = (
         });
       }
     } catch (error) {
-      console.error("Critical error in profile handling:", error);
       // Emergency fallback - just set basic auth data
       try {
         const { data: sessionData } = await supabase.auth.getSession();
@@ -169,7 +153,6 @@ export const useSessionLoader = (
           company_id: null
         });
       } catch (emergencyError) {
-        console.error("Emergency fallback failed:", emergencyError);
         setUser({
           id: userId,
           email: '',
@@ -183,8 +166,6 @@ export const useSessionLoader = (
   
   // Special function to create admin profile using RPC
   const createAdminProfile = async (userId: string, email: string, metadata: any) => {
-    console.log("Attempting to create admin profile using RPC function");
-    
     try {
       // Get Grandify company first
       const { data: companies } = await supabase
@@ -195,10 +176,6 @@ export const useSessionLoader = (
         
       const companyId = companies?.id;
       
-      if (!companyId) {
-        console.error("Could not find Grandify company for admin user");
-      }
-      
       // Use RPC function to create/update profile with admin privileges
       const { data, error } = await supabase.rpc('safe_update_user_profile', {
         user_id_param: userId,
@@ -208,11 +185,8 @@ export const useSessionLoader = (
       });
       
       if (error) {
-        console.error("Error creating admin profile via RPC:", error);
         throw error;
       }
-      
-      console.log("Admin profile created/updated via RPC:", data);
       
       // Set user with company ID
       setUser({
@@ -230,8 +204,6 @@ export const useSessionLoader = (
         toast.warning("Admin-Profil erstellt, aber keine Firma gefunden");
       }
     } catch (rpcError) {
-      console.error("Admin profile creation via RPC failed:", rpcError);
-      
       // Last fallback
       setUser({
         id: userId,
@@ -274,7 +246,6 @@ export const useSessionLoader = (
         if (mounted) {
           const { data } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-              console.log('Auth state changed:', event, session?.user?.id);
               if (session) {
                 setIsAuthenticated(true);
                 setTimeout(async () => {
@@ -292,7 +263,6 @@ export const useSessionLoader = (
           authListener = data.subscription;
         }
       } catch (error) {
-        console.error("Error during session check:", error);
         if (mounted) {
           setIsAuthenticated(false);
           setUser(null);
