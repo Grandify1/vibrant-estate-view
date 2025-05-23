@@ -17,7 +17,8 @@
     return scripts[scripts.length - 1];
   })();
   
-  const baseUrl = script.src.split('/widget.js')[0];
+  // Verwende die korrekte Basis-URL für das Widget
+  const baseUrl = 'https://immoupload.lovable.app';
   
   // Konfigurationsoptionen
   const widgetHeight = script.getAttribute('data-height') || 'auto';
@@ -65,14 +66,14 @@
     iframe.src = baseUrl + '/embed';
     iframe.style.width = widgetWidth;
     iframe.style.border = 'none';
-    iframe.style.minHeight = '350px'; // Reduzierte Anfangshöhe
+    iframe.style.minHeight = '350px';
     iframe.style.height = 'auto';
     iframe.style.maxWidth = '100%';
     iframe.id = 'immo-widget-iframe';
     iframe.className = 'immo-widget-iframe';
     iframe.setAttribute('scrolling', 'no');
     iframe.setAttribute('title', 'Immobilien Übersicht');
-    iframe.setAttribute('loading', 'eager'); // Eager loading für schnelleres Laden
+    iframe.setAttribute('loading', 'eager');
     
     // Iframe zum Container hinzufügen
     container.appendChild(iframe);
@@ -96,8 +97,8 @@
     try {
       if (iframe.contentWindow && iframe.contentWindow.document && iframe.contentWindow.document.body) {
         const height = iframe.contentWindow.document.body.scrollHeight;
-        if (height > 100) { // Nur sinnvolle Höhen verwenden
-          iframe.style.height = height + 'px'; // Exakte Höhe ohne Extra-Platz
+        if (height > 100) {
+          iframe.style.height = height + 'px';
         }
       }
     } catch (e) {
@@ -120,7 +121,7 @@
   window.addEventListener('message', function(e) {
     // Sicherheits-Check - erlauben Sie auch die Produktions-Domain
     const allowedOrigins = [
-      baseUrl, 
+      'https://immoupload.lovable.app',
       'https://kmzlkfwxeghvlgtilzjh.supabase.co',
       'https://as-immobilien.info'
     ];
@@ -147,29 +148,6 @@
       }
     }
   });
-  
-  // Disable tracking and analytics requests to avoid CORS issues
-  const originalXHR = window.XMLHttpRequest;
-  window.XMLHttpRequest = function() {
-    const xhr = new originalXHR();
-    const originalOpen = xhr.open;
-    
-    xhr.open = function() {
-      const url = arguments[1];
-      // Skip requests to analytics/tracking endpoints that might cause CORS issues
-      if (typeof url === 'string' && (
-          url.includes('/cdn-cgi/rum') || 
-          url.includes('dash.immoupload.com') ||
-          url.includes('localhost:3000')
-      )) {
-        // Cancel the request by pointing it to a data URL
-        arguments[1] = 'data:text/plain,{}';
-      }
-      return originalOpen.apply(this, arguments);
-    };
-    
-    return xhr;
-  };
   
   // Fix für drawHighlights-Fehler
   window.drawHighlights = window.drawHighlights || function() {
