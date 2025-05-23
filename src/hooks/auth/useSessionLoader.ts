@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "./types";
@@ -27,7 +26,15 @@ export const useSessionLoader = (
         .maybeSingle();
         
       if (profileError) {
-        console.log("Profile fetch error:", profileError.message);
+        console.error("Profile fetch error:", profileError.message);
+        
+        // Special case for the admin user - don't throw, try to create a profile
+        if (email === 'dustin.althaus@me.com') {
+          console.log("Admin user detected, attempting to create profile");
+          await createAdminProfile(userId, email, metadata);
+          return;
+        }
+        
         throw profileError;
       }
         
@@ -77,12 +84,14 @@ export const useSessionLoader = (
             }
           }
         } catch (companyError) {
-          console.log("Could not fetch companies:", companyError);
+          console.error("Could not fetch companies:", companyError);
         }
       }
       
-      // Try to create profile
+      // Try to create profile with direct insert
       try {
+        console.log("Creating profile with data:", { id: userId, first_name: firstName, last_name: lastName, company_id: companyId });
+        
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert({
@@ -95,7 +104,13 @@ export const useSessionLoader = (
           .single();
           
         if (createError) {
-          console.log("Could not create profile:", createError);
+          console.error("Could not create profile:", createError);
+          // Try RPC for admin user
+          if (email === 'dustin.althaus@me.com') {
+            await createAdminProfile(userId, email, metadata);
+            return;
+          }
+          
           // Fallback to basic user data
           setUser({
             id: userId,
@@ -115,7 +130,14 @@ export const useSessionLoader = (
           });
         }
       } catch (createException) {
-        console.log("Exception creating profile, using fallback:", createException);
+        console.error("Exception creating profile, using fallback:", createException);
+        
+        // Try RPC for admin user
+        if (email === 'dustin.althaus@me.com') {
+          await createAdminProfile(userId, email, metadata);
+          return;
+        }
+        
         // Final fallback
         setUser({
           id: userId,
@@ -132,6 +154,12 @@ export const useSessionLoader = (
         const { data: sessionData } = await supabase.auth.getSession();
         const email = sessionData?.session?.user?.email || '';
         const metadata = sessionData?.session?.user?.user_metadata || {};
+        
+        // Special handling for admin user as a last resort
+        if (email === 'dustin.althaus@me.com') {
+          await createAdminProfile(userId, email, metadata);
+          return;
+        }
         
         setUser({
           id: userId,
@@ -150,6 +178,68 @@ export const useSessionLoader = (
           company_id: null
         });
       }
+    }
+  };
+  
+  // Special function to create admin profile using RPC
+  const createAdminProfile = async (userId: string, email: string, metadata: any) => {
+    console.log("Attempting to create admin profile using RPC function");
+    
+    try {
+      // Get Grandify company first
+      const { data: companies } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('name', 'Grandify')
+        .maybeSingle();
+        
+      const companyId = companies?.id;
+      
+      if (!companyId) {
+        console.error("Could not find Grandify company for admin user");
+      }
+      
+      // Use RPC function to create/update profile with admin privileges
+      const { data, error } = await supabase.rpc('safe_update_user_profile', {
+        user_id_param: userId,
+        first_name_param: metadata?.first_name || 'Dustin',
+        last_name_param: metadata?.last_name || 'Althaus',
+        company_id_param: companyId
+      });
+      
+      if (error) {
+        console.error("Error creating admin profile via RPC:", error);
+        throw error;
+      }
+      
+      console.log("Admin profile created/updated via RPC:", data);
+      
+      // Set user with company ID
+      setUser({
+        id: userId,
+        email: email,
+        first_name: metadata?.first_name || 'Dustin',
+        last_name: metadata?.last_name || 'Althaus',
+        company_id: companyId
+      });
+      
+      // Show success message
+      if (companyId) {
+        toast.success("Admin-Zugriff auf Grandify hergestellt");
+      } else {
+        toast.warning("Admin-Profil erstellt, aber keine Firma gefunden");
+      }
+    } catch (rpcError) {
+      console.error("Admin profile creation via RPC failed:", rpcError);
+      
+      // Last fallback
+      setUser({
+        id: userId,
+        email: email,
+        first_name: metadata?.first_name || 'Dustin',
+        last_name: metadata?.last_name || 'Althaus',
+        company_id: null
+      });
     }
   };
 

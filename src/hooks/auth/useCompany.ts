@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser, Company } from "./types";
@@ -14,7 +15,39 @@ export const useCompany = (user: AuthUser | null) => {
     try {
       setLoadingCompany(true);
       
-      // First, check if user has a company_id in profiles
+      console.log("useCompany: Loading company for user:", user.id, "with company_id:", user.company_id);
+      
+      // If we already have company_id from the user object, use it directly
+      if (user.company_id) {
+        console.log("Using company_id from user object:", user.company_id);
+        
+        // Fetch company data
+        const { data: companyData, error: companyError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', user.company_id)
+          .maybeSingle();
+          
+        if (companyError) {
+          console.error("Error fetching company:", companyError);
+          setLoadingCompany(false);
+          return;
+        }
+          
+        if (companyData) {
+          console.log("Company data loaded successfully:", companyData);
+          setCompany(companyData);
+        } else {
+          console.warn("No company found with ID:", user.company_id);
+        }
+        
+        setLoadingCompany(false);
+        return;
+      }
+      
+      // If we don't have a company_id in user object, check the profile
+      console.log("No company_id in user object, checking profile");
+      
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('company_id')
@@ -28,6 +61,8 @@ export const useCompany = (user: AuthUser | null) => {
       }
       
       if (profileData?.company_id) {
+        console.log("Found company_id in profile:", profileData.company_id);
+        
         // Fetch company data
         const { data: companyData, error: companyError } = await supabase
           .from('companies')
@@ -42,8 +77,13 @@ export const useCompany = (user: AuthUser | null) => {
         }
           
         if (companyData) {
+          console.log("Company data loaded successfully:", companyData);
           setCompany(companyData);
+        } else {
+          console.warn("No company found with ID:", profileData.company_id);
         }
+      } else {
+        console.log("User has no company assigned in profile");
       }
     } catch (error) {
       console.error("Error loading company:", error);
