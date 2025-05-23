@@ -15,6 +15,9 @@ import { AuthProvider } from "./hooks/useAuth";
 import { PropertiesProvider } from "./hooks/useProperties";
 import { AgentsProvider } from "./hooks/useAgents";
 import LandingPage from "./pages/LandingPage";
+import Impressum from "./pages/Impressum";
+import Datenschutz from "./pages/Datenschutz";
+import { LanguageProvider } from "./context/LanguageContext";
 
 const queryClient = new QueryClient();
 
@@ -25,19 +28,23 @@ const App = () => (
         <AuthProvider>
           <PropertiesProvider>
             <AgentsProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/admin/properties/new" element={<PropertyFormPage />} />
-                <Route path="/admin/properties/edit/:id" element={<PropertyFormPage />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/embed" element={<Embed />} />
-                <Route path="/property/:propertyId" element={<PropertyDetail />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <LanguageProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/impressum" element={<Impressum language="de" />} />
+                  <Route path="/datenschutz" element={<Datenschutz language="de" />} />
+                  <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/admin/properties/new" element={<PropertyFormPage />} />
+                  <Route path="/admin/properties/edit/:id" element={<PropertyFormPage />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/embed" element={<Embed />} />
+                  <Route path="/property/:propertyId" element={<PropertyDetail />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </LanguageProvider>
             </AgentsProvider>
           </PropertiesProvider>
         </AuthProvider>
