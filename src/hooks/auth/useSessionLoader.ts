@@ -31,23 +31,31 @@ export const useSessionLoader = (
           setIsAuthenticated(true);
           
           // Fetch company_id asynchronously WITHOUT triggering re-render
-          supabase
-            .from('profiles')
-            .select('company_id')
-            .eq('id', session.user.id)
-            .maybeSingle()
-            .then(({ data: profile, error: profileError }) => {
+          const fetchCompanyId = async () => {
+            try {
+              const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('company_id')
+                .eq('id', session.user.id)
+                .maybeSingle();
+                
               if (!profileError && profile?.company_id) {
                 console.log("Found company_id in profile:", profile.company_id);
-                // Update user object directly without triggering new auth state
-                setUser(prevUser => prevUser ? { ...prevUser, company_id: profile.company_id } : null);
+                // Create updated user object with company_id
+                const updatedUser: AuthUser = {
+                  ...basicAuthUser,
+                  company_id: profile.company_id
+                };
+                setUser(updatedUser);
               } else {
                 console.log("No company_id found in profile or error:", profileError);
               }
-            })
-            .catch(profileFetchError => {
+            } catch (profileFetchError) {
               console.log("Error fetching profile, continuing without company_id:", profileFetchError);
-            });
+            }
+          };
+          
+          fetchCompanyId();
         } else {
           console.log("No session, setting user to null");
           setUser(null);
@@ -93,8 +101,12 @@ export const useSessionLoader = (
               
             if (!profileError && profile?.company_id) {
               console.log("Found company_id in existing session profile:", profile.company_id);
-              // Update user object directly without triggering new auth state
-              setUser(prevUser => prevUser ? { ...prevUser, company_id: profile.company_id } : null);
+              // Create updated user object with company_id
+              const updatedUser: AuthUser = {
+                ...basicAuthUser,
+                company_id: profile.company_id
+              };
+              setUser(updatedUser);
             } else {
               console.log("No company_id found in existing session profile or error:", profileError);
             }
