@@ -42,6 +42,7 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(false);
   const [companiesLoading, setCompaniesLoading] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithAuth | null>(null);
   const [companySearch, setCompanySearch] = useState('');
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
@@ -310,122 +311,6 @@ const UserManagement = () => {
               <Plus className="h-4 w-4 mr-2" />
               Neuen Makler erstellen
             </Button>
-            
-            <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Benutzer hinzufügen
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Benutzer hinzufügen</DialogTitle>
-                  <DialogDescription>
-                    Benutzer hinzufügen
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="first_name">Vorname *</Label>
-                      <Input
-                        id="first_name"
-                        value={formData.first_name}
-                        onChange={(e) => {
-                          console.log("First name changed:", e.target.value);
-                          setFormData({ ...formData, first_name: e.target.value });
-                        }}
-                        placeholder="Max"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="last_name">Nachname *</Label>
-                      <Input
-                        id="last_name"
-                        value={formData.last_name}
-                        onChange={(e) => {
-                          console.log("Last name changed:", e.target.value);
-                          setFormData({ ...formData, last_name: e.target.value });
-                        }}
-                        placeholder="Mustermann"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="company_search">Unternehmen</Label>
-                    {companiesLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Lade Unternehmen...</span>
-                      </div>
-                    ) : (
-                      <div className="relative">
-                        <div className="relative">
-                          <Input
-                            id="company_search"
-                            type="text"
-                            value={companySearch}
-                            onChange={(e) => {
-                              console.log("Company search changed:", e.target.value);
-                              setCompanySearch(e.target.value);
-                              setShowCompanyDropdown(true);
-                            }}
-                            onFocus={() => setShowCompanyDropdown(true)}
-                            placeholder="Unternehmen suchen..."
-                            className="pr-10"
-                          />
-                          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        </div>
-                        
-                        {showCompanyDropdown && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                            {filteredCompanies.length === 0 ? (
-                              <div className="px-3 py-2 text-gray-500">
-                                {companySearch.trim() === '' ? 'Tippen Sie, um zu suchen...' : 'Keine Unternehmen gefunden'}
-                              </div>
-                            ) : (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={clearCompanySelection}
-                                  className="w-full px-3 py-2 text-left hover:bg-gray-100 text-gray-600 border-b"
-                                >
-                                  Kein Unternehmen
-                                </button>
-                                {filteredCompanies.map((company) => (
-                                  <button
-                                    key={company.id}
-                                    type="button"
-                                    onClick={() => handleCompanySelect(company)}
-                                    className="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                                  >
-                                    {company.name}
-                                  </button>
-                                ))}
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <div className="text-xs text-gray-500">
-                      {formData.company_id ? `Ausgewählt: ${companySearch}` : 'Kein Unternehmen ausgewählt'}
-                    </div>
-                  </div>
-
-                  <DialogFooter>
-                    <Button type="submit" disabled={loading}>
-                      {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Aktualisieren
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
             
             <Dialog open={showEditDialog} onOpenChange={(open) => {
               console.log("Dialog open state changed:", open);
