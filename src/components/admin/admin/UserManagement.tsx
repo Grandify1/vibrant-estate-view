@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +50,7 @@ const UserManagement = () => {
   const [users, setUsers] = useState<UserWithAuth[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithAuth | null>(null);
   const [formData, setFormData] = useState<UserForm>({
@@ -64,6 +64,7 @@ const UserManagement = () => {
   const DEFAULT_PASSWORD = 'PasswortZurücksetzen123#';
 
   useEffect(() => {
+    console.log("UserManagement: Component mounted, loading data...");
     loadUsers();
     loadCompanies();
   }, []);
@@ -103,7 +104,7 @@ const UserManagement = () => {
         created_at: profile.created_at
       }));
 
-      console.log("Merged users:", mergedUsers);
+      console.log("Final merged users:", mergedUsers);
       setUsers(mergedUsers);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -114,6 +115,7 @@ const UserManagement = () => {
   };
 
   const loadCompanies = async () => {
+    setCompaniesLoading(true);
     try {
       console.log("Loading companies...");
       
@@ -123,16 +125,32 @@ const UserManagement = () => {
         .order('name');
 
       console.log("Companies response:", { data, error });
+      console.log("Companies data type:", typeof data, Array.isArray(data));
+      console.log("Companies length:", data?.length);
 
-      if (error) throw error;
-      setCompanies(data || []);
+      if (error) {
+        console.error("Companies error:", error);
+        throw error;
+      }
+      
+      if (data && Array.isArray(data)) {
+        console.log("Setting companies:", data);
+        setCompanies(data);
+      } else {
+        console.warn("Companies data is not an array or is null:", data);
+        setCompanies([]);
+      }
     } catch (error) {
       console.error('Error loading companies:', error);
       toast.error('Fehler beim Laden der Unternehmen');
+      setCompanies([]);
+    } finally {
+      setCompaniesLoading(false);
     }
   };
 
   const resetForm = () => {
+    console.log("Resetting form to default values");
     setFormData({
       email: '',
       first_name: '',
@@ -147,7 +165,7 @@ const UserManagement = () => {
     
     console.log("Form submission started with data:", formData);
     
-    // CRITICAL FIX: Validate all required fields
+    // Validate all required fields
     if (!formData.email.trim()) {
       toast.error('E-Mail ist erforderlich');
       return;
@@ -163,8 +181,9 @@ const UserManagement = () => {
       return;
     }
 
-    // CRITICAL FIX: Ensure password is not empty
+    // Ensure password is not empty for new users
     if (!editingUser && !formData.password.trim()) {
+      console.error("Password is empty for new user creation");
       toast.error('Passwort ist erforderlich');
       return;
     }
@@ -189,16 +208,16 @@ const UserManagement = () => {
       } else {
         console.log("Creating new user with payload:", {
           email: formData.email,
-          password: formData.password ? "***" : "EMPTY PASSWORD",
+          password: formData.password ? "***PRESENT***" : "***EMPTY***",
           first_name: formData.first_name,
           last_name: formData.last_name,
           company_id: formData.company_id || null
         });
         
-        // CRITICAL FIX: Create new user via admin API function with proper payload
+        // Create new user via admin API function with proper payload
         const payload = {
           email: formData.email,
-          password: formData.password, // Ensure this is the actual password, not empty
+          password: formData.password,
           first_name: formData.first_name,
           last_name: formData.last_name,
           company_id: formData.company_id || null
@@ -233,14 +252,11 @@ const UserManagement = () => {
       resetForm();
     } catch (error: any) {
       console.error('Error saving user:', error);
-      
-      // Enhanced error logging for debugging
-      if (error.message) {
-        console.error('Error message:', error.message);
-      }
-      if (error.context) {
-        console.error('Error context:', error.context);
-      }
+      console.error('Error details:', {
+        message: error.message,
+        context: error.context,
+        stack: error.stack
+      });
       
       toast.error('Fehler beim Speichern des Benutzers: ' + (error.message || 'Unbekannter Fehler'));
     } finally {
@@ -326,6 +342,11 @@ const UserManagement = () => {
     toast.success('In Zwischenablage kopiert');
   };
 
+  // Debug companies state
+  console.log("Current companies state:", companies);
+  console.log("Companies loading state:", companiesLoading);
+  console.log("Form data company_id:", formData.company_id);
+
   return (
     <Card>
       <CardHeader>
@@ -347,7 +368,7 @@ const UserManagement = () => {
             <DialogTrigger asChild>
               <Button onClick={() => {
                 console.log("Creating new user dialog opened");
-                resetForm(); // CRITICAL FIX: Reset form when opening dialog
+                resetForm();
               }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Neuer Benutzer
@@ -410,25 +431,45 @@ const UserManagement = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="company_id">Unternehmen</Label>
-                  <Select 
-                    value={formData.company_id} 
-                    onValueChange={(value) => {
-                      console.log("Company changed:", value);
-                      setFormData({ ...formData, company_id: value === "none" ? "" : value });
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Unternehmen auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Kein Unternehmen</SelectItem>
-                      {companies.map((company) => (
-                        <SelectItem key={company.id} value={company.id}>
-                          {company.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {companiesLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Lade Unternehmen...</span>
+                    </div>
+                  ) : (
+                    <Select 
+                      value={formData.company_id} 
+                      onValueChange={(value) => {
+                        console.log("Company dropdown value changed:", value);
+                        console.log("Available companies:", companies);
+                        setFormData({ ...formData, company_id: value === "none" ? "" : value });
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Unternehmen auswählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Kein Unternehmen</SelectItem>
+                        {companies.length === 0 ? (
+                          <SelectItem value="no-companies" disabled>
+                            Keine Unternehmen verfügbar
+                          </SelectItem>
+                        ) : (
+                          companies.map((company) => {
+                            console.log("Rendering company option:", company);
+                            return (
+                              <SelectItem key={company.id} value={company.id}>
+                                {company.name}
+                              </SelectItem>
+                            );
+                          })
+                        )}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <div className="text-xs text-gray-500">
+                    Debug: {companies.length} Unternehmen geladen
+                  </div>
                 </div>
 
                 {!editingUser && (
@@ -440,7 +481,7 @@ const UserManagement = () => {
                         type="text"
                         value={formData.password}
                         onChange={(e) => {
-                          console.log("Password changed:", e.target.value ? "***" : "EMPTY");
+                          console.log("Password changed:", e.target.value ? "***SET***" : "***EMPTY***");
                           setFormData({ ...formData, password: e.target.value });
                         }}
                         placeholder="Passwort eingeben"

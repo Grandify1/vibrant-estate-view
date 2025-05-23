@@ -31,11 +31,28 @@ const CouponManagement = () => {
     active: true
   });
 
+  // Define discount type options
+  const discountTypeOptions = [
+    { value: 'percentage', label: 'Prozent' },
+    { value: 'fixed', label: 'Festbetrag (€)' },
+    { value: 'free', label: 'Kostenlos' }
+  ];
+
+  // Define usage type options
+  const usageTypeOptions = [
+    { value: 'unlimited', label: 'Unbegrenzt' },
+    { value: 'single_use', label: 'Einmalige Nutzung' },
+    { value: 'single_use_per_email', label: 'Einmal pro E-Mail' },
+    { value: 'time_based', label: 'Zeitbasiert' }
+  ];
+
   useEffect(() => {
+    console.log("CouponManagement: Component mounted, loading coupons...");
     loadCoupons();
   }, []);
 
   const resetForm = () => {
+    console.log("Resetting coupon form to default values");
     setFormData({
       code: '',
       discount_type: 'percentage',
@@ -51,6 +68,8 @@ const CouponManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log("Coupon form submission started with data:", formData);
     
     if (!formData.code.trim()) {
       toast.error('Coupon-Code ist erforderlich');
@@ -75,6 +94,7 @@ const CouponManagement = () => {
   };
 
   const handleEdit = (coupon: CouponWithUsage) => {
+    console.log("Editing coupon:", coupon);
     setEditingCoupon(coupon);
     setFormData({
       code: coupon.code,
@@ -97,23 +117,19 @@ const CouponManagement = () => {
   };
 
   const getUsageTypeLabel = (type: string) => {
-    switch (type) {
-      case 'single_use': return 'Einmalige Nutzung';
-      case 'single_use_per_email': return 'Einmal pro E-Mail';
-      case 'time_based': return 'Zeitbasiert';
-      case 'unlimited': return 'Unbegrenzt';
-      default: return type;
-    }
+    const option = usageTypeOptions.find(opt => opt.value === type);
+    return option?.label || type;
   };
 
   const getDiscountTypeLabel = (type: string) => {
-    switch (type) {
-      case 'percentage': return 'Prozent';
-      case 'fixed': return 'Festbetrag';
-      case 'free': return 'Kostenlos';
-      default: return type;
-    }
+    const option = discountTypeOptions.find(opt => opt.value === type);
+    return option?.label || type;
   };
+
+  // Debug dropdown options
+  console.log("Discount type options:", discountTypeOptions);
+  console.log("Usage type options:", usageTypeOptions);
+  console.log("Current form data:", formData);
 
   return (
     <Card>
@@ -126,6 +142,7 @@ const CouponManagement = () => {
             </CardDescription>
           </div>
           <Dialog open={showCreateDialog} onOpenChange={(open) => {
+            console.log("Coupon dialog open state changed:", open);
             setShowCreateDialog(open);
             if (!open) {
               setEditingCoupon(null);
@@ -133,7 +150,10 @@ const CouponManagement = () => {
             }
           }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={() => {
+                console.log("Creating new coupon dialog opened");
+                resetForm();
+              }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Neuer Coupon
               </Button>
@@ -154,7 +174,10 @@ const CouponManagement = () => {
                     <Input
                       id="code"
                       value={formData.code}
-                      onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                      onChange={(e) => {
+                        console.log("Coupon code changed:", e.target.value);
+                        setFormData({ ...formData, code: e.target.value.toUpperCase() });
+                      }}
                       placeholder="z.B. SAVE20"
                       required
                     />
@@ -164,6 +187,7 @@ const CouponManagement = () => {
                     <Select 
                       value={formData.discount_type} 
                       onValueChange={(value: 'percentage' | 'fixed' | 'free') => {
+                        console.log("Discount type changed:", value);
                         setFormData({ 
                           ...formData, 
                           discount_type: value,
@@ -174,12 +198,20 @@ const CouponManagement = () => {
                       <SelectTrigger id="discount_type">
                         <SelectValue placeholder="Wählen Sie den Rabatt-Typ" />
                       </SelectTrigger>
-                      <SelectContent position="popper" className="bg-white">
-                        <SelectItem value="percentage">Prozent</SelectItem>
-                        <SelectItem value="fixed">Festbetrag (€)</SelectItem>
-                        <SelectItem value="free">Kostenlos</SelectItem>
+                      <SelectContent>
+                        {discountTypeOptions.map((option) => {
+                          console.log("Rendering discount type option:", option);
+                          return (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
+                    <div className="text-xs text-gray-500">
+                      Debug: {discountTypeOptions.length} Optionen verfügbar
+                    </div>
                   </div>
                 </div>
 
@@ -194,7 +226,10 @@ const CouponManagement = () => {
                       min="0"
                       step={formData.discount_type === 'percentage' ? '1' : '0.01'}
                       value={formData.discount_value}
-                      onChange={(e) => setFormData({ ...formData, discount_value: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) => {
+                        console.log("Discount value changed:", e.target.value);
+                        setFormData({ ...formData, discount_value: parseFloat(e.target.value) || 0 });
+                      }}
                       disabled={formData.discount_type === 'free'}
                       required={formData.discount_type !== 'free'}
                     />
@@ -203,20 +238,28 @@ const CouponManagement = () => {
                     <Label htmlFor="usage_type">Nutzungstyp</Label>
                     <Select 
                       value={formData.usage_type} 
-                      onValueChange={(value: 'single_use' | 'single_use_per_email' | 'time_based' | 'unlimited') => 
-                        setFormData({ ...formData, usage_type: value })
-                      }
+                      onValueChange={(value: 'single_use' | 'single_use_per_email' | 'time_based' | 'unlimited') => {
+                        console.log("Usage type changed:", value);
+                        setFormData({ ...formData, usage_type: value });
+                      }}
                     >
                       <SelectTrigger id="usage_type">
                         <SelectValue placeholder="Wählen Sie den Nutzungstyp" />
                       </SelectTrigger>
-                      <SelectContent position="popper" className="bg-white">
-                        <SelectItem value="unlimited">Unbegrenzt</SelectItem>
-                        <SelectItem value="single_use">Einmalige Nutzung</SelectItem>
-                        <SelectItem value="single_use_per_email">Einmal pro E-Mail</SelectItem>
-                        <SelectItem value="time_based">Zeitbasiert</SelectItem>
+                      <SelectContent>
+                        {usageTypeOptions.map((option) => {
+                          console.log("Rendering usage type option:", option);
+                          return (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
+                    <div className="text-xs text-gray-500">
+                      Debug: {usageTypeOptions.length} Optionen verfügbar
+                    </div>
                   </div>
                 </div>
 
@@ -228,7 +271,10 @@ const CouponManagement = () => {
                       type="number"
                       min="1"
                       value={formData.max_uses || ''}
-                      onChange={(e) => setFormData({ ...formData, max_uses: parseInt(e.target.value) || undefined })}
+                      onChange={(e) => {
+                        console.log("Max uses changed:", e.target.value);
+                        setFormData({ ...formData, max_uses: parseInt(e.target.value) || undefined });
+                      }}
                       placeholder="z.B. 100"
                     />
                   </div>
@@ -241,7 +287,10 @@ const CouponManagement = () => {
                       id="valid_from"
                       type="date"
                       value={formData.valid_from}
-                      onChange={(e) => setFormData({ ...formData, valid_from: e.target.value })}
+                      onChange={(e) => {
+                        console.log("Valid from changed:", e.target.value);
+                        setFormData({ ...formData, valid_from: e.target.value });
+                      }}
                     />
                   </div>
                   <div className="space-y-2">
@@ -250,7 +299,10 @@ const CouponManagement = () => {
                       id="valid_until"
                       type="date"
                       value={formData.valid_until}
-                      onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
+                      onChange={(e) => {
+                        console.log("Valid until changed:", e.target.value);
+                        setFormData({ ...formData, valid_until: e.target.value });
+                      }}
                     />
                   </div>
                 </div>
@@ -260,7 +312,10 @@ const CouponManagement = () => {
                   <Textarea
                     id="description"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) => {
+                      console.log("Description changed:", e.target.value);
+                      setFormData({ ...formData, description: e.target.value });
+                    }}
                     placeholder="Optionale Beschreibung des Coupons"
                     rows={3}
                   />
@@ -270,7 +325,10 @@ const CouponManagement = () => {
                   <Switch
                     id="active"
                     checked={formData.active}
-                    onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+                    onCheckedChange={(checked) => {
+                      console.log("Active state changed:", checked);
+                      setFormData({ ...formData, active: checked });
+                    }}
                   />
                   <Label htmlFor="active">Coupon aktiv</Label>
                 </div>
