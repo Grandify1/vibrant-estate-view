@@ -2,7 +2,7 @@
 /**
  * ImmoUpload Widget - Vereinfachte Version
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 3.5 - Mit korrigierter Base URL und fehlerbehebung
+ * Version 3.6 - Mit korrigierter Container-Erkennung und Fehlerbehandlung
  */
 (function() {
   // Globales Objekt für das Widget erstellen
@@ -77,14 +77,33 @@
       container = document.querySelector('.immo-widget-container');
     }
     
+    // Wenn kein Container gefunden wurde, versuche einen zu erstellen
     if (!container) {
-      const errorMsg = 'ImmoUpload Widget: Container mit ID "immo-widget-container" oder Klasse "immo-widget-container" nicht gefunden.';
-      console.error(errorMsg);
-      debug('CRITICAL ERROR: Container not found');
-      return;
+      debug('Container nicht gefunden, versuche einen zu erstellen');
+      
+      // Erstelle einen Container nach dem Script
+      if (script.parentNode) {
+        container = document.createElement('div');
+        container.id = 'immo-widget-container';
+        container.className = 'immo-widget-container';
+        script.parentNode.insertBefore(container, script.nextSibling);
+        debug('Container automatisch erstellt', container);
+      } else {
+        const errorMsg = 'ImmoUpload Widget: Container mit ID "immo-widget-container" oder Klasse "immo-widget-container" nicht gefunden und konnte nicht automatisch erstellt werden.';
+        console.error(errorMsg);
+        debug('CRITICAL ERROR: Container not found and could not be created');
+        
+        // Versuche trotzdem einen Container im body zu erstellen als letzte Rettung
+        const bodyContainer = document.createElement('div');
+        bodyContainer.id = 'immo-widget-container';
+        bodyContainer.className = 'immo-widget-container';
+        document.body.appendChild(bodyContainer);
+        container = bodyContainer;
+        debug('Notfall-Container im Body erstellt', container);
+      }
     }
     
-    debug('Container gefunden', container);
+    debug('Container gefunden oder erstellt', container);
     
     // Container-Style setzen
     container.style.overflow = 'hidden';
@@ -114,6 +133,14 @@
     
     // Iframe URL zusammenstellen - lese aus data-url Attribut
     let iframeUrl = script.getAttribute('data-url') || (baseUrl + '/embed');
+    
+    // Stellen Sie sicher, dass die company-ID hinzugefügt wird, wenn sie fehlt
+    if (script.getAttribute('data-company') && !iframeUrl.includes('company=') && !iframeUrl.includes('companyId=')) {
+      const separator = iframeUrl.includes('?') ? '&' : '?';
+      iframeUrl += `${separator}company=${script.getAttribute('data-company')}`;
+      debug('Company-ID zur URL hinzugefügt:', script.getAttribute('data-company'));
+    }
+    
     debug('Iframe URL erstellt:', iframeUrl);
     
     // Teste Erreichbarkeit der URL
@@ -381,6 +408,6 @@
   // Widget als initialisiert markieren
   debug('Widget wurde erfolgreich initialisiert');
   window.ImmoWidget.initialized = true;
-  window.ImmoWidget.version = '3.5';
+  window.ImmoWidget.version = '3.6';
   window.ImmoWidget.debug = debug;
 })();

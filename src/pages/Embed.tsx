@@ -41,6 +41,7 @@ export default function Embed() {
   useEffect(() => {
     const sendHeightToParent = () => {
       const height = document.body.scrollHeight;
+      console.log('Embed: Sending height to parent:', height);
       window.parent.postMessage({ type: 'resize-iframe', height }, '*');
     };
 
@@ -51,11 +52,26 @@ export default function Embed() {
     if (!loading) {
       setTimeout(sendHeightToParent, 100);
       setTimeout(sendHeightToParent, 500); // For images that might load later
+      setTimeout(sendHeightToParent, 1500); // Final adjustment after everything settles
     }
 
     // Listen for resize events
     window.addEventListener('resize', sendHeightToParent);
-    return () => window.removeEventListener('resize', sendHeightToParent);
+    
+    // Listen for postMessage requests
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'request-height') {
+        console.log('Embed: Received height request');
+        sendHeightToParent();
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    
+    return () => {
+      window.removeEventListener('resize', sendHeightToParent);
+      window.removeEventListener('message', handleMessage);
+    };
   }, [loading, properties.length]);
 
   // Load properties for the grid
@@ -79,11 +95,18 @@ export default function Embed() {
           
         const { data, error } = await query;
         
-        console.log('Embed: Properties query result:', { data, error });
+        console.log('Embed: Properties query result:', { data, error, count: data?.length || 0 });
         
         if (error) {
           console.error('Error fetching properties:', error);
           setError(error.message);
+          return;
+        }
+        
+        if (!data || data.length === 0) {
+          console.log('Embed: No properties found');
+          setProperties([]);
+          setLoading(false);
           return;
         }
         
