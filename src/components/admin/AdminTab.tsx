@@ -30,7 +30,7 @@ const AdminTab = () => {
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
         <TabsList>
           <TabsTrigger value="companies">Unternehmen</TabsTrigger>
-          <TabsTrigger value="users">Benutzer</TabsTrigger>
+          <TabsTrigger value="users">User</TabsTrigger>
           <TabsTrigger value="coupons">Coupons</TabsTrigger>
         </TabsList>
         

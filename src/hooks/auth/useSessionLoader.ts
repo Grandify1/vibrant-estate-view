@@ -34,6 +34,21 @@ export const useSessionLoader = (
           const firstName = metadata?.first_name || null;
           const lastName = metadata?.last_name || null;
           
+          // Spezielle Behandlung für Admin-User - automatische Unternehmenszuordnung
+          let companyId = null;
+          if (email === 'dustin.althaus@me.com') {
+            // Versuche das erste verfügbare Unternehmen zu finden
+            const { data: companies } = await supabase
+              .from('companies')
+              .select('id')
+              .limit(1);
+            
+            if (companies && companies.length > 0) {
+              companyId = companies[0].id;
+              console.log("Admin user automatisch einem Unternehmen zugeordnet:", companyId);
+            }
+          }
+          
           // Verwende die "upsert" Methode
           const { data: newProfile, error: upsertError } = await supabase
             .from('profiles')
@@ -41,7 +56,7 @@ export const useSessionLoader = (
               id: userId,
               first_name: firstName,
               last_name: lastName,
-              // Keine company_id setzen, wenn nicht vorhanden
+              company_id: companyId
             })
             .select()
             .single();
@@ -54,7 +69,7 @@ export const useSessionLoader = (
               email: email,
               first_name: firstName,
               last_name: lastName,
-              company_id: null
+              company_id: companyId
             });
           } else if (newProfile) {
             // Profil wurde erfolgreich erstellt/aktualisiert
@@ -79,6 +94,28 @@ export const useSessionLoader = (
         }
       } else if (profileData) {
         // Vorhandenes Profil gefunden
+        // Spezielle Behandlung für Admin ohne Unternehmen
+        if (email === 'dustin.althaus@me.com' && !profileData.company_id) {
+          // Versuche das erste verfügbare Unternehmen zu finden und zuzuordnen
+          const { data: companies } = await supabase
+            .from('companies')
+            .select('id')
+            .limit(1);
+          
+          if (companies && companies.length > 0) {
+            const companyId = companies[0].id;
+            console.log("Admin user Unternehmen zuordnen:", companyId);
+            
+            // Profile aktualisieren
+            await supabase
+              .from('profiles')
+              .update({ company_id: companyId })
+              .eq('id', userId);
+              
+            profileData.company_id = companyId;
+          }
+        }
+        
         setUser({
           id: userId,
           email: email,
