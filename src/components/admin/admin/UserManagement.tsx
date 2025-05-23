@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Copy, Key, Loader2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Plus, Edit, Copy, Key, Loader2, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -70,34 +71,87 @@ const UserManagement = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          company_id,
-          created_at,
-          companies (
-            name
-          )
-        `)
-        .order('created_at', { ascending: false });
+      // First, get all users from auth.users via admin API
+      const { data: authUsers, error: authError } = await supabase.rpc('get_all_users');
+      
+      if (authError) {
+        console.error('Error loading auth users:', authError);
+        // Fallback to profiles if RPC call fails (requires admin privileges)
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            first_name,
+            last_name,
+            company_id,
+            created_at,
+            companies (
+              name
+            )
+          `)
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
+        if (profilesError) throw profilesError;
 
-      // Transform the data to include company name at top level
-      const transformedUsers: UserWithAuth[] = (data || []).map((profile: any) => ({
-        id: profile.id,
-        email: profile.id, // We'll need to get this from auth.users
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        company_id: profile.company_id,
-        company_name: profile.companies?.name,
-        created_at: profile.created_at
-      }));
+        // Transform the data to include company name at top level
+        const transformedUsers: UserWithAuth[] = (profiles || []).map((profile: any) => ({
+          id: profile.id,
+          email: profile.id, // In this case, use ID as email as fallback
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          company_id: profile.company_id,
+          company_name: profile.companies?.name,
+          created_at: profile.created_at
+        }));
 
-      setUsers(transformedUsers);
+        setUsers(transformedUsers);
+      } else {
+        // Get profiles to merge with auth users
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, company_id, created_at');
+
+        if (profilesError) throw profilesError;
+
+        // Create a map of profiles by ID for easy lookup
+        const profileMap = new Map();
+        profiles?.forEach(profile => {
+          profileMap.set(profile.id, profile);
+        });
+
+        // Get companies for profile company_ids
+        const companyIds = profiles
+          ?.map(profile => profile.company_id)
+          .filter(id => id) || [];
+        
+        const { data: companyData } = await supabase
+          .from('companies')
+          .select('id, name')
+          .in('id', companyIds);
+
+        const companyMap = new Map();
+        companyData?.forEach(company => {
+          companyMap.set(company.id, company);
+        });
+
+        // Merge auth users with profiles
+        const mergedUsers: UserWithAuth[] = authUsers.map((user: any) => {
+          const profile = profileMap.get(user.id);
+          const company = profile?.company_id ? companyMap.get(profile.company_id) : null;
+          
+          return {
+            id: user.id,
+            email: user.email,
+            first_name: profile?.first_name || '',
+            last_name: profile?.last_name || '',
+            company_id: profile?.company_id || '',
+            company_name: company?.name || '',
+            created_at: user.created_at || (profile?.created_at || new Date().toISOString())
+          };
+        });
+
+        setUsers(mergedUsers);
+      }
     } catch (error) {
       console.error('Error loading users:', error);
       toast.error('Fehler beim Laden der Benutzer');
@@ -155,10 +209,21 @@ const UserManagement = () => {
         if (error) throw error;
         toast.success('Benutzer erfolgreich aktualisiert');
       } else {
-        // Create new user (this is complex as we need to create auth user)
-        // For now, just show a message that this feature needs backend implementation
-        toast.info('Benutzer-Erstellung erfordert Backend-Implementierung');
-        return;
+        // Create new user via admin API function
+        const { data, error } = await supabase.functions.invoke('create-user', {
+          body: {
+            email: formData.email,
+            password: formData.password,
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            company_id: formData.company_id || null
+          }
+        });
+
+        if (error) throw error;
+        if (!data?.success) throw new Error(data?.message || 'Unbekannter Fehler beim Erstellen des Benutzers');
+        
+        toast.success('Benutzer erfolgreich erstellt');
       }
 
       await loadUsers();
@@ -187,12 +252,53 @@ const UserManagement = () => {
 
   const handleResetPassword = async (userId: string) => {
     if (window.confirm('Sind Sie sicher, dass Sie das Passwort zurücksetzen möchten?')) {
-      // This would require a backend function to reset password
-      toast.info('Passwort-Reset erfordert Backend-Implementierung');
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.functions.invoke('reset-password', {
+          body: {
+            user_id: userId,
+            new_password: DEFAULT_PASSWORD
+          }
+        });
+        
+        if (error) throw error;
+        if (!data?.success) throw new Error(data?.message || 'Fehler beim Zurücksetzen des Passwortes');
+        
+        // Show the default password to admin
+        navigator.clipboard.writeText(DEFAULT_PASSWORD);
+        toast.success(`Passwort erfolgreich zurückgesetzt und in die Zwischenablage kopiert`);
+      } catch (error: any) {
+        console.error('Error resetting password:', error);
+        toast.error('Fehler beim Zurücksetzen des Passwortes: ' + error.message);
+        
+        // Fallback: show default password anyway
+        navigator.clipboard.writeText(DEFAULT_PASSWORD);
+        toast.info(`Standard-Passwort wurde in die Zwischenablage kopiert: ${DEFAULT_PASSWORD}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      setLoading(true);
       
-      // Show the default password to admin
-      navigator.clipboard.writeText(DEFAULT_PASSWORD);
-      toast.success(`Standard-Passwort wurde in die Zwischenablage kopiert: ${DEFAULT_PASSWORD}`);
+      // Delete user via admin API function
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: userId }
+      });
+      
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.message || 'Unbekannter Fehler beim Löschen des Benutzers');
+      
+      toast.success('Benutzer erfolgreich gelöscht');
+      await loadUsers();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast.error('Fehler beim Löschen des Benutzers: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -224,7 +330,7 @@ const UserManagement = () => {
                 Neuer Benutzer
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingUser ? 'Benutzer bearbeiten' : 'Neuen Benutzer erstellen'}
@@ -279,8 +385,8 @@ const UserManagement = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Unternehmen auswählen" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Kein Unternehmen</SelectItem>
+                    <SelectContent position="popper" className="bg-white">
+                      <SelectItem value="none">Kein Unternehmen</SelectItem>
                       {companies.map((company) => (
                         <SelectItem key={company.id} value={company.id}>
                           {company.name}
@@ -356,11 +462,11 @@ const UserManagement = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      <span className="font-mono text-sm">{user.id}</span>
+                      <span className="font-mono text-sm">{user.email}</span>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => copyToClipboard(user.id)}
+                        onClick={() => copyToClipboard(user.email)}
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
@@ -398,6 +504,34 @@ const UserManagement = () => {
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-red-50 hover:bg-red-100 border-red-200"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Benutzer löschen</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Sind Sie sicher, dass Sie diesen Benutzer löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="bg-red-500 hover:bg-red-600"
+                            >
+                              Löschen
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>

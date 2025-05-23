@@ -57,7 +57,7 @@ const CouponManagement = () => {
       return;
     }
 
-    // Modify validation to allow deactivated coupons with zero value
+    // Only validate discount value for active coupons that aren't free type
     if (formData.active && formData.discount_type !== 'free' && formData.discount_value <= 0) {
       toast.error('Rabattwert muss bei aktiven Coupons größer als 0 sein');
       return;
@@ -171,7 +171,7 @@ const CouponManagement = () => {
                         });
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="discount_type">
                         <SelectValue placeholder="Wählen Sie den Rabatt-Typ" />
                       </SelectTrigger>
                       <SelectContent position="popper" className="bg-white">
@@ -207,7 +207,7 @@ const CouponManagement = () => {
                         setFormData({ ...formData, usage_type: value })
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="usage_type">
                         <SelectValue placeholder="Wählen Sie den Nutzungstyp" />
                       </SelectTrigger>
                       <SelectContent position="popper" className="bg-white">

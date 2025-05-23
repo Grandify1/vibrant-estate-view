@@ -44,9 +44,9 @@ export const useCouponManagement = () => {
 
       if (error) throw error;
       setCoupons(data as CouponWithUsage[] || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading coupons:', error);
-      toast.error('Fehler beim Laden der Coupons');
+      toast.error('Fehler beim Laden der Coupons: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ export const useCouponManagement = () => {
       const { error } = await supabase
         .from('coupons')
         .insert({
-          code: couponData.code.toLowerCase(),
+          code: couponData.code.toUpperCase(), // Always store as uppercase for consistency
           discount_type: couponData.discount_type,
           discount_value: couponData.discount_value,
           description: couponData.description,
@@ -91,9 +91,15 @@ export const useCouponManagement = () => {
   const updateCoupon = async (id: string, updates: Partial<CouponForm>): Promise<boolean> => {
     setLoading(true);
     try {
+      // If we're updating the code, ensure it's uppercase
+      const finalUpdates = {
+        ...updates,
+        code: updates.code ? updates.code.toUpperCase() : updates.code
+      };
+      
       const { error } = await supabase
         .from('coupons')
-        .update(updates)
+        .update(finalUpdates)
         .eq('id', id);
 
       if (error) throw error;
@@ -113,6 +119,26 @@ export const useCouponManagement = () => {
   const deleteCoupon = async (id: string): Promise<boolean> => {
     setLoading(true);
     try {
+      // First check if coupon has been used
+      const { data: coupon, error: fetchError } = await supabase
+        .from('coupons')
+        .select('current_uses')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      if (coupon && coupon.current_uses > 0) {
+        const confirmation = window.confirm(
+          `Dieser Coupon wurde bereits ${coupon.current_uses} mal verwendet. Sind Sie sicher, dass Sie ihn löschen möchten? Dies könnte Auswirkungen auf bestehende Buchungen haben.`
+        );
+        
+        if (!confirmation) {
+          setLoading(false);
+          return false;
+        }
+      }
+
       const { error } = await supabase
         .from('coupons')
         .delete()

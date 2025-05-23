@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Users, Loader2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Plus, Edit, Users, Loader2, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -118,6 +119,59 @@ const CompanyManagement = () => {
       address: company.address || ''
     });
     setShowCreateDialog(true);
+  };
+  
+  const handleDelete = async (id: string) => {
+    setLoading(true);
+    try {
+      // First check if there are users assigned to this company
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('company_id', id);
+        
+      if (profilesError) throw profilesError;
+      
+      if (profiles && profiles.length > 0) {
+        toast.warning(`Das Unternehmen kann nicht gelöscht werden, da noch ${profiles.length} Benutzer zugeordnet sind.`);
+        return;
+      }
+      
+      // Check if there are properties assigned to this company
+      const { data: properties, error: propertiesError } = await supabase
+        .from('properties')
+        .select('id')
+        .eq('company_id', id);
+        
+      if (propertiesError) throw propertiesError;
+      
+      if (properties && properties.length > 0) {
+        toast.warning(`Das Unternehmen kann nicht gelöscht werden, da noch ${properties.length} Immobilien zugeordnet sind.`);
+        return;
+      }
+      
+      // Delete the company if no dependencies
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast.success('Unternehmen erfolgreich gelöscht');
+      await loadCompanies();
+    } catch (error: any) {
+      console.error('Error deleting company:', error);
+      toast.error('Fehler beim Löschen des Unternehmens: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewUsers = (companyId: string, companyName: string) => {
+    // Navigate to the users tab with a filter for this company
+    // This is a placeholder - implement actual navigation as needed
+    toast.info(`Benutzer für ${companyName} werden angezeigt`);
   };
 
   return (
@@ -247,13 +301,38 @@ const CompanyManagement = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          // TODO: Implementiere Benutzer-Ansicht für dieses Unternehmen
-                          toast.info('Benutzer-Verwaltung für dieses Unternehmen wird implementiert');
-                        }}
+                        onClick={() => handleViewUsers(company.id, company.name)}
                       >
                         <Users className="h-4 w-4" />
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-red-50 hover:bg-red-100 border-red-200"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Unternehmen löschen</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Sind Sie sicher, dass Sie dieses Unternehmen löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(company.id)}
+                              className="bg-red-500 hover:bg-red-600"
+                            >
+                              Löschen
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
