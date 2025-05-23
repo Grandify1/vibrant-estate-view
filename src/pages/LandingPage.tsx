@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -489,7 +488,7 @@ const LandingPage: React.FC = () => {
               </div>
               <div className="px-8 pb-8">
                 <Button className="w-full" variant="outline" asChild>
-                  <Link to="/auth">{t('cta.button')}</Link>
+                  <Link to="/payment?plan=starter">{t('cta.button')}</Link>
                 </Button>
               </div>
             </div>
@@ -534,7 +533,7 @@ const LandingPage: React.FC = () => {
               </div>
               <div className="px-8 pb-8">
                 <Button className="w-full" asChild>
-                  <Link to="/auth">{t('cta.button')}</Link>
+                  <Link to="/payment?plan=professional">{t('cta.button')}</Link>
                 </Button>
               </div>
             </div>

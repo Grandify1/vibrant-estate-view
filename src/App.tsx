@@ -33,6 +33,7 @@ const App = () => (
                 <Sonner />
                 <Routes>
                   <Route path="/" element={<LandingPage />} />
+                  <Route path="/payment" element={<Payment />} />
                   <Route path="/impressum" element={<Impressum language="de" />} />
                   <Route path="/legal-notice" element={<Impressum language="en" />} />
                   <Route path="/datenschutz" element={<Datenschutz language="de" />} />

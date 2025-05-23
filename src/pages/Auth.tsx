@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,14 @@ import { toast } from 'sonner';
 const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const { login, signup, isAuthenticated, loadingAuth, user } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>('login');
+  const [searchParams] = useSearchParams();
+  
+  // Get tab and plan from URL params
+  const urlTab = searchParams.get('tab');
+  const selectedPlan = searchParams.get('plan');
+  const paymentSuccess = searchParams.get('payment') === 'success';
+  
+  const [activeTab, setActiveTab] = useState<string>(urlTab || 'login');
   
   // Login-Zustand
   const [loginEmail, setLoginEmail] = useState('');
@@ -58,6 +65,13 @@ const AuthPage: React.FC = () => {
     return <Navigate to="/admin" />;
   }
   
+  // Show success message for payment
+  useEffect(() => {
+    if (paymentSuccess) {
+      toast.success('Zahlung erfolgreich! Bitte schließen Sie die Registrierung ab.');
+    }
+  }, [paymentSuccess]);
+  
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginLoading(true);
@@ -69,7 +83,11 @@ const AuthPage: React.FC = () => {
       
       if (success) {
         toast.success("Erfolgreich angemeldet!");
-        // Weiterleitung erfolgt automatisch durch die useEffect-Hook
+        // If there's a selected plan, redirect to payment
+        if (selectedPlan) {
+          navigate(`/payment?plan=${selectedPlan}`);
+        }
+        // Otherwise redirect happens automatically through useEffect
       }
     } catch (error) {
       console.error("Auth: Login Fehler:", error);
@@ -96,7 +114,11 @@ const AuthPage: React.FC = () => {
       
       if (success) {
         toast.success("Registrierung erfolgreich!");
-        // Die Weiterleitung erfolgt automatisch durch die useEffect-Hook
+        // If there's a selected plan but no payment success, redirect to payment
+        if (selectedPlan && !paymentSuccess) {
+          navigate(`/payment?plan=${selectedPlan}`);
+        }
+        // Otherwise redirect happens automatically through useEffect
       }
     } catch (error) {
       console.error("Auth: Registrierung Fehler:", error);
@@ -110,9 +132,14 @@ const AuthPage: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl">Immobilien-Portal</CardTitle>
+          <CardTitle className="text-2xl">
+            {selectedPlan ? `${selectedPlan === 'starter' ? 'Starter' : 'Professional'} Paket` : 'Immobilien-Portal'}
+          </CardTitle>
           <CardDescription>
-            Melden Sie sich an oder erstellen Sie ein neues Konto.
+            {selectedPlan 
+              ? 'Schließen Sie Ihre Registrierung ab, um das gewählte Paket zu aktivieren.'
+              : 'Melden Sie sich an oder erstellen Sie ein neues Konto.'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
