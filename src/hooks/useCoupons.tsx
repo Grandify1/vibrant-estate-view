@@ -56,7 +56,7 @@ export const useCoupons = () => {
       const coupon: Coupon = {
         id: couponData.id,
         code: couponData.code,
-        discount_type: couponData.discount_type,
+        discount_type: couponData.discount_type as 'percentage' | 'fixed' | 'free',
         discount_value: couponData.discount_value,
         max_uses: couponData.max_uses,
         current_uses: couponData.current_uses,

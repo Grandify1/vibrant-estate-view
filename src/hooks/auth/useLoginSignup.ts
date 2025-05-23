@@ -35,7 +35,7 @@ export const useLoginSignup = () => {
   };
   
   // Register with Supabase - no email confirmation
-  const signup = async (email: string, password: string, firstName: string, lastName: string) => {
+  const signup = async (email: string, password: string, firstName: string, lastName: string, selectedPlan?: string) => {
     try {
       // Register with email confirmation disabled
       const { data, error } = await supabase.auth.signUp({
@@ -57,19 +57,16 @@ export const useLoginSignup = () => {
       
       // Check if email confirmation is required
       if (data.user && data.session) {
-        // No email confirmation required, automatically login
-        const loginResult = await login(email, password);
-        
-        if (loginResult) {
-          toast.success("Registrierung erfolgreich! Sie sind jetzt angemeldet.");
-          return true;
-        } else {
-          toast.info("Registrierung erfolgreich, aber automatischer Login fehlgeschlagen.");
-          return true;
-        }
+        // No email confirmation required, user is automatically logged in
+        toast.success("Registrierung erfolgreich! Sie sind jetzt angemeldet.");
+        return true;
       } else {
-        // Email confirmation required
-        toast.info("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail-Adresse, um fortzufahren.");
+        // Email confirmation required - direct user to payment page if plan selected
+        if (selectedPlan) {
+          toast.info("Registrierung erfolgreich! Bitte wählen Sie Ihr Paket aus.");
+        } else {
+          toast.info("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail-Adresse.");
+        }
         return true;
       }
     } catch (error) {

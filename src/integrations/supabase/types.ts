@@ -321,6 +321,10 @@ export type Database = {
         Args: { profile_company_id: string }
         Returns: boolean
       }
+      increment_coupon_usage: {
+        Args: { coupon_id_param: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

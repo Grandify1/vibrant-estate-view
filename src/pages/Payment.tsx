@@ -85,31 +85,14 @@ const Payment: React.FC = () => {
 
     try {
       if (finalPrice === 0 && appliedCoupon) {
-        // Free with coupon - record usage and go to registration
+        // Free with coupon - record usage
         if (user?.email && appliedCoupon) {
           await applyCoupon(appliedCoupon.id, user.email);
         }
         
-        // Wenn der Benutzer bereits eingeloggt ist, erstelle einen Subscription-Eintrag
-        if (user?.id) {
-          const { error } = await supabase.from('subscriptions').insert({
-            user_id: user.id,
-            email: user.email || 'guest@example.com',
-            plan_type: currentPlan.id,
-            status: 'active',
-            amount: 0,
-            currency: 'eur',
-            coupon_code: appliedCoupon.code
-          });
-          
-          if (error) {
-            console.error('Error creating subscription record:', error);
-          }
-        }
-        
         toast.success('Kostenloses Paket aktiviert!');
         
-        // Wenn Benutzer eingeloggt ist, direkt zum Admin Dashboard, sonst zum Register
+        // If user is logged in, go to admin dashboard, otherwise to registration
         if (user?.id) {
           navigate('/admin');
         } else {
