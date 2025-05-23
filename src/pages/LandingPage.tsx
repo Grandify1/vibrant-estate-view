@@ -31,7 +31,7 @@ const LandingPage = () => {
       hero: {
         title: "Immobilien präsentieren war noch nie so einfach!",
         subtitle: "Immoupload.com – das einfachste CMS für Immobilienmakler. Professionelle, moderne Immobilien-Websites, ohne technisches Know-how.",
-        cta: "Jetzt kostenlos testen!",
+        cta: "Jetzt starten!",
         demo: "Demo ansehen"
       },
       features: {
@@ -96,7 +96,7 @@ const LandingPage = () => {
               "Kontaktformulare",
               "E-Mail Support"
             ],
-            cta: "Jetzt kostenlos testen",
+            cta: "Jetzt starten",
             popular: false
           },
           {
@@ -143,7 +143,7 @@ const LandingPage = () => {
       cta: {
         title: "Überzeugt?",
         subtitle: "Starte jetzt mit Immoupload.com und hebe dich von der Konkurrenz ab. Einfacher. Moderner. Besser.",
-        button: "Jetzt kostenlos testen und überzeugen lassen!"
+        button: "Jetzt starten!"
       },
       footer: {
         copyright: "Alle Rechte vorbehalten.",
@@ -157,7 +157,7 @@ const LandingPage = () => {
       hero: {
         title: "Real estate presentation has never been easier!",
         subtitle: "Immoupload.com – the simplest CMS for real estate agents. Professional, modern real estate websites, without technical know-how.",
-        cta: "Start free trial!",
+        cta: "Start now!",
         demo: "View demo"
       },
       features: {
@@ -222,7 +222,7 @@ const LandingPage = () => {
               "Contact forms",
               "Email support"
             ],
-            cta: "Start free trial",
+            cta: "Start now",
             popular: false
           },
           {
@@ -269,7 +269,7 @@ const LandingPage = () => {
       cta: {
         title: "Convinced?",
         subtitle: "Start now with Immoupload.com and stand out from the competition. Easier. More modern. Better.",
-        button: "Start free trial and get convinced!"
+        button: "Start now!"
       },
       footer: {
         copyright: "All rights reserved.",
@@ -575,7 +575,6 @@ const LandingPage = () => {
                 <li><a href="#" className="hover:text-white transition-colors">Home</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
               </ul>
             </div>
             <div>
