@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,10 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Copy, Key, Loader2, Search } from 'lucide-react';
+import { Edit, Copy, Key, Loader2, Search, Plus, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 interface UserWithAuth {
   id: string;
@@ -35,6 +35,7 @@ interface UserForm {
 
 const UserManagement = () => {
   const { company } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserWithAuth[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
@@ -277,6 +278,11 @@ const UserManagement = () => {
     toast.success('In Zwischenablage kopiert');
   };
 
+  const handleCreateAgent = () => {
+    // Navigate to agents tab with state to indicate we want to create a new agent
+    navigate('/admin', { state: { activeTab: 'agents', action: 'create' } });
+  };
+
   if (!company) {
     return (
       <Card>
@@ -294,127 +300,250 @@ const UserManagement = () => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Benutzer des Unternehmens</CardTitle>
+            <CardTitle>Benutzerverwaltung</CardTitle>
             <CardDescription>
-              Benutzer verwalten, die zu Ihrem Unternehmen gehören: {company.name}
+              Verwalten Sie Benutzer und erstellen Sie Makler für Ihr Unternehmen
             </CardDescription>
           </div>
-          <Dialog open={showEditDialog} onOpenChange={(open) => {
-            console.log("Dialog open state changed:", open);
-            setShowEditDialog(open);
-            if (!open) {
-              setEditingUser(null);
-              resetForm();
-            }
-          }}>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Benutzer bearbeiten</DialogTitle>
-                <DialogDescription>
-                  Benutzerdaten bearbeiten
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="first_name">Vorname *</Label>
-                    <Input
-                      id="first_name"
-                      value={formData.first_name}
-                      onChange={(e) => {
-                        console.log("First name changed:", e.target.value);
-                        setFormData({ ...formData, first_name: e.target.value });
-                      }}
-                      placeholder="Max"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="last_name">Nachname *</Label>
-                    <Input
-                      id="last_name"
-                      value={formData.last_name}
-                      onChange={(e) => {
-                        console.log("Last name changed:", e.target.value);
-                        setFormData({ ...formData, last_name: e.target.value });
-                      }}
-                      placeholder="Mustermann"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="company_search">Unternehmen</Label>
-                  {companiesLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Lade Unternehmen...</span>
+          <div className="flex gap-2">
+            <Button onClick={handleCreateAgent} className="bg-green-600 hover:bg-green-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Neuen Makler erstellen
+            </Button>
+            
+            <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Benutzer hinzufügen
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Benutzer hinzufügen</DialogTitle>
+                  <DialogDescription>
+                    Benutzer hinzufügen
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="first_name">Vorname *</Label>
+                      <Input
+                        id="first_name"
+                        value={formData.first_name}
+                        onChange={(e) => {
+                          console.log("First name changed:", e.target.value);
+                          setFormData({ ...formData, first_name: e.target.value });
+                        }}
+                        placeholder="Max"
+                        required
+                      />
                     </div>
-                  ) : (
-                    <div className="relative">
-                      <div className="relative">
-                        <Input
-                          id="company_search"
-                          type="text"
-                          value={companySearch}
-                          onChange={(e) => {
-                            console.log("Company search changed:", e.target.value);
-                            setCompanySearch(e.target.value);
-                            setShowCompanyDropdown(true);
-                          }}
-                          onFocus={() => setShowCompanyDropdown(true)}
-                          placeholder="Unternehmen suchen..."
-                          className="pr-10"
-                        />
-                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <div className="space-y-2">
+                      <Label htmlFor="last_name">Nachname *</Label>
+                      <Input
+                        id="last_name"
+                        value={formData.last_name}
+                        onChange={(e) => {
+                          console.log("Last name changed:", e.target.value);
+                          setFormData({ ...formData, last_name: e.target.value });
+                        }}
+                        placeholder="Mustermann"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="company_search">Unternehmen</Label>
+                    {companiesLoading ? (
+                      <div className="flex items-center space-x-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Lade Unternehmen...</span>
                       </div>
-                      
-                      {showCompanyDropdown && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                          {filteredCompanies.length === 0 ? (
-                            <div className="px-3 py-2 text-gray-500">
-                              {companySearch.trim() === '' ? 'Tippen Sie, um zu suchen...' : 'Keine Unternehmen gefunden'}
-                            </div>
-                          ) : (
-                            <>
-                              <button
-                                type="button"
-                                onClick={clearCompanySelection}
-                                className="w-full px-3 py-2 text-left hover:bg-gray-100 text-gray-600 border-b"
-                              >
-                                Kein Unternehmen
-                              </button>
-                              {filteredCompanies.map((company) => (
-                                <button
-                                  key={company.id}
-                                  type="button"
-                                  onClick={() => handleCompanySelect(company)}
-                                  className="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                                >
-                                  {company.name}
-                                </button>
-                              ))}
-                            </>
-                          )}
+                    ) : (
+                      <div className="relative">
+                        <div className="relative">
+                          <Input
+                            id="company_search"
+                            type="text"
+                            value={companySearch}
+                            onChange={(e) => {
+                              console.log("Company search changed:", e.target.value);
+                              setCompanySearch(e.target.value);
+                              setShowCompanyDropdown(true);
+                            }}
+                            onFocus={() => setShowCompanyDropdown(true)}
+                            placeholder="Unternehmen suchen..."
+                            className="pr-10"
+                          />
+                          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         </div>
-                      )}
+                        
+                        {showCompanyDropdown && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {filteredCompanies.length === 0 ? (
+                              <div className="px-3 py-2 text-gray-500">
+                                {companySearch.trim() === '' ? 'Tippen Sie, um zu suchen...' : 'Keine Unternehmen gefunden'}
+                              </div>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={clearCompanySelection}
+                                  className="w-full px-3 py-2 text-left hover:bg-gray-100 text-gray-600 border-b"
+                                >
+                                  Kein Unternehmen
+                                </button>
+                                {filteredCompanies.map((company) => (
+                                  <button
+                                    key={company.id}
+                                    type="button"
+                                    onClick={() => handleCompanySelect(company)}
+                                    className="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                                  >
+                                    {company.name}
+                                  </button>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-500">
+                      {formData.company_id ? `Ausgewählt: ${companySearch}` : 'Kein Unternehmen ausgewählt'}
                     </div>
-                  )}
-                  <div className="text-xs text-gray-500">
-                    {formData.company_id ? `Ausgewählt: ${companySearch}` : 'Kein Unternehmen ausgewählt'}
                   </div>
-                </div>
 
-                <DialogFooter>
-                  <Button type="submit" disabled={loading}>
-                    {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    Aktualisieren
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <DialogFooter>
+                    <Button type="submit" disabled={loading}>
+                      {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      Aktualisieren
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={showEditDialog} onOpenChange={(open) => {
+              console.log("Dialog open state changed:", open);
+              setShowEditDialog(open);
+              if (!open) {
+                setEditingUser(null);
+                resetForm();
+              }
+            }}>
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Benutzer bearbeiten</DialogTitle>
+                  <DialogDescription>
+                    Benutzerdaten bearbeiten
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="first_name">Vorname *</Label>
+                      <Input
+                        id="first_name"
+                        value={formData.first_name}
+                        onChange={(e) => {
+                          console.log("First name changed:", e.target.value);
+                          setFormData({ ...formData, first_name: e.target.value });
+                        }}
+                        placeholder="Max"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last_name">Nachname *</Label>
+                      <Input
+                        id="last_name"
+                        value={formData.last_name}
+                        onChange={(e) => {
+                          console.log("Last name changed:", e.target.value);
+                          setFormData({ ...formData, last_name: e.target.value });
+                        }}
+                        placeholder="Mustermann"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="company_search">Unternehmen</Label>
+                    {companiesLoading ? (
+                      <div className="flex items-center space-x-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Lade Unternehmen...</span>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <div className="relative">
+                          <Input
+                            id="company_search"
+                            type="text"
+                            value={companySearch}
+                            onChange={(e) => {
+                              console.log("Company search changed:", e.target.value);
+                              setCompanySearch(e.target.value);
+                              setShowCompanyDropdown(true);
+                            }}
+                            onFocus={() => setShowCompanyDropdown(true)}
+                            placeholder="Unternehmen suchen..."
+                            className="pr-10"
+                          />
+                          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        </div>
+                        
+                        {showCompanyDropdown && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {filteredCompanies.length === 0 ? (
+                              <div className="px-3 py-2 text-gray-500">
+                                {companySearch.trim() === '' ? 'Tippen Sie, um zu suchen...' : 'Keine Unternehmen gefunden'}
+                              </div>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={clearCompanySelection}
+                                  className="w-full px-3 py-2 text-left hover:bg-gray-100 text-gray-600 border-b"
+                                >
+                                  Kein Unternehmen
+                                </button>
+                                {filteredCompanies.map((company) => (
+                                  <button
+                                    key={company.id}
+                                    type="button"
+                                    onClick={() => handleCompanySelect(company)}
+                                    className="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                                  >
+                                    {company.name}
+                                  </button>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-500">
+                      {formData.company_id ? `Ausgewählt: ${companySearch}` : 'Kein Unternehmen ausgewählt'}
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button type="submit" disabled={loading}>
+                      {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      Aktualisieren
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent>

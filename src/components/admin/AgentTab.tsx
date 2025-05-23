@@ -1,19 +1,29 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Agent } from '@/types/agent';
 import { useAgents } from '@/hooks/useAgents';
 import AgentList from './AgentList';
 import AgentForm from './AgentForm';
 import { useAuth } from '@/hooks/useAuth';
+import { useLocation } from 'react-router-dom';
 
 const AgentTab: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const location = useLocation();
   
   const { agents, addAgent, updateAgent, deleteAgent } = useAgents();
   const { company } = useAuth();
+  
+  // Check if we should auto-open the create form
+  useEffect(() => {
+    if (location.state?.action === 'create') {
+      setIsCreating(true);
+      // Clear the state to prevent reopening on future visits
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
   
   const handleCreateClick = () => {
     setIsCreating(true);
