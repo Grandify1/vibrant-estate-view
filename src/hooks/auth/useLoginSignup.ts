@@ -34,7 +34,7 @@ export const useLoginSignup = () => {
     }
   };
   
-  // Register with Supabase - no email confirmation
+  // Register with Supabase - now accepts selectedPlan parameter
   const signup = async (email: string, password: string, firstName: string, lastName: string, selectedPlan?: string) => {
     try {
       // Register with email confirmation disabled
