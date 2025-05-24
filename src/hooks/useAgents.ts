@@ -54,17 +54,24 @@ export const useAgents = (companyId: string) => {
 
   const addAgent = async (agentData: Omit<Agent, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      console.log("Adding agent:", agentData);
+      console.log("Adding agent with data:", agentData);
+      
+      // Explizit sicherstellen, dass company_id gesetzt ist
+      const agentWithCompany = {
+        ...agentData,
+        company_id: companyId
+      };
       
       const { data, error } = await supabase
         .from('agents')
-        .insert([agentData])
+        .insert([agentWithCompany])
         .select()
         .single();
 
       if (error) {
         console.error("Error adding agent:", error);
-        throw error;
+        toast.error('Fehler beim Hinzufügen des Maklers: ' + error.message);
+        return { success: false, error };
       }
       
       console.log("Agent added successfully:", data);
