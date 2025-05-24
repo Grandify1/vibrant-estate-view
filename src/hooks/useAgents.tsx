@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Agent, initialAgent } from '@/types/agent';
 import { useAuth } from './useAuth';
@@ -37,10 +36,10 @@ export const useAgents = (): AgentsContextType => {
       setLoading(true);
       console.log("Loading agents for company:", company.id);
 
-      // Fetch agents data from AGENTS table (not users!)
+      // FIXED: Simple select only from agents table - no JOIN, no users reference
       const { data: agentsData, error } = await supabase
-        .from('agents')  // ← KORREKT: agents statt users
-        .select('*')
+        .from('agents')
+        .select('id, first_name, last_name, email, phone, position, image_url, company_id, created_at, updated_at')
         .eq('company_id', company.id)
         .order('created_at', { ascending: false });
 
@@ -51,7 +50,7 @@ export const useAgents = (): AgentsContextType => {
         return;
       }
 
-      console.log("Agents loaded:", agentsData?.length || 0);
+      console.log("Agents loaded successfully:", agentsData?.length || 0);
       setAgents(agentsData || []);
     } catch (error) {
       console.error("Error loading agents:", error);
@@ -71,16 +70,21 @@ export const useAgents = (): AgentsContextType => {
     try {
       console.log("Adding agent to company:", company.id, agent);
 
-      // Ensure company_id is set
-      const newAgent = {
-        ...agent,
+      // FIXED: Clean insert with only agents table data - no users reference
+      const newAgentData = {
+        first_name: agent.first_name,
+        last_name: agent.last_name,
+        email: agent.email,
+        phone: agent.phone || null,
+        position: agent.position || null,
+        image_url: agent.image_url || null,
         company_id: company.id
       };
 
       const { data, error } = await supabase
-        .from('agents')  // ← KORREKT: agents statt users
-        .insert(newAgent)
-        .select();
+        .from('agents')
+        .insert(newAgentData)
+        .select('id, first_name, last_name, email, phone, position, image_url, company_id, created_at, updated_at');
 
       if (error) {
         console.error("Error adding agent:", error);
@@ -113,11 +117,22 @@ export const useAgents = (): AgentsContextType => {
     try {
       console.log("Updating agent:", id, updates);
 
+      // FIXED: Clean update with only agents table data - no users reference
+      const updateData = {
+        ...(updates.first_name !== undefined && { first_name: updates.first_name }),
+        ...(updates.last_name !== undefined && { last_name: updates.last_name }),
+        ...(updates.email !== undefined && { email: updates.email }),
+        ...(updates.phone !== undefined && { phone: updates.phone }),
+        ...(updates.position !== undefined && { position: updates.position }),
+        ...(updates.image_url !== undefined && { image_url: updates.image_url }),
+        ...(updates.company_id !== undefined && { company_id: updates.company_id })
+      };
+
       const { data, error } = await supabase
-        .from('agents')  // ← KORREKT: agents statt users
-        .update(updates)
+        .from('agents')
+        .update(updateData)
         .eq('id', id)
-        .select();
+        .select('id, first_name, last_name, email, phone, position, image_url, company_id, created_at, updated_at');
 
       if (error) {
         console.error("Error updating agent:", error);
@@ -152,8 +167,9 @@ export const useAgents = (): AgentsContextType => {
     try {
       console.log("Deleting agent:", id);
 
+      // FIXED: Simple delete from agents table only - no users reference
       const { error } = await supabase
-        .from('agents')  // ← KORREKT: agents statt users
+        .from('agents')
         .delete()
         .eq('id', id);
 
