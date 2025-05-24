@@ -55,6 +55,9 @@ const AgentList: React.FC<AgentListProps> = ({ agents, onEdit, onDelete }) => {
     );
   }
 
+  // DEBUGGING: Console log für Agenten
+  console.log("AgentList rendering agents:", agents);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {agents.map((agent) => (

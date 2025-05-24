@@ -17,6 +17,10 @@ const AgentTab: React.FC = () => {
   const { agents, addAgent, updateAgent, deleteAgent } = useAgents();
   const { company } = useAuth();
   
+  // DEBUGGING: Console log für debugging
+  console.log("AgentTab - Company:", company);
+  console.log("AgentTab - Agents:", agents);
+  
   // Check if we should auto-open the create form
   useEffect(() => {
     if (location.state?.action === 'create') {
@@ -47,6 +51,8 @@ const AgentTab: React.FC = () => {
   const handleSubmit = async (data: Omit<Agent, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       setIsSubmitting(true);
+      
+      console.log("AgentTab - Submitting data:", data);
       
       if (isCreating) {
         // Ensure company_id is included

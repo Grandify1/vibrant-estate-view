@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Agent, initialAgent } from '@/types/agent';
 import { useAuth } from './useAuth';
@@ -36,10 +37,10 @@ export const useAgents = (): AgentsContextType => {
       setLoading(true);
       console.log("Loading agents for company:", company.id);
 
-      // FIXED: Simple select only from agents table - no JOIN, no users reference
+      // DEBUGGING: Einfachste mögliche Query - KEINE JOINs, KEINE users Referenzen
       const { data: agentsData, error } = await supabase
         .from('agents')
-        .select('id, first_name, last_name, email, phone, position, image_url, company_id, created_at, updated_at')
+        .select('*') // Nur agents Tabelle, keine JOINs
         .eq('company_id', company.id)
         .order('created_at', { ascending: false });
 
@@ -70,7 +71,7 @@ export const useAgents = (): AgentsContextType => {
     try {
       console.log("Adding agent to company:", company.id, agent);
 
-      // FIXED: Clean insert with only agents table data - no users reference
+      // DEBUGGING: Einfachste mögliche INSERT - KEINE users Referenzen
       const newAgentData = {
         first_name: agent.first_name,
         last_name: agent.last_name,
@@ -84,7 +85,7 @@ export const useAgents = (): AgentsContextType => {
       const { data, error } = await supabase
         .from('agents')
         .insert(newAgentData)
-        .select('id, first_name, last_name, email, phone, position, image_url, company_id, created_at, updated_at');
+        .select('*'); // Nur agents Tabelle
 
       if (error) {
         console.error("Error adding agent:", error);
@@ -117,7 +118,7 @@ export const useAgents = (): AgentsContextType => {
     try {
       console.log("Updating agent:", id, updates);
 
-      // FIXED: Clean update with only agents table data - no users reference
+      // DEBUGGING: Einfachste mögliche UPDATE - KEINE users Referenzen
       const updateData = {
         ...(updates.first_name !== undefined && { first_name: updates.first_name }),
         ...(updates.last_name !== undefined && { last_name: updates.last_name }),
@@ -132,7 +133,7 @@ export const useAgents = (): AgentsContextType => {
         .from('agents')
         .update(updateData)
         .eq('id', id)
-        .select('id, first_name, last_name, email, phone, position, image_url, company_id, created_at, updated_at');
+        .select('*'); // Nur agents Tabelle
 
       if (error) {
         console.error("Error updating agent:", error);
@@ -167,7 +168,7 @@ export const useAgents = (): AgentsContextType => {
     try {
       console.log("Deleting agent:", id);
 
-      // FIXED: Simple delete from agents table only - no users reference
+      // DEBUGGING: Einfachste mögliche DELETE - KEINE users Referenzen
       const { error } = await supabase
         .from('agents')
         .delete()
@@ -202,6 +203,11 @@ export const useAgents = (): AgentsContextType => {
   };
 };
 
+// Create context for agents
+import { createContext, useContext } from 'react';
+
+const AgentsContext = createContext<AgentsContextType | undefined>(undefined);
+
 export function AgentsProvider({ children }: { children: React.ReactNode }) {
   const agents = useAgents();
   
@@ -211,11 +217,6 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
     </AgentsContext.Provider>
   );
 }
-
-// Create context for agents
-import { createContext, useContext } from 'react';
-
-const AgentsContext = createContext<AgentsContextType | undefined>(undefined);
 
 export const useAgentsContext = () => {
   const context = useContext(AgentsContext);
