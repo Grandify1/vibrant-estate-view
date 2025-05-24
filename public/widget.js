@@ -2,9 +2,11 @@
 /**
  * ImmoUpload Widget - Production Version
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 5.0 - PostMessage Auto-Resize
+ * Version 6.0 - Improved Auto-Resize with Loop Prevention
  */
 (function() {
+  'use strict';
+  
   // Globales Objekt für das Widget erstellen
   window.ImmoWidget = window.ImmoWidget || {};
   
@@ -20,12 +22,10 @@
   // Base URL für Production
   const baseUrl = window.location.origin;
   
-  // Konfigurationsoptionen
-  const widgetHeight = script.getAttribute('data-height') || 'auto';
-  const widgetWidth = script.getAttribute('data-width') || '100%';
-  
   // Initialisierung des Widgets
   function initWidget() {
+    console.log('ImmoWidget: Initializing widget...');
+    
     // Container identifizieren oder erstellen
     let container = document.getElementById('immo-widget-container');
     if (!container) {
@@ -60,13 +60,6 @@
     // CSS für Widget einfügen
     const styleTag = document.createElement('style');
     styleTag.textContent = `
-      .property-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-      }
-      .property-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-      }
       .immo-widget-iframe {
         border: none !important;
         overflow: visible !important;
@@ -74,12 +67,14 @@
         padding: 0 !important;
         width: 100% !important;
         transition: height 0.3s ease !important;
+        display: block !important;
       }
       .immo-widget-container {
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
         overflow: visible !important;
+        position: relative !important;
       }
     `;
     document.head.appendChild(styleTag);
@@ -93,6 +88,8 @@
       iframeUrl += `${separator}company=${script.getAttribute('data-company')}`;
     }
     
+    console.log('ImmoWidget: Loading iframe from:', iframeUrl);
+    
     // Iframe erstellen
     const iframe = document.createElement('iframe');
     iframe.src = iframeUrl;
@@ -103,6 +100,7 @@
     iframe.style.height = '400px'; // Initial height
     iframe.style.overflow = 'visible';
     iframe.style.transition = 'height 0.3s ease';
+    iframe.style.display = 'block';
     iframe.id = 'immo-widget-iframe';
     iframe.className = 'immo-widget-iframe';
     iframe.setAttribute('scrolling', 'no');
@@ -112,8 +110,11 @@
     // Iframe zum Container hinzufügen
     container.appendChild(iframe);
     
+    console.log('ImmoWidget: Iframe created and added to container');
+    
     // Load Event Handler
     iframe.addEventListener('load', function() {
+      console.log('ImmoWidget: Iframe loaded successfully');
       const event = new CustomEvent('immo-widget-loaded', {
         detail: {
           iframeUrl: iframeUrl,
@@ -121,6 +122,11 @@
         }
       });
       document.dispatchEvent(event);
+    });
+    
+    // Error Handler
+    iframe.addEventListener('error', function() {
+      console.error('ImmoWidget: Error loading iframe');
     });
   }
   
@@ -133,8 +139,16 @@
     initWidget();
   }
   
-  // PostMessage Event Handler für Auto-Resize
+  // PostMessage Event Handler für Auto-Resize mit Loop Prevention
+  let lastHeight = 400;
+  let resizeCount = 0;
+  let lastResizeTime = 0;
+  const maxResizes = 5;
+  const resizeDelay = 100;
+  
   window.addEventListener('message', function(event) {
+    const now = Date.now();
+    
     // Erweiterte Sicherheits-Checks
     const allowedOrigins = [
       'https://immoupload.com',
@@ -154,19 +168,44 @@
       return;
     }
     
-    // Auto-Resize Handler
+    // Auto-Resize Handler mit Loop Prevention
     if (event.data && event.data.type === 'RESIZE_IFRAME') {
+      // Rate limiting
+      if (now - lastResizeTime < resizeDelay) {
+        return;
+      }
+      
       const iframe = document.getElementById('immo-widget-iframe');
       const container = document.getElementById('immo-widget-container');
       
       if (iframe && event.data.height) {
-        console.log('Resizing iframe to height:', event.data.height);
+        const newHeight = parseInt(event.data.height);
         
-        // Setze iframe und container Höhe
-        iframe.style.height = event.data.height + 'px';
-        
-        if (container) {
-          container.style.height = event.data.height + 'px';
+        // Prevent infinite loops and unreasonable heights
+        if (newHeight > 50 && newHeight < 5000 && Math.abs(newHeight - lastHeight) > 10) {
+          
+          // Reset counter if enough time has passed
+          if (now - lastResizeTime > 2000) {
+            resizeCount = 0;
+          }
+          
+          // Check resize limit
+          if (resizeCount < maxResizes) {
+            console.log('ImmoWidget: Resizing iframe to height:', newHeight);
+            
+            // Setze iframe und container Höhe
+            iframe.style.height = newHeight + 'px';
+            
+            if (container) {
+              container.style.height = newHeight + 'px';
+            }
+            
+            lastHeight = newHeight;
+            resizeCount++;
+            lastResizeTime = now;
+          } else {
+            console.warn('ImmoWidget: Maximum resize limit reached, preventing infinite loop');
+          }
         }
       }
     }
@@ -181,5 +220,7 @@
   
   // Widget als initialisiert markieren
   window.ImmoWidget.initialized = true;
-  window.ImmoWidget.version = '5.0';
+  window.ImmoWidget.version = '6.0';
+  
+  console.log('ImmoWidget: Script loaded, version 6.0');
 })();

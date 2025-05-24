@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import PropertyGrid from '@/components/embed/PropertyGrid';
@@ -34,27 +33,39 @@ export default function Embed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // PostMessage Auto-Resize System
+  // Optimized PostMessage Auto-Resize System
   useEffect(() => {
+    let resizeTimeout: NodeJS.Timeout;
+    let lastSentHeight = 0;
+    
     const calculateAndSendHeight = () => {
-      // Warte bis Layout gerendert ist
-      setTimeout(() => {
+      // Clear previous timeout
+      clearTimeout(resizeTimeout);
+      
+      resizeTimeout = setTimeout(() => {
         // Berechne die tatsächliche Content-Höhe
         const contentHeight = Math.max(
           document.body.scrollHeight,
           document.body.offsetHeight,
           document.documentElement.scrollHeight,
-          document.documentElement.offsetHeight
+          document.documentElement.offsetHeight,
+          400 // Minimum height
         );
         
-        console.log('Calculated content height:', contentHeight);
-        
-        // Sende Höhe an Parent Window mit Buffer
-        window.parent.postMessage({
-          type: 'RESIZE_IFRAME',
-          height: contentHeight + 20, // 20px Buffer
-          source: 'immo-embed'
-        }, '*');
+        // Sende nur wenn sich die Höhe signifikant geändert hat
+        if (Math.abs(contentHeight - lastSentHeight) > 10) {
+          console.log('Embed: Sending height update:', contentHeight);
+          
+          // Sende Höhe an Parent Window
+          window.parent.postMessage({
+            type: 'RESIZE_IFRAME',
+            height: contentHeight + 20, // 20px Buffer
+            source: 'immo-embed',
+            timestamp: Date.now()
+          }, '*');
+          
+          lastSentHeight = contentHeight;
+        }
       }, 100);
     };
 
@@ -63,12 +74,18 @@ export default function Embed() {
       calculateAndSendHeight();
     }
 
-    // Bei Window Resize
-    window.addEventListener('resize', calculateAndSendHeight);
+    // Bei Window Resize (debounced)
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(calculateAndSendHeight, 200);
+    };
+    
+    window.addEventListener('resize', handleResize);
     
     // Cleanup
     return () => {
-      window.removeEventListener('resize', calculateAndSendHeight);
+      clearTimeout(resizeTimeout);
+      window.removeEventListener('resize', handleResize);
     };
   }, [loading, properties.length]);
 
@@ -103,52 +120,50 @@ export default function Embed() {
         }
         
         // Format the data
-        const formattedData: Property[] = data.map((item: any) => {
-          const emptyHighlights: PropertyHighlight[] = [];
-          const emptyImages: PropertyImage[] = [];
-          const emptyFloorPlans: FloorPlan[] = [];
-          const emptyDetails: PropertyDetails = {
-            price: '',
-            livingArea: '',
-            plotArea: '',
-            rooms: '',
-            bathrooms: '',
-            bedrooms: '',
-            propertyType: '',
-            availableFrom: '',
-            maintenanceFee: '',
-            constructionYear: '',
-            condition: '',
-            heatingType: '',
-            energySource: '',
-            floor: '',
-            totalFloors: '',
-            parkingSpaces: ''
-          };
-          const emptyEnergy: EnergyDetails = {
-            certificateAvailable: false,
-            includesWarmWater: false
-          };
-          
-          return {
-            id: item.id,
-            title: item.title || '',
-            address: item.address || '',
-            description: item.description || '',
-            amenities: item.amenities || '',
-            location: item.location || '',
-            status: item.status as 'active' | 'sold' | 'archived',
-            company_id: item.company_id,
-            agent_id: item.agent_id,
-            highlights: safelyParseJson<PropertyHighlight[]>(item.highlights, emptyHighlights),
-            images: safelyParseJson<PropertyImage[]>(item.images, emptyImages),
-            floorPlans: safelyParseJson<FloorPlan[]>(item.floor_plans, emptyFloorPlans),
-            details: safelyParseJson<PropertyDetails>(item.details, emptyDetails),
-            energy: safelyParseJson<EnergyDetails>(item.energy, emptyEnergy),
-            createdAt: item.created_at,
-            updatedAt: item.updated_at
-          };
-        });
+        const emptyHighlights: PropertyHighlight[] = [];
+        const emptyImages: PropertyImage[] = [];
+        const emptyFloorPlans: FloorPlan[] = [];
+        const emptyDetails: PropertyDetails = {
+          price: '',
+          livingArea: '',
+          plotArea: '',
+          rooms: '',
+          bathrooms: '',
+          bedrooms: '',
+          propertyType: '',
+          availableFrom: '',
+          maintenanceFee: '',
+          constructionYear: '',
+          condition: '',
+          heatingType: '',
+          energySource: '',
+          floor: '',
+          totalFloors: '',
+          parkingSpaces: ''
+        };
+        const emptyEnergy: EnergyDetails = {
+          certificateAvailable: false,
+          includesWarmWater: false
+        };
+        
+        const formattedData: Property[] = data.map((item: any) => ({
+          id: item.id,
+          title: item.title || '',
+          address: item.address || '',
+          description: item.description || '',
+          amenities: item.amenities || '',
+          location: item.location || '',
+          status: item.status as 'active' | 'sold' | 'archived',
+          company_id: item.company_id,
+          agent_id: item.agent_id,
+          highlights: safelyParseJson<PropertyHighlight[]>(item.highlights, emptyHighlights),
+          images: safelyParseJson<PropertyImage[]>(item.images, emptyImages),
+          floorPlans: safelyParseJson<FloorPlan[]>(item.floor_plans, emptyFloorPlans),
+          details: safelyParseJson<PropertyDetails>(item.details, emptyDetails),
+          energy: safelyParseJson<EnergyDetails>(item.energy, emptyEnergy),
+          createdAt: item.created_at,
+          updatedAt: item.updated_at
+        }));
         
         setProperties(formattedData);
       } catch (error: any) {
@@ -162,7 +177,7 @@ export default function Embed() {
   }, [companyId]);
 
   return (
-    <div className="w-full bg-white py-1">
+    <div className="w-full bg-white">
       <PropertyGrid properties={properties} loading={loading} error={error} />
     </div>
   );
