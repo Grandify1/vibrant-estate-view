@@ -16,6 +16,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onClick }) => {
     <div 
       className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
       onClick={onClick}
+      style={{ 
+        margin: '0',
+        marginBottom: '0'
+      }}
     >
       <div className="aspect-video relative overflow-hidden">
         {mainImage ? (
@@ -37,7 +41,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onClick }) => {
         )}
       </div>
       
-      <div className="p-4">
+      <div className="p-4" style={{ paddingBottom: '16px' }}>
         <h3 className="font-semibold text-lg mb-1 truncate">{property.title}</h3>
         
         <p className="text-gray-600 text-sm mb-2 truncate">{property.address}</p>

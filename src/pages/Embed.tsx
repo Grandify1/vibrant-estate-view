@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import PropertyGrid from '@/components/embed/PropertyGrid';
@@ -43,30 +44,36 @@ export default function Embed() {
       clearTimeout(resizeTimeout);
       
       resizeTimeout = setTimeout(() => {
-        // Berechne die tatsächliche Content-Höhe
-        const contentHeight = Math.max(
-          document.body.scrollHeight,
-          document.body.offsetHeight,
-          document.documentElement.scrollHeight,
-          document.documentElement.offsetHeight,
-          400 // Minimum height
+        // Berechne die tatsächliche Content-Höhe ohne unnötige Margins
+        const body = document.body;
+        const html = document.documentElement;
+        
+        // Verwende nur die tatsächliche Scroll-Höhe ohne Buffer
+        const contentHeight = Math.min(
+          body.scrollHeight,
+          body.offsetHeight,
+          html.scrollHeight,
+          html.offsetHeight
         );
         
+        // Minimale sinnvolle Höhe
+        const finalHeight = Math.max(contentHeight, 200);
+        
         // Sende nur wenn sich die Höhe signifikant geändert hat
-        if (Math.abs(contentHeight - lastSentHeight) > 10) {
-          console.log('Embed: Sending height update:', contentHeight);
+        if (Math.abs(finalHeight - lastSentHeight) > 5) {
+          console.log('Embed: Sending optimized height:', finalHeight);
           
-          // Sende Höhe an Parent Window
+          // Sende Höhe an Parent Window ohne zusätzlichen Buffer
           window.parent.postMessage({
             type: 'RESIZE_IFRAME',
-            height: contentHeight + 20, // 20px Buffer
+            height: finalHeight,
             source: 'immo-embed',
             timestamp: Date.now()
           }, '*');
           
-          lastSentHeight = contentHeight;
+          lastSentHeight = finalHeight;
         }
-      }, 100);
+      }, 50);
     };
 
     // Nach dem Laden der Properties
@@ -77,7 +84,7 @@ export default function Embed() {
     // Bei Window Resize (debounced)
     const handleResize = () => {
       clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(calculateAndSendHeight, 200);
+      resizeTimeout = setTimeout(calculateAndSendHeight, 100);
     };
     
     window.addEventListener('resize', handleResize);
@@ -177,7 +184,12 @@ export default function Embed() {
   }, [companyId]);
 
   return (
-    <div className="w-full bg-white">
+    <div className="w-full bg-white" style={{ 
+      padding: '0', 
+      margin: '0', 
+      minHeight: 'auto',
+      overflow: 'visible'
+    }}>
       <PropertyGrid properties={properties} loading={loading} error={error} />
     </div>
   );
