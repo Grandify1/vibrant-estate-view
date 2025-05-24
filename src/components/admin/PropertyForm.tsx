@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from "sonner";
 import { useAgents } from "@/hooks/useAgents";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 interface PropertyFormProps {
   property?: Property;
@@ -40,7 +40,8 @@ const PropertyForm: React.FC<PropertyFormProps> = ({
   isSubmitting
 }) => {
   const [activeTab, setActiveTab] = useState("basic");
-  const { agents } = useAgents();
+  const { user } = useAuth();
+  const { agents } = useAgents(user?.company_id || '');
   
   // Form state
   const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm({
