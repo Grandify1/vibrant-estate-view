@@ -37,15 +37,16 @@ export const useAgents = (): AgentsContextType => {
       setLoading(true);
       console.log("Loading agents for company:", company.id);
 
-      // Fetch agents data
+      // Fetch agents data from AGENTS table (not users!)
       const { data: agentsData, error } = await supabase
-        .from('agents')
+        .from('agents')  // ← KORREKT: agents statt users
         .select('*')
         .eq('company_id', company.id)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching agents:", error);
+        toast.error(`Fehler beim Laden der Makler: ${error.message}`);
         setLoading(false);
         return;
       }
@@ -54,6 +55,7 @@ export const useAgents = (): AgentsContextType => {
       setAgents(agentsData || []);
     } catch (error) {
       console.error("Error loading agents:", error);
+      toast.error("Ein unerwarteter Fehler beim Laden der Makler ist aufgetreten");
     } finally {
       setLoading(false);
     }
@@ -76,7 +78,7 @@ export const useAgents = (): AgentsContextType => {
       };
 
       const { data, error } = await supabase
-        .from('agents')
+        .from('agents')  // ← KORREKT: agents statt users
         .insert(newAgent)
         .select();
 
@@ -112,7 +114,7 @@ export const useAgents = (): AgentsContextType => {
       console.log("Updating agent:", id, updates);
 
       const { data, error } = await supabase
-        .from('agents')
+        .from('agents')  // ← KORREKT: agents statt users
         .update(updates)
         .eq('id', id)
         .select();
@@ -151,7 +153,7 @@ export const useAgents = (): AgentsContextType => {
       console.log("Deleting agent:", id);
 
       const { error } = await supabase
-        .from('agents')
+        .from('agents')  // ← KORREKT: agents statt users
         .delete()
         .eq('id', id);
 
