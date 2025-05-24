@@ -22,33 +22,35 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [bucketChecked, setBucketChecked] = useState(false);
   
+  // Bestimme den richtigen Bucket basierend auf dem Kontext
+  const getBucketName = () => {
+    // Für Makler verwende agent-images bucket
+    if (window.location.pathname.includes('/admin') && window.location.hash?.includes('agents')) {
+      return 'agent-images';
+    }
+    // Standard: properties bucket
+    return 'properties';
+  };
+  
   // Check if the bucket exists when the component mounts
   useEffect(() => {
     const checkBucket = async () => {
       try {
+        const bucketName = getBucketName();
         const { data: buckets } = await supabase
           .storage
           .listBuckets();
           
-        const bucketExists = buckets?.some(bucket => bucket.name === 'properties');
+        const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
         setBucketChecked(true);
         
         if (!bucketExists) {
-          // If bucket doesn't exist, we'll create it during the first upload attempt
-          console.log("Properties bucket doesn't exist yet.");
-          try {
-            // Try to create the bucket
-            await supabase.storage.createBucket('properties', {
-              public: true,
-              fileSizeLimit: 10485760, // 10MB
-            });
-            console.log("Created properties bucket");
-          } catch (bucketError) {
-            console.warn("Could not create bucket automatically:", bucketError);
-          }
+          console.log(`${bucketName} bucket doesn't exist yet.`);
+          // Bucket sollte bereits durch SQL Migration erstellt worden sein
         }
       } catch (error) {
         console.error("Error checking buckets:", error);
+        setBucketChecked(true); // Weiter machen auch bei Fehlern
       }
     };
     
@@ -60,6 +62,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     if (!files || files.length === 0) return;
     
     setIsLoading(true);
+    const bucketName = getBucketName();
     
     try {
       let uploadedUrls: string[] = [];
@@ -90,72 +93,28 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.webp`;
           const filePath = `images/${fileName}`;
           
-          // Variable to store upload result
-          let uploadData = null;
-          let uploadError = null;
-          
           // Zu Supabase hochladen
-          const uploadResult = await supabase.storage
-            .from('properties')
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from(bucketName)
             .upload(filePath, compressedBlob, {
               contentType: 'image/webp',
               cacheControl: '3600',
               upsert: false
             });
             
-          uploadData = uploadResult.data;
-          uploadError = uploadResult.error;
-            
           if (uploadError) {
             console.error(`Fehler beim Hochladen von ${file.name}:`, uploadError);
-            
-            // Special handling for bucket not found
-            if (uploadError.message.includes("bucket not found") || uploadError.message.includes("bucket_not_found")) {
-              try {
-                // Try to create the bucket
-                await supabase.storage.createBucket('properties', {
-                  public: true,
-                  fileSizeLimit: 10485760, // 10MB
-                });
-                console.log("Created properties bucket after error");
-                
-                // Try upload again
-                const retryUpload = await supabase.storage
-                  .from('properties')
-                  .upload(filePath, compressedBlob, {
-                    contentType: 'image/webp',
-                    cacheControl: '3600',
-                    upsert: false
-                  });
-                
-                if (retryUpload.error) {
-                  throw retryUpload.error;
-                } else {
-                  // Use the data from retry upload instead
-                  uploadData = retryUpload.data;
-                  uploadError = null;
-                }
-              } catch (bucketError) {
-                toast.error("Bucket nicht gefunden. Bitte kontaktieren Sie den Administrator.");
-                console.error("Could not create bucket:", bucketError);
-                continue;
-              }
-            } else {
-              toast.error(`Fehler beim Hochladen von ${file.name}: ${uploadError.message}`);
-              continue;
-            }
+            toast.error(`Fehler beim Hochladen von ${file.name}: ${uploadError.message}`);
+            continue;
           }
           
-          // If we have valid upload data, get the public URL
-          if (uploadData) {
-            // URL der hochgeladenen Datei abrufen
-            const { data: { publicUrl } } = supabase.storage
-              .from('properties')
-              .getPublicUrl(filePath);
+          // URL der hochgeladenen Datei abrufen
+          const { data: { publicUrl } } = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(filePath);
               
-            uploadedUrls.push(publicUrl);
-            console.log(`Successfully uploaded: ${publicUrl}`);
-          }
+          uploadedUrls.push(publicUrl);
+          console.log(`Successfully uploaded to ${bucketName}: ${publicUrl}`);
         } catch (uploadError) {
           console.error(`Exception beim Hochladen von ${file.name}:`, uploadError);
           toast.error(`Unerwarteter Fehler beim Hochladen von ${file.name}`);
