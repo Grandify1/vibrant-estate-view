@@ -4,7 +4,6 @@ import { useAgents } from "@/hooks/useAgents";
 import { Agent } from "@/types/agent";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface AgentListProps {

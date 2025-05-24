@@ -10,23 +10,6 @@ interface PropertyGridProps {
 }
 
 const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error }) => {
-  // Pre-calculate external URLs to avoid recalculation on each render
-  const [externalUrls, setExternalUrls] = useState<Record<string, string>>({});
-  
-  // Calculate external URLs once when properties change
-  useEffect(() => {
-    if (properties && properties.length > 0) {
-      const urls: Record<string, string> = {};
-      const baseUrl = 'https://immoupload.com'; // Fixed domain
-      
-      properties.forEach(property => {
-        urls[property.id] = `${baseUrl}/property/${property.id}`;
-      });
-      
-      setExternalUrls(urls);
-    }
-  }, [properties]);
-  
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8" style={{ margin: '0', padding: '32px 0' }}>
