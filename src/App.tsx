@@ -14,7 +14,6 @@ import PropertyFormPage from "./pages/PropertyFormPage";
 import Payment from "./pages/Payment";
 import { AuthProvider } from "./hooks/useAuth";
 import { PropertiesProvider } from "./hooks/useProperties";
-import { AgentsProvider } from "./hooks/useAgents";
 import LandingPage from "./pages/LandingPage";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
@@ -28,31 +27,29 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <PropertiesProvider>
-            <AgentsProvider>
-              <LanguageProvider>
-                <Toaster />
-                <Sonner />
-                <Routes>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/payment" element={<Payment />} />
-                  
-                  {/* Aktualisierte Routen für Impressum und Datenschutz mit korrekter Sprachweiterleitung */}
-                  <Route path="/impressum" element={<Impressum language="de" />} />
-                  <Route path="/legal-notice" element={<Impressum language="en" />} />
-                  <Route path="/datenschutz" element={<Datenschutz language="de" />} />
-                  <Route path="/privacy-policy" element={<Datenschutz language="en" />} />
-                  
-                  <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/admin/properties/new" element={<PropertyFormPage />} />
-                  <Route path="/admin/properties/edit/:id" element={<PropertyFormPage />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/embed" element={<Embed />} />
-                  <Route path="/property/:propertyId" element={<PropertyDetail />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </LanguageProvider>
-            </AgentsProvider>
+            <LanguageProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/payment" element={<Payment />} />
+                
+                {/* Aktualisierte Routen für Impressum und Datenschutz mit korrekter Sprachweiterleitung */}
+                <Route path="/impressum" element={<Impressum language="de" />} />
+                <Route path="/legal-notice" element={<Impressum language="en" />} />
+                <Route path="/datenschutz" element={<Datenschutz language="de" />} />
+                <Route path="/privacy-policy" element={<Datenschutz language="en" />} />
+                
+                <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/properties/new" element={<PropertyFormPage />} />
+                <Route path="/admin/properties/edit/:id" element={<PropertyFormPage />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/embed" element={<Embed />} />
+                <Route path="/property/:propertyId" element={<PropertyDetail />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </LanguageProvider>
           </PropertiesProvider>
         </AuthProvider>
       </BrowserRouter>

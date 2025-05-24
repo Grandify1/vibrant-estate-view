@@ -12,39 +12,39 @@ export type Database = {
       agents: {
         Row: {
           company_id: string
-          created_at: string
-          email: string
+          created_at: string | null
+          email: string | null
           first_name: string
           id: string
           image_url: string | null
           last_name: string
           phone: string | null
           position: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           company_id: string
-          created_at?: string
-          email: string
+          created_at?: string | null
+          email?: string | null
           first_name: string
           id?: string
           image_url?: string | null
           last_name: string
           phone?: string | null
           position?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           company_id?: string
-          created_at?: string
-          email?: string
+          created_at?: string | null
+          email?: string | null
           first_name?: string
           id?: string
           image_url?: string | null
           last_name?: string
           phone?: string | null
           position?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -257,13 +257,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "properties_agent_id_fkey"
-            columns: ["agent_id"]
-            isOneToOne: false
-            referencedRelation: "agents"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "properties_company_id_fkey"
             columns: ["company_id"]
