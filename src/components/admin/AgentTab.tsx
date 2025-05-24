@@ -3,43 +3,58 @@ import React, { useState } from 'react';
 import { useAgents } from '@/hooks/useAgents';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Plus, User } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Trash2, Plus, User, Edit } from 'lucide-react';
+import { AgentForm } from './AgentForm';
+
+interface Agent {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  position?: string;
+  image_url?: string;
+  company_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export const AgentTab = () => {
   const { company } = useAuth();
-  const { agents, loading, addAgent, deleteAgent } = useAgents(company?.id || '');
+  const { agents, loading, addAgent, updateAgent, deleteAgent } = useAgents(company?.id || '');
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    position: ''
-  });
+  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (formData: any) => {
     console.log("Submitting form data:", formData);
     
-    const result = await addAgent({
-      ...formData,
-      company_id: company?.id || ''
-    });
+    let result;
+    if (editingAgent) {
+      // Bearbeiten
+      result = await updateAgent(editingAgent.id, formData);
+    } else {
+      // Neu hinzufügen
+      result = await addAgent({
+        ...formData,
+        company_id: company?.id || ''
+      });
+    }
 
     if (result.success) {
-      setFormData({
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-        position: ''
-      });
       setShowForm(false);
+      setEditingAgent(null);
     }
+  };
+
+  const handleEdit = (agent: Agent) => {
+    setEditingAgent(agent);
+    setShowForm(true);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingAgent(null);
   };
 
   const handleDelete = async (agentId: string) => {
@@ -67,71 +82,12 @@ export const AgentTab = () => {
       </div>
 
       {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Neuen Makler hinzufügen</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="first_name">Vorname*</Label>
-                  <Input
-                    id="first_name"
-                    value={formData.first_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="last_name">Nachname*</Label>
-                  <Input
-                    id="last_name"
-                    value={formData.last_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="email">E-Mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="phone">Telefon</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="position">Position</Label>
-                  <Input
-                    id="position"
-                    value={formData.position}
-                    onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className="flex space-x-2">
-                <Button type="submit">Makler hinzufügen</Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                  Abbrechen
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <AgentForm
+          agent={editingAgent || undefined}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          isEditing={!!editingAgent}
+        />
       )}
 
       <div className="grid gap-4">
@@ -151,8 +107,16 @@ export const AgentTab = () => {
               <CardContent className="pt-6">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-gray-600" />
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+                      {agent.image_url ? (
+                        <img 
+                          src={agent.image_url} 
+                          alt={`${agent.first_name} ${agent.last_name}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-6 h-6 text-gray-600" />
+                      )}
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">
@@ -171,13 +135,22 @@ export const AgentTab = () => {
                       </div>
                     </div>
                   </div>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(agent.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(agent)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(agent.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -78,6 +78,33 @@ export const useAgents = (companyId: string) => {
     }
   };
 
+  const updateAgent = async (agentId: string, agentData: Partial<Omit<Agent, 'id' | 'created_at' | 'updated_at'>>) => {
+    try {
+      console.log("Updating agent:", agentId, agentData);
+      
+      const { data, error } = await supabase
+        .from('agents')
+        .update(agentData)
+        .eq('id', agentId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating agent:", error);
+        throw error;
+      }
+      
+      console.log("Agent updated successfully:", data);
+      setAgents(prev => prev.map(agent => agent.id === agentId ? data : agent));
+      toast.success('Makler erfolgreich aktualisiert');
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('Fehler beim Aktualisieren des Maklers:', error);
+      toast.error('Fehler beim Aktualisieren des Maklers: ' + error.message);
+      return { success: false, error };
+    }
+  };
+
   const deleteAgent = async (agentId: string) => {
     try {
       console.log("Deleting agent:", agentId);
@@ -111,6 +138,7 @@ export const useAgents = (companyId: string) => {
     agents,
     loading,
     addAgent,
+    updateAgent,
     deleteAgent,
     refetch: fetchAgents
   };
