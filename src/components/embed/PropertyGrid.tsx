@@ -17,7 +17,7 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error 
   useEffect(() => {
     if (properties && properties.length > 0) {
       const urls: Record<string, string> = {};
-      const baseUrl = getBaseUrl();
+      const baseUrl = 'https://immoupload.com'; // Fixed domain
       
       properties.forEach(property => {
         urls[property.id] = `${baseUrl}/property/${property.id}`;
@@ -55,14 +55,6 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error 
     );
   }
   
-  // Function to get the base URL for external links
-  function getBaseUrl(): string {
-    // Get the current hostname but not localhost
-    const hostname = window.location.hostname === 'localhost' ? 'as-immobilien.info' : window.location.hostname;
-    const protocol = window.location.protocol;
-    return `${protocol}//${hostname}`;
-  }
-  
   return (
     <div className="w-full" style={{ 
       padding: '16px 8px 20px 8px', 
@@ -75,7 +67,7 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error 
         {properties.map(property => (
           <a 
             key={property.id} 
-            href={externalUrls[property.id] || `${getBaseUrl()}/property/${property.id}`} 
+            href={externalUrls[property.id] || `https://immoupload.com/property/${property.id}`} 
             className="no-underline text-inherit block"
             target="_blank" 
             rel="noopener noreferrer"
