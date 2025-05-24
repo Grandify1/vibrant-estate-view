@@ -14,7 +14,6 @@ interface AgentListProps {
 }
 
 const AgentList: React.FC<AgentListProps> = ({ agents, onEdit, onDelete }) => {
-  // Remove the unused agents from useAgents as we're getting them from props now
   const { loading } = useAgents();
 
   const handleDelete = async (id: string) => {

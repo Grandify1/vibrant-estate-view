@@ -67,7 +67,7 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({ properties, loading, error 
         {properties.map(property => (
           <a 
             key={property.id} 
-            href={externalUrls[property.id] || `https://immoupload.com/property/${property.id}`} 
+            href={`https://immoupload.com/property/${property.id}`}
             className="no-underline text-inherit block"
             target="_blank" 
             rel="noopener noreferrer"
