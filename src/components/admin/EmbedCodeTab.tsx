@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,10 +17,30 @@ const EmbedCodeTab: React.FC = () => {
   const baseUrl = window.location.origin;
   const widgetUrl = `${baseUrl}/embed${companyParam}`;
   
-  // Das Auto-Resize Embed-Skript
+  // Das Auto-Resize Embed-Skript mit korrektem widget.js Pfad
   const singleScriptCode = `<!-- Immobilien-Widget mit Auto-Resize Start -->
 <div id="immo-widget-container" class="immo-widget-container"></div>
-<script src="${baseUrl}/widget.js" data-target="immo-widget" data-url="${widgetUrl}"></script>
+<script>
+(function() {
+  const script = document.createElement('script');
+  script.src = '${baseUrl}/widget.js';
+  script.setAttribute('data-target', 'immo-widget');
+  script.setAttribute('data-url', '${widgetUrl}');
+  script.onload = function() {
+    console.log('ImmoWidget script loaded successfully');
+  };
+  script.onerror = function() {
+    console.error('Failed to load ImmoWidget script from:', script.src);
+    // Fallback: try alternative path
+    const fallbackScript = document.createElement('script');
+    fallbackScript.src = '${baseUrl}/public/widget.js';
+    fallbackScript.setAttribute('data-target', 'immo-widget');
+    fallbackScript.setAttribute('data-url', '${widgetUrl}');
+    document.head.appendChild(fallbackScript);
+  };
+  document.head.appendChild(script);
+})();
+</script>
 <!-- Immobilien-Widget Ende -->`;
   
   // Funktion zum Kopieren des Codes
@@ -88,6 +107,7 @@ const EmbedCodeTab: React.FC = () => {
           <li>Die Höhe wird automatisch berechnet und an das Parent-Window gesendet</li>
           <li>Reagiert auf Fenster-Größenänderungen und passt sich entsprechend an</li>
           <li>Minimaler JavaScript-Overhead für optimale Performance</li>
+          <li>Automatischer Fallback bei Ladeproblemen</li>
         </ul>
       </div>
     </div>
