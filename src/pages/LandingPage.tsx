@@ -617,9 +617,6 @@ const LandingPage = () => {
                 <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
                   {step.number}
                 </div>
-                <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <step.icon className="h-6 w-6 text-blue-600" />
-                </div>
                 <h3 className="text-xl font-semibold mb-3 text-gray-900">{step.title}</h3>
                 <p className="text-gray-600 leading-relaxed">{step.description}</p>
               </div>
