@@ -20,22 +20,4 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  build: {
-    rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html'),
-        widget: path.resolve(__dirname, 'public/widget.js')
-      },
-      output: {
-        entryFileNames: (chunkInfo) => {
-          if (chunkInfo.name === 'widget') {
-            return 'widget.js'
-          }
-          return 'assets/[name]-[hash].js'
-        }
-      }
-    }
-  },
-  publicDir: 'public',
-  assetsInclude: ['**/*.js']
 }));
