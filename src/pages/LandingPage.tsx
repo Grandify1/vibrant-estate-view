@@ -489,6 +489,11 @@ const LandingPage = () => {
       },
       footer: {
         copyright: "All rights reserved.",
+        contact: {
+          title: "Contact",
+          email: "info@immoupload.com",
+          phone: "+49 123 456789"
+        },
         links: {
           legal: "Legal Notice",
           privacy: "Privacy Policy"
