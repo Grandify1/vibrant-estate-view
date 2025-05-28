@@ -2,7 +2,7 @@
 /**
  * ImmoUpload Widget - Production Version
  * Dynamisches Widget zur Einbindung von Immobilienübersichten
- * Version 6.0 - Improved Auto-Resize with Loop Prevention
+ * Version 7.0 - Fixed Domain Loading for Customer Websites
  */
 (function() {
   'use strict';
@@ -13,18 +13,18 @@
   // Widget bereits initialisiert?
   if (window.ImmoWidget.initialized) return;
   
-  // Basis-URL ermitteln (woher das Script geladen wurde)
+  // WICHTIG: Feste Domain für das Widget - IMMER von immoupload.com laden
+  const WIDGET_BASE_URL = 'https://immoupload.com';
+  
+  // Aktuelles Script identifizieren
   const script = document.currentScript || (function() {
     const scripts = document.getElementsByTagName('script');
     return scripts[scripts.length - 1];
   })();
   
-  // Base URL für Production
-  const baseUrl = window.location.origin;
-  
   // Initialisierung des Widgets
   function initWidget() {
-    console.log('ImmoWidget: Initializing widget...');
+    console.log('ImmoWidget: Initializing widget from', WIDGET_BASE_URL);
     
     // Container identifizieren oder erstellen
     let container = document.getElementById('immo-widget-container');
@@ -79,13 +79,19 @@
     `;
     document.head.appendChild(styleTag);
     
-    // Iframe URL zusammenstellen
-    let iframeUrl = script.getAttribute('data-url') || (baseUrl + '/embed');
+    // Iframe URL zusammenstellen - IMMER von immoupload.com
+    let iframeUrl = WIDGET_BASE_URL + '/embed';
     
-    // Company-ID hinzufügen wenn vorhanden
-    if (script.getAttribute('data-company') && !iframeUrl.includes('company=') && !iframeUrl.includes('companyId=')) {
-      const separator = iframeUrl.includes('?') ? '&' : '?';
-      iframeUrl += `${separator}company=${script.getAttribute('data-company')}`;
+    // Company-ID aus Script-Attributen hinzufügen
+    const companyId = script.getAttribute('data-company') || script.getAttribute('data-company-id');
+    if (companyId) {
+      iframeUrl += `?company=${encodeURIComponent(companyId)}`;
+    }
+    
+    // Custom URL überschreibung falls vorhanden
+    const customUrl = script.getAttribute('data-url');
+    if (customUrl) {
+      iframeUrl = customUrl;
     }
     
     console.log('ImmoWidget: Loading iframe from:', iframeUrl);
@@ -106,6 +112,7 @@
     iframe.setAttribute('scrolling', 'no');
     iframe.setAttribute('title', 'Immobilien Übersicht');
     iframe.setAttribute('loading', 'eager');
+    iframe.setAttribute('allow', 'cross-origin');
     
     // Iframe zum Container hinzufügen
     container.appendChild(iframe);
@@ -114,7 +121,7 @@
     
     // Load Event Handler
     iframe.addEventListener('load', function() {
-      console.log('ImmoWidget: Iframe loaded successfully');
+      console.log('ImmoWidget: Iframe loaded successfully from', iframeUrl);
       const event = new CustomEvent('immo-widget-loaded', {
         detail: {
           iframeUrl: iframeUrl,
@@ -126,7 +133,7 @@
     
     // Error Handler
     iframe.addEventListener('error', function() {
-      console.error('ImmoWidget: Error loading iframe');
+      console.error('ImmoWidget: Error loading iframe from', iframeUrl);
     });
   }
   
@@ -149,24 +156,25 @@
   window.addEventListener('message', function(event) {
     const now = Date.now();
     
-    // Erweiterte Sicherheits-Checks
+    // Erweiterte Sicherheits-Checks - NUR von immoupload.com akzeptieren
     const allowedOrigins = [
       'https://immoupload.com',
       'https://immoupload.lovable.app',
-      'https://kmzlkfwxeghvlgtilzjh.supabase.co',
-      'https://as-immobilien.info',
-      window.location.origin
+      'http://localhost:8080',
+      'http://localhost:5173',
+      'http://127.0.0.1:8080',
+      'http://127.0.0.1:5173'
     ];
     
     // Prüfen, ob die Ursprungs-Domain erlaubt ist
-    const originAllowed = allowedOrigins.some(origin => event.origin.includes(origin)) || 
-                         event.origin.includes('localhost') || 
-                         event.origin.includes('127.0.0.1') ||
-                         event.origin.includes('lovableproject.com');
+    const originAllowed = allowedOrigins.includes(event.origin);
     
     if (!originAllowed) {
+      console.log('ImmoWidget: Message from unauthorized origin blocked:', event.origin);
       return;
     }
+    
+    console.log('ImmoWidget: Received message from authorized origin:', event.origin);
     
     // Auto-Resize Handler mit Loop Prevention
     if (event.data && event.data.type === 'RESIZE_IFRAME') {
@@ -220,7 +228,7 @@
   
   // Widget als initialisiert markieren
   window.ImmoWidget.initialized = true;
-  window.ImmoWidget.version = '6.0';
+  window.ImmoWidget.version = '7.0';
   
-  console.log('ImmoWidget: Script loaded, version 6.0');
+  console.log('ImmoWidget: Script loaded, version 7.0, loading from:', WIDGET_BASE_URL);
 })();

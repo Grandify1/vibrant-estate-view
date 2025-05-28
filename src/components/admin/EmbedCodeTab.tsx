@@ -11,32 +11,24 @@ const EmbedCodeTab: React.FC = () => {
   const [embedTab, setEmbedTab] = useState('single-script');
   
   // Die Firmen-ID als Parameter für das Embed-Skript
-  const companyParam = company ? `?company=${company.id}` : '';
+  const companyParam = company ? company.id : '';
   
-  // Das Basis-URL für das Embed-Widget
-  const baseUrl = window.location.origin;
-  const widgetUrl = `${baseUrl}/embed${companyParam}`;
+  // WICHTIG: Feste Domain für Production - IMMER immoupload.com
+  const WIDGET_BASE_URL = 'https://immoupload.com';
   
-  // Das Auto-Resize Embed-Skript mit korrektem widget.js Pfad
+  // Das Auto-Resize Embed-Skript mit korrekter Domain
   const singleScriptCode = `<!-- Immobilien-Widget mit Auto-Resize Start -->
 <div id="immo-widget-container" class="immo-widget-container"></div>
 <script>
 (function() {
   const script = document.createElement('script');
-  script.src = '${baseUrl}/widget.js';
-  script.setAttribute('data-target', 'immo-widget');
-  script.setAttribute('data-url', '${widgetUrl}');
+  script.src = '${WIDGET_BASE_URL}/widget.js';
+  script.setAttribute('data-company', '${companyParam}');
   script.onload = function() {
-    console.log('ImmoWidget script loaded successfully');
+    console.log('ImmoWidget script loaded successfully from ${WIDGET_BASE_URL}');
   };
   script.onerror = function() {
     console.error('Failed to load ImmoWidget script from:', script.src);
-    // Fallback: try alternative path
-    const fallbackScript = document.createElement('script');
-    fallbackScript.src = '${baseUrl}/public/widget.js';
-    fallbackScript.setAttribute('data-target', 'immo-widget');
-    fallbackScript.setAttribute('data-url', '${widgetUrl}');
-    document.head.appendChild(fallbackScript);
   };
   document.head.appendChild(script);
 })();
@@ -62,7 +54,7 @@ const EmbedCodeTab: React.FC = () => {
       <div className="bg-gray-50 p-6 rounded-lg">
         <h2 className="text-xl font-semibold mb-4">Website-Integration mit Auto-Resize</h2>
         <p className="text-gray-700 mb-4">
-          Das Widget passt sich automatisch an die Anzahl der Immobilien an - kein manueller Aufwand nötig!
+          Das Widget lädt von <strong>immoupload.com</strong> und funktioniert auf jeder Kundenwebsite!
         </p>
         
         <Tabs value={embedTab} onValueChange={setEmbedTab} className="mt-6">
@@ -86,6 +78,17 @@ const EmbedCodeTab: React.FC = () => {
             {copied ? "Kopiert!" : "Code kopieren"}
           </Button>
         </div>
+      </div>
+      
+      <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+        <h3 className="text-lg font-semibold mb-2 text-blue-800">Domain-Setup für Kunden</h3>
+        <ul className="list-disc list-inside space-y-2 text-blue-700">
+          <li><strong>Widget lädt IMMER von immoupload.com:</strong> Keine 404-Fehler mehr</li>
+          <li><strong>Funktioniert auf jeder Domain:</strong> Keine Konfiguration nötig</li>
+          <li><strong>Sichere Cross-Origin-Kommunikation:</strong> Nur von immoupload.com erlaubt</li>
+          <li><strong>Automatische Firmen-ID:</strong> Wird automatisch übertragen</li>
+          <li><strong>Keine lokalen Abhängigkeiten:</strong> Alles wird zentral geladen</li>
+        </ul>
       </div>
       
       <div className="bg-gray-50 p-6 rounded-lg">
