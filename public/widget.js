@@ -7,9 +7,9 @@
 (function() {
   'use strict';
   
-  // ABSOLUT FINALE Production-Domain - NIEMALS ÄNDERN!
-  const FINAL_PRODUCTION_DOMAIN = 'immoupload.com';
-  const FINAL_WIDGET_BASE_URL = 'https://' + FINAL_PRODUCTION_DOMAIN;
+  // Dynamic domain detection for Replit deployment
+  const REPLIT_DOMAIN = window.location.hostname.includes('replit.dev') ? window.location.origin : 'https://immoupload.com';
+  const FINAL_WIDGET_BASE_URL = REPLIT_DOMAIN;
   
   console.log('🔥 ImmoWidget v10.0: ULTIMATE FINAL - Loading EXCLUSIVELY from:', FINAL_WIDGET_BASE_URL);
   
@@ -172,9 +172,10 @@
     // NUR von FINALER Production-Domain akzeptieren
     const allowedOrigins = [
       FINAL_WIDGET_BASE_URL,
-      'https://immoupload.lovable.app', // Nur für Development
+      'https://immoupload.lovable.app',
       'http://localhost:8080',
-      'http://localhost:5173'
+      'http://localhost:5173',
+      window.location.origin // Allow current Replit domain
     ];
     
     if (!allowedOrigins.includes(event.origin)) {
