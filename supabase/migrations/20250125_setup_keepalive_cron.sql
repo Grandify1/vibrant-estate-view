@@ -11,7 +11,7 @@ SELECT cron.schedule(
     SELECT 
       net.http_post(
         url := 'https://kmzlkfwxeghvlgtilzjh.supabase.co/functions/v1/auto-keepalive',
-        headers := '{"Content-Type": "application/json", "Authorization": "Bearer ' || current_setting('app.settings.service_role_key', true) || '"}',
+        headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttemxrZnd4ZWdodmxndGlsempoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzgwMzIzNSwiZXhwIjoyMDYzMzc5MjM1fQ.yCFjNH1WPzQEJDwKOOa_UBl5RnGNS88xo9Z1qHh2UuM"}',
         body := '{}'
       ) as response;
     $$

@@ -6,8 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Your Replit URL - update this with your actual URL
-const REPLIT_URL = 'https://ihre-repl-url.replit.dev';
+// Your Lovable.com URL
+const REPLIT_URL = 'https://immoupload.com';
 
 serve(async (req) => {
   // Handle CORS preflight request
