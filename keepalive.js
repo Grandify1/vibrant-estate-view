@@ -1,37 +1,18 @@
-
-const https = require('https');
-const http = require('http');
+import https from 'https';
+import http from 'http';
 
 class KeepAliveService {
-  constructor(url, interval = 240000) { // 4 minutes default for lovable.com
+  constructor(url, interval = 300000) { // Default 5 minutes
     this.url = url;
     this.interval = interval;
+    this.intervalId = null;
     this.isRunning = false;
-    this.timeoutId = null;
     this.failureCount = 0;
     this.maxFailures = 3;
     this.lastPing = null;
-  }
 
-  start() {
-    if (this.isRunning) {
-      console.log('Keep-alive service is already running');
-      return;
-    }
-
-    this.isRunning = true;
-    console.log(`Starting keep-alive service for ${this.url}`);
-    console.log(`Ping interval: ${this.interval / 1000} seconds`);
-    
-    this.ping();
-  }
-
-  stop() {
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId);
-    }
-    this.isRunning = false;
-    console.log('Keep-alive service stopped');
+    console.log(`🔄 KeepAlive service initialized for: ${url}`);
+    console.log(`⏰ Ping interval: ${interval / 1000}s`);
   }
 
   ping() {
@@ -47,12 +28,12 @@ class KeepAliveService {
     const req = client.get(this.url, (res) => {
       const responseTime = Date.now() - startTime;
       this.failureCount = 0; // Reset failure count on success
-      
+
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
-        console.log(`✅ [KEEPALIVE] Ping successful (${res.statusCode}) - ${responseTime}ms [${this.lastPing}]`);
-        
+        console.log(`💚 Keep-alive ping successful: ${res.statusCode} - ${responseTime}ms [${this.lastPing}]`);
+
         // Log response data if it's JSON
         try {
           const responseData = JSON.parse(data);
@@ -66,9 +47,9 @@ class KeepAliveService {
 
     req.on('error', (error) => {
       this.failureCount++;
-      console.log(`❌ [KEEPALIVE] Ping failed (${this.failureCount}/${this.maxFailures}): ${error.message}`);
+      console.error(`❌ Keep-alive ping failed: ${error.message} - ${new Date().toISOString()}`);
       console.log(`❌ [KEEPALIVE] Error code: ${error.code}, URL: ${this.url}`);
-      
+
       if (this.failureCount >= this.maxFailures) {
         console.log(`🚨 [KEEPALIVE] Max failures reached. Service may be down.`);
         console.log(`🚨 [KEEPALIVE] Consider checking server logs or restarting service.`);
@@ -78,27 +59,74 @@ class KeepAliveService {
     req.setTimeout(15000, () => {
       req.destroy();
       this.failureCount++;
+      console.error(`⏰ Keep-alive ping timeout - ${new Date().toISOString()}`);
       console.log(`⏰ [KEEPALIVE] Ping timeout (${this.failureCount}/${this.maxFailures}) - URL: ${this.url}`);
     });
 
     // Schedule next ping with exponential backoff on failures
-    const nextInterval = this.failureCount > 0 
+    const nextInterval = this.failureCount > 0
       ? Math.min(this.interval * Math.pow(2, this.failureCount), 600000) // Max 10 minutes
       : this.interval;
-      
+
     console.log(`⏳ [KEEPALIVE] Next ping in ${nextInterval / 1000} seconds`);
-    
-    this.timeoutId = setTimeout(() => {
+
+    this.intervalId = setTimeout(() => {
       this.ping();
     }, nextInterval);
+  }
+
+  start() {
+    if (this.isRunning) {
+      console.log('⚠️ KeepAlive service is already running');
+      return;
+    }
+
+    console.log('🚀 Starting KeepAlive service...');
+    this.isRunning = true;
+
+    // Initial ping
+    this.ping();
+
+    // Set up recurring pings
+    this.intervalId = setInterval(() => {
+      this.ping();
+    }, this.interval);
+
+    console.log('✅ KeepAlive service started successfully');
+  }
+
+  stop() {
+    if (!this.isRunning) {
+      console.log('⚠️ KeepAlive service is not running');
+      return;
+    }
+
+    console.log('🛑 Stopping KeepAlive service...');
+
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+
+    this.isRunning = false;
+    console.log('✅ KeepAlive service stopped');
+  }
+
+  getStatus() {
+    return {
+      isRunning: this.isRunning,
+      url: this.url,
+      interval: this.interval,
+      timestamp: new Date().toISOString()
+    };
   }
 }
 
 // Auto-start if running as main module
-if (require.main === module) {
+if (process.argv[1] === require.resolve(__filename)) {
   const url = process.env.KEEP_ALIVE_URL || 'http://localhost:8080';
   const interval = parseInt(process.env.KEEP_ALIVE_INTERVAL) || 300000;
-  
+
   const keepAlive = new KeepAliveService(url, interval);
   keepAlive.start();
 
@@ -110,4 +138,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = KeepAliveService;
+export default KeepAliveService;

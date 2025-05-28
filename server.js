@@ -1,8 +1,12 @@
 
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const KeepAliveService = require('./keepalive');
+import express from 'express';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const PORT = process.env.PORT || 8080;
 
@@ -129,16 +133,5 @@ app.listen(PORT, '0.0.0.0', () => {
   const widgetPath = path.join(__dirname, 'dist', 'widget.js');
   console.log('🔍 Initial widget.js check:', fs.existsSync(widgetPath) ? '✅ EXISTS' : '❌ MISSING');
   
-  // Start internal keep-alive service after server is ready
-  setTimeout(() => {
-    const serverUrl = process.env.REPLIT_DEPLOYMENT 
-      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/health`
-      : `http://0.0.0.0:${PORT}/health`;
-    
-    console.log(`🔄 Starting keep-alive service for: ${serverUrl}`);
-    const keepAlive = new KeepAliveService(serverUrl, 240000); // 4 minutes
-    keepAlive.start();
-    
-    console.log('✅ Keep-alive service started for lovable.com hosting');
-  }, 5000);
+  console.log('✅ Server successfully started for lovable.com hosting');
 });
