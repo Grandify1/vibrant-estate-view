@@ -1,3 +1,4 @@
+modules = ["nodejs-20"]
 
 [deployment]
 build = ["npm", "run", "build"]
@@ -14,3 +15,19 @@ to = "/widget.js"
 [[deployment.rewrites]]
 from = "/*"
 to = "/index.html"
+
+[workflows]
+runButton = "Build and Serve"
+
+[[workflows.workflow]]
+name = "Build and Serve"
+author = 43169530
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx serve dist -s -p 8080 --host 0.0.0.0"
