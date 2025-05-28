@@ -17,7 +17,7 @@ from = "/*"
 to = "/index.html"
 
 [workflows]
-runButton = "Build and Serve"
+runButton = "Express Server"
 
 [[workflows.workflow]]
 name = "Build and Serve"
@@ -31,3 +31,16 @@ args = "npm run build"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npx serve dist -s -p 8080 --host 0.0.0.0"
+
+[[workflows.workflow]]
+name = "Express Server"
+author = 43169530
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server.js"
