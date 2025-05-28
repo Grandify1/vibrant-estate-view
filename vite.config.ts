@@ -22,8 +22,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      // Stelle sicher, dass widget.js als statisches Asset behandelt wird
-      external: ['widget.js'],
+      // ULTIMATE FINAL: widget.js wird als statisches Asset behandelt
       output: {
         assetFileNames: (assetInfo) => {
           if (assetInfo.name === 'widget.js') {
@@ -32,6 +31,10 @@ export default defineConfig(({ mode }) => ({
           return assetInfo.name || '';
         }
       }
-    }
-  }
+    },
+    // ULTIMATE FINAL: Kopiere widget.js ins public Verzeichnis
+    copyPublicDir: true
+  },
+  // ULTIMATE FINAL: Stelle sicher, dass widget.js verfügbar ist
+  publicDir: 'public'
 }));
