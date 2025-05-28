@@ -47,3 +47,4 @@ args = "node server.js"
 
 [nix]
 channel = "stable-24_05"
+packages = ["supabase-cli"]

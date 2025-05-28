@@ -1,0 +1,28 @@
+supabase functions deploy keep-alive-replit
+supabase functions deploy auto-keepalive  
+supabase functions deploy keepalive-config
+supabase: command not installed, but was located via Nix.
+package: supabase-cli  1.168.1  A CLI for interacting with supabase
+Would you like to run supabase from Nix and add it to your project? [Yn]: Y
+supabase-cli  1.168.1  A CLI for interacting with supabase
+Adding supabase-cli to .replit
+Access token not provided. Supply an access token by running supabase login or setting the SUPABASE_ACCESS_TOKEN environment variable.
+Try rerunning the command with --debug to troubleshoot the error.
+Access token not provided. Supply an access token by running supabase login or setting the SUPABASE_ACCESS_TOKEN environment variable.
+Try rerunning the command with --debug to troubleshoot the error.
+Access token not provided. Supply an access token by running supabase login or setting the SUPABASE_ACCESS_TOKEN environment variable.
+Try rerunning the command with --debug to troubleshoot the error.
+~/workspace$ supabase login
+Hello from Supabase! Press Enter to open browser and login automatically.
+
+Here is your login link in case browser did not open https://supabase.com/dashboard/cli/login?session_id=cb0772fc-20d3-449d-a792-e56357a5e09b&token_name=cli_runner@9533fccf620f_1748442365&public_key=04632c84b6031f3f51f97bbbe0c5ada5ddf2579d4f277724b528987ac9e73e4e7aaaa56952949ec949682616f020e733abf81710cbc18a3d8447cd8a9e63bb8bea
+
+HTTP 401 Unauthorized: cannot retrieve access token
+Try rerunning the command with --debug to troubleshoot the error.
+~/workspace$ supabase login
+Hello from Supabase! Press Enter to open browser and login automatically.
+
+Here is your login link in case browser did not open https://supabase.com/dashboard/cli/login?session_id=84c2dc04-b986-4a9a-a7ee-376e07820461&token_name=cli_runner@9533fccf620f_1748442405&public_key=04e17b5b1d8a93912546dc43989ac9ce080b0aaf7a08b4fdb9d4d810491c6b48420639401de7aa0f23bc94b25825976d5413739936fb37e05f734b8e7cf3ffc352
+
+HTTP 401 Unauthorized: cannot retrieve access token
+Try rerunning the command with --debug to troubleshoot the error.
