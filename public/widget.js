@@ -7,12 +7,9 @@
 (function() {
   'use strict';
   
-  // Dynamic domain detection for Replit deployment
+  // Fixed domain detection - always use immoupload.com for production
   const getCurrentDomain = () => {
-    if (window.location.hostname.includes('replit.dev') || window.location.hostname.includes('repl.co')) {
-      return window.location.origin;
-    }
-    // Fallback to immoupload.com if not on Replit
+    // Always use immoupload.com for production deployment
     return 'https://immoupload.com';
   };
   
