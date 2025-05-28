@@ -28,22 +28,45 @@ app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'alive', 
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    platform: 'replit',
+    service: 'immoupload-widget'
+  });
+});
+
+// Keep-alive ping endpoint for external services
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
+// Status endpoint with detailed information
+app.get('/status', (req, res) => {
+  res.status(200).json({
+    status: 'running',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    environment: process.env.NODE_ENV || 'development',
+    deployment: process.env.REPLIT_DEPLOYMENT ? 'production' : 'development',
+    version: '1.0.0'
   });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+  console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
+  console.log(`📡 Ping endpoint: http://0.0.0.0:${PORT}/ping`);
   
   // Start internal keep-alive service after server is ready
   setTimeout(() => {
     const serverUrl = process.env.REPLIT_DEPLOYMENT 
       ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/health`
-      : `http://localhost:${PORT}/health`;
+      : `http://0.0.0.0:${PORT}/health`;
     
     const keepAlive = new KeepAliveService(serverUrl, 240000); // 4 minutes
     keepAlive.start();
     
-    console.log('✓ Keep-alive service started');
+    console.log('✅ Keep-alive service started for lovable.com hosting');
   }, 5000);
 });
