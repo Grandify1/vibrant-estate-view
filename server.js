@@ -104,7 +104,7 @@ app.get('/debug/files', (req, res) => {
 });
 
 // SPA fallback - serve index.html for all other routes
-app.get('*', (req, res) => {
+app.use((req, res) => {
   const indexPath = path.join(__dirname, 'dist', 'index.html');
   console.log('🌐 SPA fallback for:', req.url);
   

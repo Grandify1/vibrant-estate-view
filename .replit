@@ -47,3 +47,7 @@ args = "node server.js"
 [nix]
 channel = "stable-24_05"
 packages = ["supabase-cli"]
+
+[[ports]]
+localPort = 8080
+externalPort = 80
