@@ -22,19 +22,22 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      // ULTIMATE FINAL: widget.js wird als statisches Asset behandelt
+      // Ensure widget.js is copied to root of dist folder
+      input: {
+        main: './index.html'
+      },
       output: {
         assetFileNames: (assetInfo) => {
           if (assetInfo.name === 'widget.js') {
             return 'widget.js';
           }
-          return assetInfo.name || '';
+          return 'assets/[name]-[hash][extname]';
         }
       }
     },
-    // ULTIMATE FINAL: Kopiere widget.js ins public Verzeichnis
+    // Copy public directory including widget.js
     copyPublicDir: true
   },
-  // ULTIMATE FINAL: Stelle sicher, dass widget.js verfügbar ist
+  // Ensure public directory is copied
   publicDir: 'public'
 }));

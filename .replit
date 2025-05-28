@@ -1,8 +1,16 @@
-modules = ["nodejs-20", "web"]
-run = "npm run dev"
-
-[nix]
-channel = "stable-24_05"
 
 [deployment]
-run = ["sh", "-c", "npm run dev"]
+build = ["npm", "run", "build"]
+run = ["npx", "serve", "dist", "-s", "-l", "8080"]
+deploymentTarget = "static"
+publicDir = "dist"
+
+# Ensure widget.js is accessible at root
+[[deployment.rewrites]]
+from = "/widget.js"
+to = "/widget.js"
+
+# SPA fallback for all other routes
+[[deployment.rewrites]]
+from = "/*"
+to = "/index.html"
