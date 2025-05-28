@@ -1,0 +1,80 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+};
+// Ihre Lovable.com App URL - HIER IHRE ECHTE URL EINTRAGEN
+const LOVABLE_APP_URL = 'https://immoupload.com';
+serve(async (req)=>{
+  // Handle CORS preflight request
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      headers: corsHeaders
+    });
+  }
+  try {
+    console.log(`🚀 Lovable Keep-Alive Service starting at ${new Date().toISOString()}`);
+    // Endloser Loop mit 4-Minuten Intervall
+    while(true){
+      try {
+        const startTime = Date.now();
+        // Ping die Lovable.com App - verschiedene Endpunkte versuchen
+        const endpoints = [
+          '/',
+          '/health',
+          '/ping',
+          '/api/health'
+        ];
+        let success = false;
+        for (const endpoint of endpoints){
+          try {
+            const response = await fetch(`${LOVABLE_APP_URL}${endpoint}`, {
+              method: 'GET',
+              headers: {
+                'User-Agent': 'Supabase-Lovable-KeepAlive/1.0',
+                'Accept': 'text/html,application/json,*/*',
+                'Cache-Control': 'no-cache'
+              },
+              signal: AbortSignal.timeout(30000)
+            });
+            if (response.status < 500) {
+              const responseTime = Date.now() - startTime;
+              const timestamp = new Date().toISOString();
+              console.log(`✅ [${timestamp}] Keep-Alive successful ${endpoint} - ${response.status} - ${responseTime}ms`);
+              success = true;
+              break;
+            }
+          } catch (endpointError) {
+            console.log(`⚠️  Endpoint ${endpoint} failed: ${endpointError.message}`);
+            continue;
+          }
+        }
+        if (!success) {
+          console.log(`❌ All endpoints failed for ${LOVABLE_APP_URL}`);
+        }
+        // Warte 4 Minuten (240000 ms)
+        console.log(`⏰ Waiting 4 minutes until next ping...`);
+        await new Promise((resolve)=>setTimeout(resolve, 240000));
+      } catch (pingError) {
+        const timestamp = new Date().toISOString();
+        console.error(`❌ [${timestamp}] Ping error: ${pingError.message}`);
+        // Bei Fehler trotzdem weiter versuchen nach 4 Minuten
+        await new Promise((resolve)=>setTimeout(resolve, 240000));
+      }
+    }
+  } catch (error) {
+    console.error('❌ Keep-Alive fatal error:', error.message);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      service: 'Lovable Keep-Alive'
+    }), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      },
+      status: 500
+    });
+  }
+});
