@@ -133,5 +133,5 @@ app.listen(PORT, '0.0.0.0', () => {
   const widgetPath = path.join(__dirname, 'dist', 'widget.js');
   console.log('🔍 Initial widget.js check:', fs.existsSync(widgetPath) ? '✅ EXISTS' : '❌ MISSING');
   
-  console.log('✅ Server successfully started for lovable.com hosting');
+  console.log('✅ Server successfully started on Replit hosting');
 });
