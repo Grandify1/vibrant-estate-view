@@ -1,17 +1,23 @@
 
 /**
  * ImmoUpload Widget - ULTIMATE FINAL VERSION
- * GARANTIERT: Lädt NIEMALS von Lovable - NUR von immoupload.com!
- * Version 10.0 - ABSOLUTE FINAL FIX
+ * GARANTIERT: Lädt NIEMALS von Lovable - NUR von Replit!
+ * Version 10.1 - REPLIT DOMAIN FIX
  */
 (function() {
   'use strict';
   
   // Dynamic domain detection for Replit deployment
-  const REPLIT_DOMAIN = window.location.hostname.includes('replit.dev') ? window.location.origin : 'https://immoupload.com';
-  const FINAL_WIDGET_BASE_URL = REPLIT_DOMAIN;
+  const getCurrentDomain = () => {
+    if (window.location.hostname.includes('replit.dev') || window.location.hostname.includes('repl.co')) {
+      return window.location.origin;
+    }
+    // Fallback to immoupload.com if not on Replit
+    return 'https://immoupload.com';
+  };
   
-  console.log('🔥 ImmoWidget v10.0: ULTIMATE FINAL - Loading EXCLUSIVELY from:', FINAL_WIDGET_BASE_URL);
+  const FINAL_WIDGET_BASE_URL = getCurrentDomain();
+  console.log('🔥 ImmoWidget v10.1: REPLIT FIX - Loading EXCLUSIVELY from:', FINAL_WIDGET_BASE_URL);
   
   // Prüfe ob bereits initialisiert
   if (window.ImmoWidget && window.ImmoWidget.initialized) {
@@ -30,7 +36,7 @@
   
   // Widget initialisieren
   function initializeWidget() {
-    console.log('🚀 ImmoWidget: FINAL initialization from PRODUCTION ONLY:', FINAL_WIDGET_BASE_URL);
+    console.log('🚀 ImmoWidget: REPLIT initialization from:', FINAL_WIDGET_BASE_URL);
     
     // Container finden oder erstellen
     let container = document.getElementById('immo-widget-container');
@@ -90,13 +96,13 @@
     const companyId = currentScript.getAttribute('data-company') || currentScript.getAttribute('data-company-id');
     console.log('ImmoWidget: Company ID:', companyId);
     
-    // FINALE Iframe-URL - ABSOLUT von Production
+    // FINALE Iframe-URL - ABSOLUT von Replit
     let finalIframeUrl = FINAL_WIDGET_BASE_URL + '/embed';
     if (companyId) {
       finalIframeUrl += `?company=${encodeURIComponent(companyId)}`;
     }
     
-    console.log('🎯 ImmoWidget: Creating iframe with FINAL PRODUCTION URL:', finalIframeUrl);
+    console.log('🎯 ImmoWidget: Creating iframe with REPLIT URL:', finalIframeUrl);
     
     // Iframe erstellen
     const iframe = document.createElement('iframe');
@@ -121,15 +127,15 @@
     
     // Erfolgs-Handler
     iframe.addEventListener('load', function() {
-      console.log('✅ ImmoWidget: ULTIMATE SUCCESS - Loaded from FINAL PRODUCTION:', finalIframeUrl);
+      console.log('✅ ImmoWidget: REPLIT SUCCESS - Loaded from:', finalIframeUrl);
       
       // Erfolgs-Event
       const successEvent = new CustomEvent('immo-widget-loaded', {
         detail: {
           iframeUrl: finalIframeUrl,
-          productionDomain: FINAL_PRODUCTION_DOMAIN,
+          baseUrl: FINAL_WIDGET_BASE_URL,
           timestamp: new Date().toISOString(),
-          version: '10.0-FINAL'
+          version: '10.1-REPLIT'
         }
       });
       document.dispatchEvent(successEvent);
@@ -137,15 +143,15 @@
     
     // Fehler-Handler
     iframe.addEventListener('error', function() {
-      console.error('❌ ImmoWidget: CRITICAL FINAL ERROR - Failed to load from:', finalIframeUrl);
-      console.error('❌ Check if', FINAL_PRODUCTION_DOMAIN, 'is accessible');
+      console.error('❌ ImmoWidget: REPLIT ERROR - Failed to load from:', finalIframeUrl);
+      console.error('❌ Check if', FINAL_WIDGET_BASE_URL, 'is accessible');
       
       // Fehler-Event
       const errorEvent = new CustomEvent('immo-widget-error', {
         detail: {
-          error: 'Failed to load final iframe',
+          error: 'Failed to load iframe',
           url: finalIframeUrl,
-          domain: FINAL_PRODUCTION_DOMAIN,
+          baseUrl: FINAL_WIDGET_BASE_URL,
           timestamp: new Date().toISOString()
         }
       });
@@ -169,13 +175,12 @@
   let resizeDebounceTimer;
   
   window.addEventListener('message', function(event) {
-    // NUR von FINALER Production-Domain akzeptieren
+    // Erlaubte Domains für Replit
     const allowedOrigins = [
       FINAL_WIDGET_BASE_URL,
-      'https://immoupload.lovable.app',
       'http://localhost:8080',
       'http://localhost:5173',
-      window.location.origin // Allow current Replit domain
+      window.location.origin
     ];
     
     if (!allowedOrigins.includes(event.origin)) {
@@ -193,7 +198,7 @@
         if (newHeight > 50 && newHeight < 5000 && Math.abs(newHeight - lastKnownHeight) > 10) {
           clearTimeout(resizeDebounceTimer);
           resizeDebounceTimer = setTimeout(() => {
-            console.log('ImmoWidget: FINAL resize to height:', newHeight);
+            console.log('ImmoWidget: REPLIT resize to height:', newHeight);
             iframe.style.height = newHeight + 'px';
             lastKnownHeight = newHeight;
           }, 50);
@@ -207,12 +212,11 @@
     }
   });
   
-  // Widget als FINAL initialisiert markieren
+  // Widget als initialisiert markieren
   window.ImmoWidget.initialized = true;
-  window.ImmoWidget.version = '10.0-FINAL';
-  window.ImmoWidget.productionDomain = FINAL_PRODUCTION_DOMAIN;
+  window.ImmoWidget.version = '10.1-REPLIT';
   window.ImmoWidget.baseUrl = FINAL_WIDGET_BASE_URL;
   
-  console.log('🏆 ImmoWidget v10.0: ULTIMATE FINAL VERSION loaded from:', FINAL_WIDGET_BASE_URL);
-  console.log('🔒 GARANTIERT: Lädt NIEMALS von Lovable - NUR von', FINAL_PRODUCTION_DOMAIN);
+  console.log('🏆 ImmoWidget v10.1: REPLIT VERSION loaded from:', FINAL_WIDGET_BASE_URL);
+  console.log('🔒 GARANTIERT: Lädt von Replit, nicht von Lovable!');
 })();
