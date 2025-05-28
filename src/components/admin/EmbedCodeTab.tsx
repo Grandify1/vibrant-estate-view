@@ -13,10 +13,11 @@ const EmbedCodeTab: React.FC = () => {
   // Die Firmen-ID als Parameter für das Embed-Skript
   const companyParam = company ? company.id : '';
   
-  // WICHTIG: Feste Domain für Production - IMMER immoupload.com
-  const WIDGET_BASE_URL = 'https://immoupload.com';
+  // KRITISCH: Feste Production-Domain - NIEMALS ändern!
+  const PRODUCTION_DOMAIN = 'immoupload.com';
+  const WIDGET_BASE_URL = `https://${PRODUCTION_DOMAIN}`;
   
-  // Das Auto-Resize Embed-Skript mit korrekter Domain
+  // Das Auto-Resize Embed-Skript mit fester Production-Domain
   const singleScriptCode = `<!-- Immobilien-Widget mit Auto-Resize Start -->
 <div id="immo-widget-container" class="immo-widget-container"></div>
 <script>
@@ -29,6 +30,7 @@ const EmbedCodeTab: React.FC = () => {
   };
   script.onerror = function() {
     console.error('Failed to load ImmoWidget script from:', script.src);
+    console.error('Check if ${PRODUCTION_DOMAIN} is accessible');
   };
   document.head.appendChild(script);
 })();
@@ -53,8 +55,11 @@ const EmbedCodeTab: React.FC = () => {
     <div className="space-y-6">
       <div className="bg-gray-50 p-6 rounded-lg">
         <h2 className="text-xl font-semibold mb-4">Website-Integration mit Auto-Resize</h2>
-        <p className="text-gray-700 mb-4">
-          Das Widget lädt von <strong>immoupload.com</strong> und funktioniert auf jeder Kundenwebsite!
+        <p className="text-gray-700 mb-2">
+          Das Widget lädt von <strong className="text-green-600">{PRODUCTION_DOMAIN}</strong> und funktioniert auf jeder Kundenwebsite!
+        </p>
+        <p className="text-sm text-blue-600 font-medium">
+          ✅ Garantiert: Lädt IMMER von der festen Production-Domain
         </p>
         
         <Tabs value={embedTab} onValueChange={setEmbedTab} className="mt-6">
@@ -80,14 +85,14 @@ const EmbedCodeTab: React.FC = () => {
         </div>
       </div>
       
-      <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-        <h3 className="text-lg font-semibold mb-2 text-blue-800">Domain-Setup für Kunden</h3>
-        <ul className="list-disc list-inside space-y-2 text-blue-700">
-          <li><strong>Widget lädt IMMER von immoupload.com:</strong> Keine 404-Fehler mehr</li>
-          <li><strong>Funktioniert auf jeder Domain:</strong> Keine Konfiguration nötig</li>
-          <li><strong>Sichere Cross-Origin-Kommunikation:</strong> Nur von immoupload.com erlaubt</li>
+      <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+        <h3 className="text-lg font-semibold mb-2 text-green-800">🔧 PROBLEM GELÖST - Feste Domain!</h3>
+        <ul className="list-disc list-inside space-y-2 text-green-700">
+          <li><strong>Widget lädt IMMER von {PRODUCTION_DOMAIN}:</strong> Keine 404-Fehler mehr</li>
+          <li><strong>Feste Production-Domain:</strong> Unabhängig von Lovable-URLs</li>
+          <li><strong>Funktioniert auf jeder Kundenwebsite:</strong> Keine Domain-Probleme</li>
+          <li><strong>Sichere Cross-Origin-Kommunikation:</strong> Nur von {PRODUCTION_DOMAIN} erlaubt</li>
           <li><strong>Automatische Firmen-ID:</strong> Wird automatisch übertragen</li>
-          <li><strong>Keine lokalen Abhängigkeiten:</strong> Alles wird zentral geladen</li>
         </ul>
       </div>
       

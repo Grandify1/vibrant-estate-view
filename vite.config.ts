@@ -20,4 +20,18 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      // Stelle sicher, dass widget.js als statisches Asset behandelt wird
+      external: ['widget.js'],
+      output: {
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name === 'widget.js') {
+            return 'widget.js';
+          }
+          return assetInfo.name || '';
+        }
+      }
+    }
+  }
 }));
