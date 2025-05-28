@@ -3,8 +3,7 @@ modules = ["nodejs-20"]
 [deployment]
 build = ["npm", "run", "build"]
 run = ["npx", "serve", "dist", "-s", "-l", "8080"]
-deploymentTarget = "static"
-publicDir = "dist"
+deploymentTarget = "gce"
 
 # Ensure widget.js is accessible at root
 [[deployment.rewrites]]
