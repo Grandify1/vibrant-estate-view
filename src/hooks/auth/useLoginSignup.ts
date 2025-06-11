@@ -88,9 +88,67 @@ export const useLoginSignup = () => {
     }
   };
 
+  // Google OAuth Login
+  const loginWithGoogle = async () => {
+    try {
+      console.log("Google Login versuchen...");
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + "/auth"
+        }
+      });
+      
+      if (error) {
+        console.error("Google Login Fehler:", error);
+        toast.error("Google Login Fehler: " + error.message);
+        return false;
+      }
+      
+      console.log("Google Login erfolgreich gestartet");
+      return true;
+    } catch (error) {
+      console.error("Fehler beim Google Login:", error);
+      toast.error("Ein Fehler ist aufgetreten");
+      return false;
+    }
+  };
+
+  // Google OAuth Signup
+  const signupWithGoogle = async (selectedPlan?: string) => {
+    try {
+      console.log("Google Registrierung versuchen...");
+      const redirectUrl = selectedPlan 
+        ? `${window.location.origin}/auth?new_registration=true&plan=${selectedPlan}`
+        : `${window.location.origin}/auth?new_registration=true`;
+        
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl
+        }
+      });
+      
+      if (error) {
+        console.error("Google Registrierung Fehler:", error);
+        toast.error("Google Registrierung Fehler: " + error.message);
+        return false;
+      }
+      
+      console.log("Google Registrierung erfolgreich gestartet");
+      return true;
+    } catch (error) {
+      console.error("Fehler bei der Google Registrierung:", error);
+      toast.error("Ein Fehler ist aufgetreten");
+      return false;
+    }
+  };
+
   return {
     login,
     signup,
-    logout
+    logout,
+    loginWithGoogle,
+    signupWithGoogle
   };
 };
