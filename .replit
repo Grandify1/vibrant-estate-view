@@ -16,7 +16,7 @@ from = "/*"
 to = "/index.html"
 
 [workflows]
-runButton = "Express Server"
+runButton = "Build and Serve"
 
 [[workflows.workflow]]
 name = "Build and Serve"
