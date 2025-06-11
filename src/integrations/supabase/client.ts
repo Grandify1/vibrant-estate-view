@@ -22,6 +22,13 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
+// Debug Logging
+if (process.env.NODE_ENV === 'development') {
+  console.log("🔧 Supabase Client initialized");
+  console.log("🔧 Supabase URL:", SUPABASE_URL);
+  console.log("🔧 Expected redirect URL should be:", `${SUPABASE_URL}/auth/v1/callback`);
+}
+
 // Prevent multiple instances warning by disabling the warning in development
 if (process.env.NODE_ENV === 'development') {
   // @ts-ignore

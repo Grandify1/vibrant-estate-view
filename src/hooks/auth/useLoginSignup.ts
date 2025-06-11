@@ -91,7 +91,10 @@ export const useLoginSignup = () => {
   // Google OAuth Login
   const loginWithGoogle = async () => {
     try {
-      console.log("Google Login versuchen...");
+      console.log("🔵 Google Login versuchen...");
+      console.log("🔵 Current Origin:", window.location.origin);
+      console.log("🔵 Redirect URL wird sein:", `${window.location.origin}/auth`);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -104,15 +107,17 @@ export const useLoginSignup = () => {
       });
       
       if (error) {
-        console.error("Google Login Fehler:", error);
+        console.error("🔴 Google Login Fehler:", error);
+        console.error("🔴 Error Details:", JSON.stringify(error, null, 2));
         toast.error("Google Login Fehler: " + error.message);
         return false;
       }
       
-      console.log("Google Login erfolgreich gestartet");
+      console.log("🟢 Google Login erfolgreich gestartet");
+      console.log("🟢 Auth Data:", data);
       return true;
     } catch (error) {
-      console.error("Fehler beim Google Login:", error);
+      console.error("🔴 Fehler beim Google Login:", error);
       toast.error("Ein Fehler ist aufgetreten");
       return false;
     }
@@ -121,10 +126,15 @@ export const useLoginSignup = () => {
   // Google OAuth Signup
   const signupWithGoogle = async (selectedPlan?: string) => {
     try {
-      console.log("Google Registrierung versuchen...");
+      console.log("🔵 Google Registrierung versuchen...");
+      console.log("🔵 Selected Plan:", selectedPlan);
+      console.log("🔵 Current Origin:", window.location.origin);
+      
       const redirectUrl = selectedPlan 
         ? `${window.location.origin}/auth?new_registration=true&plan=${selectedPlan}`
         : `${window.location.origin}/auth?new_registration=true`;
+      
+      console.log("🔵 Redirect URL wird sein:", redirectUrl);
         
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -138,15 +148,17 @@ export const useLoginSignup = () => {
       });
       
       if (error) {
-        console.error("Google Registrierung Fehler:", error);
+        console.error("🔴 Google Registrierung Fehler:", error);
+        console.error("🔴 Error Details:", JSON.stringify(error, null, 2));
         toast.error("Google Registrierung Fehler: " + error.message);
         return false;
       }
       
-      console.log("Google Registrierung erfolgreich gestartet");
+      console.log("🟢 Google Registrierung erfolgreich gestartet");
+      console.log("🟢 Auth Data:", data);
       return true;
     } catch (error) {
-      console.error("Fehler bei der Google Registrierung:", error);
+      console.error("🔴 Fehler bei der Google Registrierung:", error);
       toast.error("Ein Fehler ist aufgetreten");
       return false;
     }
