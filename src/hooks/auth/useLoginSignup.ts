@@ -101,7 +101,7 @@ export const useLoginSignup = () => {
           redirectTo: `${window.location.origin}/auth`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
+            prompt: 'select_account'
           }
         }
       });
@@ -142,7 +142,7 @@ export const useLoginSignup = () => {
           redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
+            prompt: 'select_account'
           }
         }
       });
