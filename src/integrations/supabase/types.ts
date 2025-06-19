@@ -320,6 +320,10 @@ export type Database = {
         Args: { profile_company_id: string }
         Returns: boolean
       }
+      delete_company_admin: {
+        Args: { company_id_param: string }
+        Returns: boolean
+      }
       get_all_users_with_profiles: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -332,11 +336,45 @@ export type Database = {
           company_name: string
         }[]
       }
+      get_companies_for_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          description: string
+          logo_url: string
+          website: string
+          phone: string
+          email: string
+          address: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      get_profiles_for_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          first_name: string
+          last_name: string
+          email: string
+          company_id: string
+          created_at: string
+        }[]
+      }
       increment_coupon_usage: {
         Args: { coupon_id_param: string }
         Returns: undefined
       }
-      is_admin_user: {
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_admin_by_jwt: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_admin_by_profile: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
@@ -347,6 +385,14 @@ export type Database = {
           last_name_param: string
           company_id_param: string
         }
+        Returns: Json
+      }
+      test_admin_connection: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      test_admin_debug: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
     }
